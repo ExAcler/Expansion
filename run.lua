@@ -22,6 +22,7 @@ gamerun_status = ""    --[[游戏状态
 								选择目标-B：使用 "借刀杀人" 选择目标A确定之后的状态
 						   手牌生效中：卡牌需要队列执行效果时
 						   观看手牌 ("-拆、-顺"、"-杀")：使用一些卡牌需要选择对方手牌时
+						   牌堆选择 ("-五谷")：使用一些卡牌、技能等需要翻开牌堆顶数张牌并选择时
 						   主动出牌 ("-决斗"、"-火攻"、"-青龙"、"-贯石"、"-刚烈")：使用一些卡牌需要己方进一步响应时
 						   技能选择 ("-单牌"：选取单张牌、"-多牌"：选取多张牌、"-目标"：选取目标状态)
 						   确认操作：技能等需要确认发动的
@@ -82,10 +83,40 @@ function add_funcptr(func, va_list, p)
 	return #funcptr_queue
 end
 
+--  将函数队列覆盖  --
+function change_funcptr(func, va_list, p)
+    local t = {}
+	t.func = func; t.va_list = va_list
+	if p ~= nil then
+	    table.remove(funcptr_queue,p)
+		table.insert(funcptr_queue, p, t)
+	else
+		table.remove(funcptr_queue,#funcptr_queue)
+	    table.insert(funcptr_queue, t)
+	end
+	return #funcptr_queue
+end
 --  开始函数队列执行  --
 function consent_func_queue(interval)
-    funcptr_i = 1
+	funcptr_i = 1
     timer.start(interval)
+end
+
+--  暂停函数队列执行  --
+function pause_func_queue()
+	pause = true
+	timer.stop()
+	stick_at = funcptr_i
+end
+
+--  继续函数队列执行  --
+function continue_func_queue(interval)
+	if stick_at == nil then
+		consent_func_queue(interval)
+	else
+		funcptr_i = stick_at
+		timer.start(interval)
+	end
 end
 
 --  富文本框初始化  --
@@ -195,8 +226,7 @@ function gamerun_huihe_start()
 	add_funcptr(card_mopai, nil)
 	
 	--  出牌阶段  --
-	add_funcptr(_start_sub1, nil)
-	
+		add_funcptr(_start_sub1, nil)
 	--[[
 	if #char_juese[char_current_i].panding > 0 then
 		--  无懈可击主动响应  --
@@ -236,6 +266,7 @@ function gamerun_huihe_panding()
 	msg = nil; collectgarbage()
 	
 	for _, _ in ipairs(char_juese[char_current_i].panding) do
+		is_affect = true
 	    add_funcptr(_panding_sub1, char_current_i)
 		p = add_funcptr(_panding_sub3, nil)    -- 记录位置，供判定阶段伤害结算插队
 		add_funcptr(_panding_sub2, {1, p})
@@ -445,7 +476,7 @@ function gamerun_select_target(dir)
 	    gamerun_target_selected = gamerun_target_selected - 1
 		
 		--  使用目标不能是自己 (火攻、借刀杀人除外)  --
-		if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" then
+		if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
 			if gamerun_target_selected == char_current_i then
 				gamerun_target_selected = gamerun_target_selected - 1
 			end
@@ -466,7 +497,7 @@ function gamerun_select_target(dir)
 				gamerun_target_selected = gamerun_target_selected - 1
 				j = true
 			end
-			if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" then
+			if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
 				if gamerun_target_selected == char_current_i then
 					gamerun_target_selected = gamerun_target_selected - 1
 				end
@@ -484,7 +515,7 @@ function gamerun_select_target(dir)
 	if dir == "left" then
 	    gamerun_target_selected = gamerun_target_selected + 1
 		
-		if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" then
+		if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
 			if gamerun_target_selected == char_current_i then
 				gamerun_target_selected = gamerun_target_selected + 1
 			end
@@ -504,7 +535,7 @@ function gamerun_select_target(dir)
 				gamerun_target_selected = gamerun_target_selected + 1
 				j = true
 			end
-			if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" then
+			if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
 				if gamerun_target_selected == char_current_i then
 					gamerun_target_selected = gamerun_target_selected + 1
 				end
@@ -520,26 +551,67 @@ function gamerun_select_target(dir)
 	end
 end
 
+  --  临时将装备牌收入手牌  --
+function card_into_hand(ID_s)
+	shoupai_temp[ID_s] = table.copy(char_juese[ID_s].shoupai)
+	if #char_juese[ID_s].wuqi ~= 0 then
+		char_juese[ID_s].shoupai[-1] = table.copy(char_juese[ID_s].wuqi)
+	end
+	if #char_juese[ID_s].fangju ~= 0 then
+		char_juese[ID_s].shoupai[-2] = table.copy(char_juese[ID_s].fangju)
+	end
+	if #char_juese[ID_s].gongma ~= 0 then
+		char_juese[ID_s].shoupai[-3] = table.copy(char_juese[ID_s].gongma)
+	end
+	if #char_juese[ID_s].fangma ~= 0 then
+		char_juese[ID_s].shoupai[-4] = table.copy(char_juese[ID_s].fangma)
+	end
+end
 
-
-
-
-
+--  收回临时收入手牌的装备牌  --
+shoupai_temp = {}
+shoupai_temp[1] = {}
+shoupai_temp[2] = {}
+shoupai_temp[3] = {}
+shoupai_temp[4] = {}
+shoupai_temp[5] = {}
+for ID_s =1,5 do
+	char_juese[ID_s].shoupai[-1] = {}
+	char_juese[ID_s].shoupai[-2] = {}
+	char_juese[ID_s].shoupai[-3] = {}
+	char_juese[ID_s].shoupai[-4] = {}
+end
+function card_back_arm(ID_s)
+	char_juese[ID_s].wuqi = table.copy(char_juese[ID_s].shoupai[-1])
+	char_juese[ID_s].fangju = table.copy(char_juese[ID_s].shoupai[-2])
+	char_juese[ID_s].gongma = table.copy(char_juese[ID_s].shoupai[-3])
+	char_juese[ID_s].fangma = table.copy(char_juese[ID_s].shoupai[-4])
+end
+card_into_hand(1)
+card_into_hand(2)
+card_into_hand(3)
+card_into_hand(4)
+card_into_hand(5)
 
 
 
 
 
 --                     TI-Lua 系统事件                 --
-
+pause = false
 function on.timer()
-    if funcptr_i <= #funcptr_queue then
-		if funcptr_queue[funcptr_i].func ~= nil then
-			funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
-	    end
-		funcptr_i = funcptr_i + 1
+    if pause == false then 
+		if funcptr_i <= #funcptr_queue then
+			if funcptr_queue[funcptr_i].func ~= nil then
+				funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
+			end
+			funcptr_i = funcptr_i + 1
+		else
+			stick_at,funcptr_queue = nil,{}
+			timer.stop()
+		end
 	else
-	    timer.stop()
+		return
 	end
 end
 
@@ -583,22 +655,7 @@ function on.enterKey()
 
 	local card
 	
-	if gamerun_huihe == "判定" then
-		--  选择是否使用无懈可击  --
-		if string.find(gamerun_status, "无懈") then
-			if table.getn2(card_selected) ~= 0 then
-				card = char_juese[char_current_i].shoupai[card_highlighted]
-				if string.find(card[1], "无懈") then
-					gamerun_status = "手牌生效中"
-					set_hints("")
-					_wuxie_zhudong_exe(card, card_highlighted)
-					card_highlighted = 1
-				end
-			end
-		end
-		return
-	end
-	
+	card_into_hand(char_current_i)
 	if gamerun_huihe == "摸牌" then
 		--  张辽突袭  --
 		if gamerun_status == "选择目标" then
@@ -653,7 +710,13 @@ function on.enterKey()
 			    _sha_sub3()
 			end
 			platform.window:invalidate()
-			
+		elseif string.find(gamerun_status, "牌堆选择") then
+			if string.find(gamerun_status, "五谷") then
+				funcptr_queue = {}
+				_wugu_get_card_zhudong(char_current_i, gamerun_guankan_selected)
+				_wugu_others_get_card_exe(char_current_i)
+				consent_func_queue(0.6)
+			end
 		elseif string.find(gamerun_status, "主动出牌") then
 		    if string.find(gamerun_status, "决斗") then
 			    if table.getn2(card_selected) ~= 0 then
@@ -661,6 +724,17 @@ function on.enterKey()
 					if string.find(card, "杀") then
 			            funcptr_queue = {}
 						_juedou_exe_ji(char_current_i, gamerun_target_selected, card_highlighted)
+			            consent_func_queue(0.6)
+					end
+				end
+			end
+			
+			if string.find(gamerun_status, "无懈") then
+			    if table.getn2(card_selected) ~= 0 then
+			        card = char_juese[char_current_i].shoupai[card_highlighted][1]
+					if string.find(card, "无懈可击") or char_juese[char_current_i].name=="卧龙诸葛" then
+			            funcptr_queue = {}
+						_wuxie_exe_ji(char_current_i, gamerun_target_selected, card_highlighted)
 			            consent_func_queue(0.6)
 					end
 				end
@@ -800,7 +874,8 @@ function on.enterKey()
 	--  游戏结束，重新开始  --
     if gamerun_huihe == "游戏结束" then
 		timer.stop()
-	    set_hints("")
+	    pause = true
+		set_hints("")
 		txt_messages:setExpression("", -1)
 		txt_messages_init()
 		init_character()
@@ -824,11 +899,17 @@ function on.enterKey()
 					char_current_i = 1
 				end
 			
-				--  跳过死亡的玩家  --
+				--  跳过死亡以及翻面的玩家  --
 				local j = true
 				while j do
 					j = false
 					if char_juese[char_current_i].siwang == true then
+						char_current_i = char_current_i + 1
+						j = true
+					end
+					if char_juese[char_current_i].fanmian == true and char_juese[char_current_i].siwang == false then
+						char_juese[char_current_i].fanmian = false
+						push_message(table.concat({char_juese[char_current_i].name,"将武将牌翻回正面"}))
 						char_current_i = char_current_i + 1
 						j = true
 					end
@@ -868,8 +949,10 @@ function on.escapeKey()
 	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then return end
 	if gamerun_status == "手牌生效中" or string.find(gamerun_status, "观看手牌") then return end
 	
-	if gamerun_huihe == "判定" and string.find(gamerun_status, "无懈") then
-		_wuxie_zhudong_exe_2()
+	if string.find(gamerun_status, "无懈") then
+		funcptr_queue = {}
+		_wuxie_exe_fangqi(char_current_i, gamerun_target_selected)
+		consent_func_queue(0.6)
 	end
 	
 	if gamerun_huihe == "摸牌" then
@@ -1010,6 +1093,7 @@ end
 
 --  左/右键 (移动高亮的牌/选择卡牌使用目标)  --
 function on.arrowKey(key)
+	if card_highlighted <=0 then card_highlighted = 1 end
 	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then return end
     if gamerun_huihe == "结束" or gamerun_status == "手牌生效中" or string.find(gamerun_status, "确认操作") then return end
 
@@ -1017,10 +1101,16 @@ function on.arrowKey(key)
 	    if string.find(gamerun_status, "选择目标") or gamerun_status == "技能选择-目标" or gamerun_status == "技能选择-目标B" then
 		    --  选择卡牌使用目标状态  --
 		    gamerun_select_target(key)
-		elseif string.find(gamerun_status, "观看手牌") then
+		elseif string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then
 		    --  观看手牌状态  --
-			if gamerun_guankan_selected > 1 then
-			    gamerun_guankan_selected = gamerun_guankan_selected - 1
+			if string.find(gamerun_status, "观看手牌") then
+				if gamerun_guankan_selected > 1 then
+					gamerun_guankan_selected = gamerun_guankan_selected - 1
+				end
+			elseif string.find(gamerun_status, "牌堆选择") then
+				if gamerun_guankan_selected > 1 then
+					gamerun_guankan_selected = gamerun_guankan_selected - 1
+				end
 			end
 		else
 		    --  选取手牌状态  --
@@ -1042,9 +1132,15 @@ function on.arrowKey(key)
 	if key == "right" then
 	    if string.find(gamerun_status, "选择目标") or gamerun_status == "技能选择-目标" or gamerun_status == "技能选择-目标B" then
 		    gamerun_select_target(key)
-		elseif string.find(gamerun_status, "观看手牌") then
-		    if gamerun_guankan_selected < #gamerun_guankan_type then
-			    gamerun_guankan_selected = gamerun_guankan_selected + 1
+		elseif string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then
+		    if string.find(gamerun_status, "观看手牌") then
+				if gamerun_guankan_selected < #gamerun_guankan_type then
+					gamerun_guankan_selected = gamerun_guankan_selected + 1
+				end
+			elseif string.find(gamerun_status, "牌堆选择") then
+				if gamerun_guankan_selected < #wugucards then
+					gamerun_guankan_selected = gamerun_guankan_selected + 1
+				end
 			end
 		else
 			local wuqi
@@ -1067,9 +1163,9 @@ end
 --  "选取" 键  --
 function on.tabKey()
     local card, card2
-
+    if card_highlighted <=0 then return end
 	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" or gamerun_status == "手牌生效中" then return end
-    if gamerun_huihe == "结束" or string.find(gamerun_status, "确认操作") or string.find(gamerun_status, "观看手牌") then return end
+    if gamerun_huihe == "结束" or string.find(gamerun_status, "确认操作") or string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then return end
 	if #char_juese[char_current_i].shoupai == 0 then return end
 	
     if card_selected[card_highlighted] ~= nil then
@@ -1191,7 +1287,7 @@ function on.tabKey()
 	platform.window:invalidate()
 end
 
---  选择技能  --
+--  选择技能、装备牌  --
 function on.charIn(char)
 	local skills
 	if char_juese[char_current_i].name == "" then return end
@@ -1259,6 +1355,53 @@ function on.charIn(char)
 		end
 	end
 	
+	if char == 'a' then
+		if #char_juese[char_current_i].shoupai[-1] ~= 0 then
+			if card_selected[-1] == 1 then
+				card_selected[-1] = nil
+				card_highlighted = 1
+			else
+				card_highlighted = -1
+				card_selected[-1] = 1
+			end
+		end
+	end
+	
+	if char == 'b' then
+		if #char_juese[char_current_i].shoupai[-2] ~= 0 then
+			if card_selected[-2] == 1 then
+				card_selected[-2] = nil
+				card_highlighted = 1
+			else
+				card_highlighted = -2
+				card_selected[-2] = 1
+			end
+		end
+	end
+	
+	if char == 'c' then
+		if #char_juese[char_current_i].shoupai[-3] ~= 0 then
+			if card_selected[-3] == 1 then
+				card_selected[-3] = nil
+				card_highlighted = 1
+			else
+				card_highlighted = -3
+				card_selected[-3] = 1
+			end
+		end
+	end
+	
+	if char == 'd' then
+		if #char_juese[char_current_i].shoupai[-4] ~= 0 then
+			if card_selected[-4] == 1 then
+				card_selected[-4] = nil
+				card_highlighted = 1
+			else
+				card_highlighted = -4
+				card_selected[-4] = 1
+			end
+		end
+	end
 	platform.window:invalidate()
 end
 

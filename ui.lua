@@ -18,7 +18,11 @@ function draw_opponent(gc)
 		
 		-- 信息区域填色
 		if char_juese[id].siwang == false then
-			gc:setColorRGB(229, 195, 147)
+			if char_juese[id].fanmian == true then
+				gc:setColorRGB(114, 97, 73)
+			else
+				gc:setColorRGB(229, 195, 147)
+			end
 		else
 			gc:setColorRGB(153, 153, 153)
 	    end
@@ -261,7 +265,11 @@ function draw_self(gc)
     local i, img_width, j, base_y
 	
     -- 玩家信息框架	--
-	gc:setColorRGB(229, 195, 147)    -- 信息区域填色
+	if char_juese[char_current_i].fanmian == true then
+		gc:setColorRGB(114, 97, 73)
+	else
+		gc:setColorRGB(229, 195, 147)
+	end    -- 信息区域填色
 	gc:fillRect(224, 151, 88, 57)
 	gc:setColorRGB(153, 153, 153)    -- 体力显示区域填色
 	gc:fillRect(224 + 76, 152, 12, 56)
@@ -294,12 +302,14 @@ function draw_self(gc)
 	        gc:setFont("sansserif", "r", 11)
 		end
 	end
-	if card_selected[card_highlighted] == nil then
-	    gc:drawImage(cards_img[char_juese[char_current_i].shoupai[card_highlighted][1]], 81 + img_width * (card_highlighted - 1), 151)
-        gc:drawImage(color_img[char_juese[char_current_i].shoupai[card_highlighted][2]], 82 + img_width * (card_highlighted - 1), 153)
-        gc:setFont("sansserif", "r", 7)
-	    gc:drawString(char_juese[char_current_i].shoupai[card_highlighted][3], 85 + img_width * (card_highlighted - 1), 173)
-	    gc:setFont("sansserif", "r", 11)
+	if card_selected[card_highlighted] == nil and card_highlighted ~= nil then
+		if card_highlighted > 0 then
+			gc:drawImage(cards_img[char_juese[char_current_i].shoupai[card_highlighted][1]], 81 + img_width * (card_highlighted - 1), 151)
+			gc:drawImage(color_img[char_juese[char_current_i].shoupai[card_highlighted][2]], 82 + img_width * (card_highlighted - 1), 153)
+			gc:setFont("sansserif", "r", 7)
+			gc:drawString(char_juese[char_current_i].shoupai[card_highlighted][3], 85 + img_width * (card_highlighted - 1), 173)
+			gc:setFont("sansserif", "r", 11)
+		end
 	end
 	end
 	
@@ -355,6 +365,26 @@ function draw_self(gc)
 	gc:drawImage(identity_img[char_juese[char_current_i].shenfen], 224 + 77, 151 + 1)
 	
 	-- 装备信息 --
+	if card_selected[-1] ~= nil then
+		gc:setColorRGB(0, 255, 0)
+		gc:fillRect(5,131+20,gc:getStringWidth(char_juese[char_current_i].wuqi[1]),20)
+		gc:setColorRGB(0, 0, 0)
+	end
+	if card_selected[-2] ~= nil then
+		gc:setColorRGB(0, 255, 0)
+		gc:fillRect(5,151+19,gc:getStringWidth(char_juese[char_current_i].fangju[1]),20)
+		gc:setColorRGB(0, 0, 0)
+	end
+	if card_selected[-3] ~= nil then
+		gc:setColorRGB(0, 255, 0)
+		gc:fillRect(5,170+19,30,20)
+		gc:setColorRGB(0, 0, 0)
+	end
+	if card_selected[-4] ~= nil then
+		gc:setColorRGB(0, 255, 0)
+		gc:fillRect(40,170+19,30,20)
+		gc:setColorRGB(0, 0, 0)
+	end
 	if #char_juese[char_current_i].wuqi ~= 0 then
 	    gc:drawString(char_juese[char_current_i].wuqi[1], 5, 151 + 20)
 	end
@@ -362,33 +392,35 @@ function draw_self(gc)
 	    gc:drawString(char_juese[char_current_i].fangju[1], 5, 171 + 19)
 	end
 	if #char_juese[char_current_i].gongma ~= 0 and #char_juese[char_current_i].fangma ~= 0 then
-	    gc:drawString("+1 / -1", 5, 190 + 19)
+	    gc:drawString("-1 / +1", 5, 190 + 19)
 	else
 	    if #char_juese[char_current_i].gongma ~= 0 then
 		    gc:drawString("-1", 5, 190 + 19)
 		end
 		if #char_juese[char_current_i].fangma ~= 0 then
-		    gc:drawString("+1", 5, 190 + 19)
+		    gc:drawString("+1", 40, 190 + 19)
 		end
 	end
 	
 	--  被选择目标 (借刀杀人第二阶段)
-	if gamerun_status == "选择目标-B" and char_current_i == gamerun_target_selected then
-		--  显示焦点  --
-		local card
-		card = char_juese[char_current_i].shoupai[card_highlighted][1]
+	if card_highlighted ~= nil then
+		if gamerun_status == "选择目标-B" and char_current_i == gamerun_target_selected then
+			--  显示焦点  --
+			local card
+			card = char_juese[char_current_i].shoupai[card_highlighted][1]
 			
-		if card_if_d_limit(card, guankan_s, gamerun_target_selected) then
-			--  选择的角色可作为目标  --
-			gc:setColorRGB(255, 0, 0)
-		else
-			gc:setColorRGB(216, 216, 216)
+			if card_if_d_limit(card, guankan_s, gamerun_target_selected) then
+				--  选择的角色可作为目标  --
+				gc:setColorRGB(255, 0, 0)
+			else
+				gc:setColorRGB(216, 216, 216)
+			end
+			
+			gc:setPen("medium")
+			gc:drawRect(224, 151, 88, 57)
+			gc:setPen("thin")
+			gc:setColorRGB(0, 0, 0)
 		end
-			
-		gc:setPen("medium")
-		gc:drawRect(224, 151, 88, 57)
-		gc:setPen("thin")
-		gc:setColorRGB(0, 0, 0)
 	end
 end
 
@@ -477,6 +509,27 @@ function draw_others(gc)
 			    end
 			end
 		end
+	elseif string.find(gamerun_status, "牌堆选择") then
+		gc:setColorRGB(255, 255, 255)
+		gc:fillRect(50, 15, 220, 190)
+        gc:setColorRGB(0, 0, 0)
+        gc:drawRect(50, 15, 220, 190)
+		gc:drawString("五谷丰登", 130, 45)
+		for i = 1,#wugucards do
+			gc:drawImage(cards_img[wugucards[i][1]], 83 + 18 * i, 117 - 10 - 27)
+			gc:drawImage(color_img[wugucards[i][2]], 84 + 18 * i, 119 - 10 - 27)
+		    gc:setFont("sansserif", "r", 7)
+	        gc:drawString(wugucards[i][3], 87 + 18 * i, 139 - 10 - 27)
+	        gc:setFont("sansserif", "r", 11)
+		end
+		gc:drawImage(cards_img[wugucards[gamerun_guankan_selected][1]], 83 + 18 * gamerun_guankan_selected, 117 - 10 - 27)
+		gc:drawImage(color_img[wugucards[gamerun_guankan_selected][2]], 84 + 18 * gamerun_guankan_selected, 119 - 10 - 27)
+		gc:setFont("sansserif", "r", 7)
+	    gc:drawString(wugucards[gamerun_guankan_selected][3], 87 + 18 * gamerun_guankan_selected, 139 - 10 - 27)
+	    gc:setFont("sansserif", "r", 11)
+		gc:setPen("medium")
+	    gc:setColorRGB(255, 0, 0)
+	    gc:drawRect(83 + 18 * gamerun_guankan_selected, 117 - 10 - 27, 41, 57)
 	end
 end
 

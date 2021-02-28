@@ -1,12 +1,37 @@
 --  AI 在牌堆中查找牌，若没有则尝试使用技能  --
 function card_judge_chupai(ID, card)
 	local name, card_id, card_name, card_huase, skill
-	
 	skill = ""
 	name = char_juese[ID].name
-	card_id = card_chazhao(ID. 
+	card_id = card_chazhao(ID,card)
+	return card_id
 end
 
+function card_judge_arm(ID, card)
+	local name, card_id, card_name, card_huase, skill
+	skill = ""
+	name = char_juese[ID].name
+	card_id = card_chazhaoarm(ID,card)
+	return card_id
+end
+--  AI身份判定 --
+function ai_judge_shenfen()
+	for i = 1,5 do
+		if char_juese[i].shenfen == "主公" then
+			char_juese[i].isblackjack,char_juese[i].isantigovernment = false,false
+		else
+			char_juese[i].antigovernmentmax = math.max(char_juese[i].antigovernmentmax,char_juese[i].antigovernment)
+			char_juese[i].antigovernmentmin = math.min(char_juese[i].antigovernmentmin,char_juese[i].antigovernment)
+			if char_juese[i].antigovernmentmax-char_juese[i].antigovernmentmin > 10 then
+				char_juese[i].isblackjack,char_juese[i].isantigovernment = true,false
+			elseif char_juese[i].antigovernmentmax > 5 then
+				char_juese[i].isblackjack,char_juese[i].isantigovernment = false,true
+			else
+			    char_juese[i].isblackjack,char_juese[i].isantigovernment = false,false
+			end
+		end
+	end
+end
 --  AI 回合内出牌处理  --
 function auto_chupai(ID)
 	local shoupai_c, tili, tili_max, name, shenfen, shili
@@ -29,7 +54,7 @@ function auto_chupai(ID)
 	end
 	
 	if name == "黄盖" then
-		if (shenfen == "主公" and tili > 2) or (shenfen == "内奸" and tili > 3) or (shenfen == "忠臣" and tili > 2) or (shenfen == "反贼" and tili > 2)
+		if (shenfen == "主公" and tili > 2) or (shenfen == "内奸" and tili > 3) or (shenfen == "忠臣" and tili > 2) or (shenfen == "反贼" and tili > 2) then
 			skills_kurou_ai()
 			return false
 		end
@@ -306,7 +331,7 @@ function ai_judge_jiejiu(ID_s, ID_d, action)
 	d_shenfen = char_juese[ID_d].shenfen
 	
 	if s_shenfen == "忠臣" and d_shenfen ~= "主公" then
-		return false1
+		return false
 	end
 	if s_shenfen == "反贼" and not (d_shenfen == "反贼" and char_juese[ID_d].shenfen_unknown == false) then
 		return false
@@ -479,7 +504,7 @@ function ai_judge_gongji(ID_s, ID_d, action)
 					if d_tili <= 2 or d_tili < _unknown_tili then
 						return false
 					end
-				else if action == "顺手牵羊" then
+				elseif action == "顺手牵羊" then
 					if d_tili <= 1 or d_tili < _unknown_tili then
 						return false
 					end
@@ -641,7 +666,7 @@ function ai_judge_taoyuan(ID)
 	if iCount == 0 then
 		return false
 	end
-	for i = 1, 5 then
+	for i = 1, 5 do
 		if tili_deduct[i] > 0 then
 			if ai_judge_jiejiu(ID, i, "桃") then
 				if iCount > 1 and tili > 1 then
@@ -672,7 +697,7 @@ function ai_judge_AOE(ID)
 		if i ~= ID then
 			tili = char_juese[i].tili
 			if tili > 0 and char_juese[i].siwang == false then
-				if tili_min > tili then tili_min = tili
+				if tili_min > tili then tili_min = tili end
 				if ai_judge_gongji(ID, i, "南蛮入侵") == false then
 					if tili_notattack > tili then
 						tili_notattack = tili

@@ -50,188 +50,57 @@ function skills_yiji(ID_s, deduct)
 	add_funcptr(push_message, "郭嘉发动了武将技能 '遗计'")
 	add_funcptr(card_fenfa, {ID_s, deduct * 2, true})
 end
-
---  曹丕：行殇  --
-function skills_xingshang(va_list)
-	local ID_s, ID_siwang, panding
-	ID_s = va_list[1]; ID_siwang = va_list[2]; panding = va_list[3]
-	
-	push_message("曹丕发动了武将技能 '行殇'")
-	push_message(table.concat({"曹丕获得了", char_juese[ID_siwang].name, "的所有牌"}))
-	
-	_xingshang_card_transfer(ID_s, ID_siwang, panding)
-end
-function _xingshang_card_transfer(ID_s, ID_siwang, panding)    --  行殇：将死亡玩家所有卡牌转移至曹丕
-	local i, max_select
-	
-	max_select = #char_juese[ID_siwang].shoupai
-	
-	if max_select > 0 then
-		for i = 1, max_select do
-			if char_juese[ID_siwang].shoupai[i] ~= nil then
-				table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].shoupai[i])
+--  神曹操：归心 --
+function skills_guixin(ID)
+    add_funcptr(push_message, "神曹操发动了武将技能 '归心'")
+	for i = 1,5 do
+		if i ~= ID and char_juese[i].siwang == false then
+			--  简易AI  --
+			--  拿走诸葛连弩  --
+			if #char_juese[i].wuqi > 0 and char_juese[i].wuqi[1] == "诸葛连弩" then
+				add_funcptr(_guixin_exe_2, {ID, i})
+				--  拿走防具  --
+			else 
+				if #char_juese[i].fangju > 0 then
+					add_funcptr(_guixin_exe_2, {ID, i})
+				else
+					--  拿走手牌  --
+					if #char_juese[i].shoupai > 0 then
+						add_funcptr(_guixin_exe_1, {ID, i})
+					end
+				end
 			end
 		end
 	end
-	char_juese[ID_siwang].shoupai = {}
-	
-	if panding and #char_juese[ID_siwang].panding ~= 0 then
-		for i = 1, #char_juese[ID_siwang].panding do
-			if char_juese[ID_siwang].panding[i] ~= nil then
-				table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].panding[i])
-			end
-		end
-	end
-	char_juese[ID_siwang].panding = {}
-	
-	if #char_juese[ID_siwang].wuqi ~= 0 then
-		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].wuqi)
-	end
-	char_juese[ID_siwang].wuqi = {}
-	
-	if #char_juese[ID_siwang].fangju ~= 0 then
-		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].fangju)
-	end
-	char_juese[ID_siwang].fangju = {}
-	
-	if #char_juese[ID_siwang].gongma ~= 0 then
-		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].gongma)
-	end
-	char_juese[ID_siwang].gongma = {}
-	
-	if #char_juese[ID_siwang].fangma ~= 0 then
-		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].fangma)
-	end
-	char_juese[ID_siwang].fangma = {}
+	add_funcptr(push_message, "神曹操将武将牌翻面")
+	add_funcptr(char_fanmian, ID)
 end
+function _guixin_exe_1(va_list)    --  拿走手牌
+	local ID, i
+	ID = va_list[1]; i = va_list[2]
 
---  周瑜：英姿  --
-function skills_yingzi()
-	push_message("周瑜发动了武将技能 '英姿'")
+	local t = math.random(#char_juese[i].shoupai)
+	push_message(table.concat({"神曹操获得", char_juese[i].name, "的一张手牌"}))
+	table.insert(char_juese[ID].shoupai, char_juese[i].shoupai[t])
+	card_remove({i, t})
 end
+function _guixin_exe_2(va_list)    --  拿走防具
+	local ID, i
+	ID = va_list[1]; i = va_list[2]
 
---  貂蝉：闭月  --
-function skills_biyue(ID)
-	add_funcptr(push_message, "貂蝉发动了武将技能 '闭月'")
-	add_funcptr(card_fenfa, {ID, 1, true})
+	local card = char_juese[i].fangju
+	push_message(table.concat({"神曹操获得", char_juese[i].name, "的防具 '", card[2], card[3], "的", card[1], "'"}))
+	table.insert(char_juese[ID].shoupai, char_juese[i].fangju)
+	char_juese[i].fangju = {}
 end
+function _guixin_exe_2(va_list)    --  拿走武器
+	local ID, i
+	ID = va_list[1]; i = va_list[2]
 
---  袁绍：血裔判断  --
-function skills_judge_xueyi(ID)
-	local i, extra
-	
-	extra = 0
-	if char_juese[ID].name ~= "袁绍" or char_juese[ID].shenfen ~= "主公" then
-		return 0
-	end
-	
-	for i = 1, 5 do
-		if char_juese[i].siwang == false and char_juese_jineng[char_juese[i].name][2] == "群" then
-			extra = extra + 2
-		end
-	end
-	
-	return extra
-end
-
---  华佗：急救查找红色手牌  --
-function skills_jijiu_chazhao(ID)
-	local i, v
-	
-	for i, v in ipairs(char_juese[ID].shoupai) do
-	    if v[2] == "红桃" or v[2] == "方块" then
-		    return i
-		end
-	end
-	
-	return -1
-end
-
---  卧龙诸葛：八阵  --
-function skills_bazhen()
-	push_message("卧龙诸葛发动了武将技能 '八阵'")
-end
-
---  董卓：崩坏  --
-function skills_judge_benghuai(ID)    --  判断是否满足崩坏条件
-	local tili = char_juese[ID].tili
-	local i
-	
-	for i = 1, 5 do
-		if char_juese[i].tili < tili then
-			return true
-		end
-	end
-	
-	return false
-end
-function skills_benghuai_enter()    --  进入崩坏状态
-	gamerun_huihe = "结束"
-    gamerun_status = "确认操作"
-	if char_juese[char_current_i].tili_max > 1 then
-		jiaohu_text = "'确定': 减上限 '取消': 减体力"
-	else
-		jiaohu_text = "'取消': 减体力"
-	end
-	
-	gamerun_OK_ptr = function()    -- 如果确认发动，执行的函数
-		if gamerun_OK == true then
-			if char_juese[char_current_i].tili_max > 1 then
-				set_hints("")
-				funcptr_queue = {}
-				add_funcptr(push_message, "董卓发动了武将技能 '崩坏'")
-				add_funcptr(_benghuai_reduce_max, char_current_i)
-				_skills_huihe_end()
-				consent_func_queue(0.6)
-			end
-		else
-			set_hints("")
-			funcptr_queue = {}
-			add_funcptr(push_message, "董卓发动了武将技能 '崩坏'")
-			char_tili_deduct({1, char_current_i, nil, "普通", char_current_i})
-			_skills_huihe_end()
-			consent_func_queue(0.6)
-		end
-	end
-	
-	platform.window:invalidate()
-end
-function _benghuai_reduce_max(ID)    --  减少体力上限
-	push_message("董卓减少1点体力上限")
-	char_juese[ID].tili_max = char_juese[ID].tili_max - 1
-	if char_juese[ID].tili > char_juese[ID].tili_max then
-		char_juese[ID].tili = char_juese[ID].tili_max
-	end
-end
-function _skills_huihe_end()    --  进入回合结束阶段
-	local msg
-	
-	gamerun_OK = false
-	msg = {char_juese[char_current_i].name, "回合结束"}
-    add_funcptr(push_message, table.concat(msg))
-	
-	add_funcptr(_jieshu_sub1, nil)
-	
-	msg = nil; collectgarbage()
-end
-
---  吕蒙：克己  --
-function skills_judge_keji(ID)
-	if char_juese[char_current_i].name == "吕蒙" then
-		if char_yisha then
-			return false
-		else
-			return true
-		end
-	else
-		return false
-	end
-end
-
---  孙策：激昂  --
-function skills_jiang(ID)
-	add_funcptr(push_message, "孙策发动了武将技能 '激昂'")
-	add_funcptr(card_fenfa, {ID, 1, true})
+	local card = char_juese[i].wuqi
+	push_message(table.concat({"神曹操获得", char_juese[i].name, "的武器 '", card[2], card[3], "的", card[1], "'"}))
+	table.insert(char_juese[ID].shoupai, char_juese[i].wuqi)
+	char_juese[i].wuqi = {}
 end
 
 --  司马懿：反馈  --
@@ -285,6 +154,200 @@ function _fankui_exe_2(va_list)    --  拿走武器
 	push_message(table.concat({"司马懿获得", char_juese[laiyuan].name, "的武器 '", card[2], card[3], "的", card[1], "'"}))
 	table.insert(char_juese[ID].shoupai, char_juese[laiyuan].wuqi)
 	char_juese[laiyuan].wuqi = {}
+end
+
+--  曹丕：行殇  --
+function skills_xingshang(va_list)
+	local ID_s, ID_siwang, panding
+	ID_s = va_list[1]; ID_siwang = va_list[2]; panding = va_list[3]
+	
+	push_message("曹丕发动了武将技能 '行殇'")
+	push_message(table.concat({"曹丕获得了", char_juese[ID_siwang].name, "的所有牌"}))
+	
+	_xingshang_card_transfer(ID_s, ID_siwang, panding)
+end
+
+function _xingshang_card_transfer(ID_s, ID_siwang, panding)    --  行殇：将死亡玩家所有卡牌转移至曹丕
+	local i, max_select
+	
+	max_select = #char_juese[ID_siwang].shoupai
+	
+	if max_select > 0 then
+		for i = 1, max_select do
+			if char_juese[ID_siwang].shoupai[i] ~= nil then
+				table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].shoupai[i])
+			end
+		end
+	end
+	char_juese[ID_siwang].shoupai = {}
+	
+	if panding and #char_juese[ID_siwang].panding ~= 0 then
+		for i = 1, #char_juese[ID_siwang].panding do
+			if char_juese[ID_siwang].panding[i] ~= nil then
+				table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].panding[i])
+			end
+		end
+	end
+	char_juese[ID_siwang].panding = {}
+	
+	if #char_juese[ID_siwang].wuqi ~= 0 then
+		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].wuqi)
+	end
+	char_juese[ID_siwang].wuqi = {}
+	
+	if #char_juese[ID_siwang].fangju ~= 0 then
+		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].fangju)
+	end
+	char_juese[ID_siwang].fangju = {}
+	
+	if #char_juese[ID_siwang].gongma ~= 0 then
+		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].gongma)
+	end
+	char_juese[ID_siwang].gongma = {}
+	
+	if #char_juese[ID_siwang].fangma ~= 0 then
+		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].fangma)
+	end
+	char_juese[ID_siwang].fangma = {}
+end
+
+--  关索：征南 --
+function skills_zhengnan(va_list)
+	local ID_s, ID_siwang, panding
+	ID_s = va_list[1]; ID_siwang = va_list[2]; panding = va_list[3]
+	
+	push_message("关索发动了武将技能 '征南'")
+	
+	add_funcptr(card_fenfa, {ID_s, 3, true})
+end
+
+--  周瑜：英姿  --
+function skills_yingzi()
+	push_message("周瑜发动了武将技能 '英姿'")
+end
+
+--  貂蝉：闭月  --
+function skills_biyue(ID)
+	add_funcptr(push_message, "貂蝉发动了武将技能 '闭月'")
+	add_funcptr(card_fenfa, {ID, 1, true})
+end
+
+--  袁绍：血裔判断  --
+function skills_judge_xueyi(ID)
+	local i, extra
+	
+	extra = 0
+	if char_juese[ID].name ~= "袁绍" or char_juese[ID].shenfen ~= "主公" then
+		return 0
+	end
+	
+	for i = 1, 5 do
+		if char_juese[i].siwang == false and char_juese_jineng[char_juese[i].name][2] == "群" then
+			extra = extra + 2
+		end
+	end
+	
+	return extra
+end
+
+--  华佗：急救查找红色手牌  --
+function skills_jijiu_chazhao(ID)
+	local i, v
+	
+	for i, v in pairs(char_juese[ID].shoupai) do
+	    if v[2] == "红桃" or v[2] == "方块" then
+		    return i
+		end
+	end
+	
+	return -1
+end
+
+--  卧龙诸葛：八阵  --
+function skills_bazhen()
+	push_message("卧龙诸葛发动了武将技能 '八阵'")
+end
+
+--  董卓：崩坏  --
+function skills_judge_benghuai(ID)    --  判断是否满足崩坏条件
+	local tili = char_juese[ID].tili
+	local i
+	
+	for i = 1, 5 do
+		if char_juese[i].tili < tili then
+			return true
+		end
+	end
+	
+	return false
+end
+function skills_benghuai_enter()    --  进入崩坏状态
+	gamerun_huihe = "结束"
+    gamerun_status = "确认操作"
+	if char_juese[char_current_i].tili_max > 1 then
+		jiaohu_text = "'确定': 减上限 '取消': 减体力"
+	else
+		jiaohu_text = "'取消': 减体力"
+	end
+	
+	gamerun_OK_ptr = function()    -- 如果确认发动，执行的函数
+		if gamerun_OK == true then
+			if char_juese[char_current_i].tili_max > 1 then
+				set_hints("")
+				funcptr_queue = {}
+				add_funcptr(push_message, "董卓发动了武将技能 '崩坏'")
+				add_funcptr(_benghuai_reduce_max, char_current_i)
+				_skills_huihe_end()
+				consent_func_queue(0.6)
+			end
+		else
+			set_hints("")
+			funcptr_queue = {}
+			add_funcptr(push_message, "董卓发动了武将技能 '崩坏'")
+			char_tili_deduct({1, char_current_i, nil, "流失", char_current_i})
+			_skills_huihe_end()
+			consent_func_queue(0.6)
+		end
+	end
+	
+	platform.window:invalidate()
+end
+function _benghuai_reduce_max(ID)    --  减少体力上限
+	push_message("董卓减少1点体力上限")
+	char_juese[ID].tili_max = char_juese[ID].tili_max - 1
+	if char_juese[ID].tili > char_juese[ID].tili_max then
+		char_juese[ID].tili = char_juese[ID].tili_max
+	end
+end
+function _skills_huihe_end()    --  进入回合结束阶段
+	local msg
+	
+	gamerun_OK = false
+	msg = {char_juese[char_current_i].name, "回合结束"}
+    add_funcptr(push_message, table.concat(msg))
+	
+	add_funcptr(_jieshu_sub1, nil)
+	
+	msg = nil; collectgarbage()
+end
+
+--  吕蒙：克己  --
+function skills_judge_keji(ID)
+	if char_juese[char_current_i].name == "吕蒙" then
+		if char_yisha then
+			return false
+		else
+			return true
+		end
+	else
+		return false
+	end
+end
+
+--  孙策：激昂  --
+function skills_jiang(ID)
+	add_funcptr(push_message, "孙策发动了武将技能 '激昂'")
+	add_funcptr(card_fenfa, {ID, 1, true})
 end
 
 --  甘宁：奇袭  --
@@ -398,7 +461,7 @@ end
 --  华佗：青囊  --
 function skills_qingnang_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
-
+	if card_highlighted <= 0 then return false end
 	skills_enter("请选择一张手牌", "使用桃", "桃", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
@@ -429,7 +492,7 @@ end
 --  卧龙诸葛：火计  --
 function skills_huoji_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
-
+	if card_highlighted <= 0 then return false end
 	skills_enter("请选择红色手牌", "火攻", "火攻", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
@@ -476,7 +539,7 @@ end
 function skills_kurou()
 	funcptr_queue = {}
 	add_funcptr(_kurou_sub1)
-	char_tili_deduct({1, char_current_i, char_current_i, "普通"})
+	char_tili_deduct({1, char_current_i, char_current_i, "流失"})
 	add_funcptr(card_fenfa, {char_current_i, 2, true})
 	add_funcptr(_kurou_sub2)
 end
@@ -493,7 +556,7 @@ end
 --  董卓：酒池  --
 function skills_jiuchi_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
-
+	if card_highlighted <= 0 then return false end
 	skills_enter("请选择黑色手牌", "使用酒", "酒", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
@@ -719,7 +782,6 @@ end
 --  袁绍：乱击  --
 function skills_luanji_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
-
 	skills_enter("请选择两张同花色牌", "使用万箭齐发", "万箭齐发", "技能选择-多牌")
 	
 	gamerun_OK_ptr = function()
@@ -741,7 +803,6 @@ function skills_judge_luanji()
 	local h1 = 0
 	local h2 = 0
 	card = char_juese[char_current_i].shoupai
-	
 	if table.getn2(card_selected) == 2 then
 		for i, _ in pairs(card_selected) do
 			if h1 == 0 then
@@ -750,6 +811,7 @@ function skills_judge_luanji()
 				h2 = i
 			end
 		end
+		if h1 <= 0 or h2<=0 then return false end
 		if card[h1][2] == card[h2][2] then
 			return true
 		end
@@ -781,9 +843,7 @@ end
 
 --  孙尚香：结姻  --
 function skills_jieyin_enter()
-	if char_juese[char_current_i].tili == char_juese[char_current_i].tili_max then return false end
 	if #char_juese[char_current_i].shoupai == 0 then return false end
-	
 	skills_enter("请选择两张牌", "请选择受伤男性", "结姻", "技能选择-多牌")
 	
 	gamerun_OK_ptr = function()
@@ -821,7 +881,6 @@ function skills_jieyin(ID_s, ID_mubiao)
 	
 	local h1 = 0
 	local h2 = 0
-	
 	for i, _ in pairs(card_selected) do
 		if h1 == 0 then
 			h1 = i
@@ -829,7 +888,7 @@ function skills_jieyin(ID_s, ID_mubiao)
 			h2 = i
 		end
 	end
-	
+	if h1 <= 0 or h2<=0 then return false end
 	add_funcptr(_jieyin_sub1, {ID_s, h1, h2})
 	add_funcptr(_tao_sub, {ID_s, true})
 	add_funcptr(_tao_sub, {ID_mubiao, false})
@@ -843,7 +902,18 @@ function _jieyin_sub1(va_list)
 	
 	set_hints("")
 	gamerun_status = "手牌生效中"
-	
+	if char_juese[ID_mubiao].isantigovernment ~= nil then
+		if char_juese[ID_mubiao].isantigovernment == false then
+			if char_juese[ID_s].shenfen == "主公" then
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 3
+			else
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 2
+			end
+		else
+			char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 2
+		end
+	end
+	ai_judge_shenfen()
 	push_message("孙尚香发动了武将技能 '结姻'")
 	card_shanchu({ID_s, h1})
 	card_shanchu({ID_s, h2 - 1})
@@ -852,7 +922,7 @@ end
 --  张昭张纮：直谏  --
 function skills_zhijian_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
-	
+	if card_highlighted <= 0 then return false end
 	skills_enter("请选择装备牌", "请选择目标", "直谏", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
@@ -911,6 +981,18 @@ function _zhijian_sub1()
 	gamerun_status = "手牌使用中"
 	set_hints("")
 	push_message("张昭张宏发动了武将技能 '直谏'")
+	if char_juese[ID_mubiao].isantigovernment ~= nil then
+		if char_juese[ID_mubiao].isantigovernment == false then
+			if char_juese[ID_s].shenfen == "主公" then
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 2
+			else
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 1
+			end
+		else
+			char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 2
+		end
+	end
+	ai_judge_shenfen()
 end
 function _zhijian_sub2(va_list)
 	local ID_shoupai, ID_s, ID_mubiao
@@ -1006,6 +1088,18 @@ function _fanjian_sub1()
 	set_hints("")
 	gamerun_status = "手牌生效中"
 	push_message("周瑜发动了武将技能 '反间'")
+	if char_juese[ID_mubiao].isantigovernment ~= nil then
+		if char_juese[ID_mubiao].isantigovernment == false then
+			if char_juese[ID_s].shenfen == "主公" then
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 3
+			else
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 2
+			end
+		else
+			char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 2
+		end
+	end
+	ai_judge_shenfen()
 end
 function _fanjian_sub2(ID_s, ID_mubiao)
 	local t, card
@@ -1068,6 +1162,18 @@ function skills_tiaoxin(ID_req, ID_d)
 	lianhuan_va = nil
 	
 	msg = {"姜维发动了武将技能 '挑衅' (对", char_juese[ID_d].name, "}"}
+	if char_juese[ID_d].isantigovernment ~= nil then
+		if char_juese[ID_d].isantigovernment == false then
+			if char_juese[ID_d].shenfen == "主公" then
+				char_juese[ID_req].antigovernment = char_juese[ID_req].antigovernment + 3
+			else
+				char_juese[ID_req].antigovernment = char_juese[ID_req].antigovernment + 1
+			end
+		else
+			char_juese[ID_req].antigovernment = char_juese[ID_req].antigovernment - 2
+		end
+	end
+	ai_judge_shenfen()
 	add_funcptr(push_message, table.concat(msg))
 	
 	c_pos = card_chazhao(ID_d, "杀")
@@ -1113,13 +1219,26 @@ function skills_rende_enter()
 end
 function skills_rende(ID_s, ID_mubiao)
 	if table.getn2(card_selected) == 0 then return false end
-
+	if card_selected[-1] == 1 or card_selected[-2] == 1 or card_selected[-3] == 1 or card_selected[-4] == 1 then return false end
 	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
 	card_highlighted = 1
 	
 	funcptr_queue = {}
 	add_funcptr(push_message, "刘备发动了武将技能 '仁德'")
+	
+	if char_juese[ID_mubiao].isantigovernment ~= nil then
+		if char_juese[ID_mubiao].isantigovernment == false then
+			if char_juese[ID_s].shenfen == "主公" then
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 3
+			else
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 2
+			end
+		else
+			char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 2
+		end
+	end
+	ai_judge_shenfen()
 	
 	add_funcptr(skills_rende_exe, {ID_s, ID_mubiao})
 	add_funcptr(_rende_sub)
@@ -1223,9 +1342,22 @@ function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	gamerun_status = "手牌生效中"
 	set_hints("")
 	
+	if char_juese[ID_mubiao].isantigovernment ~= nil then
+		if char_juese[ID_mubiao].isantigovernment == false then
+			if char_juese[ID_s].shenfen == "主公" then
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 5
+			else
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 2
+			end
+		else
+			char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 3
+		end
+	end
+	ai_judge_shenfen()
+	
 	add_funcptr(_qiangxi_sub1, {ID_s, card_highlighted})
 	if last_OK == false then
-		char_tili_deduct({1, ID_s, nil, "普通"})
+		char_tili_deduct({1, ID_s, nil, "流失"})
 	end
 	char_tili_deduct({1, ID_mubiao, ID_s, "普通"})
 	add_funcptr(_qiangxi_sub2)
@@ -1340,7 +1472,18 @@ end
 --  夏侯惇：刚烈判定  --
 function skills_ganglie(ID_s, ID_mubiao)
     add_funcptr(push_message, table.concat({"夏侯惇发动了武将技能 '刚烈'"}))
-	
+	if char_juese[ID_mubiao].isantigovernment ~= nil then
+		if char_juese[ID_mubiao].isantigovernment == false then
+			if char_juese[ID_s].shenfen == "主公" then
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 5
+			else
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 2
+			end
+		else
+			char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 3
+		end
+	end
+	ai_judge_shenfen()
 	--  翻开判定牌  --
 	if #card_yixi == 0 then
 	    card_xipai(true)
@@ -1450,7 +1593,18 @@ function _tuxi_sub1(va_list)
 	local ID_s, ID_mubiao
 	local t, card
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
-	
+	if char_juese[ID_mubiao].isantigovernment ~= nil then
+		if char_juese[ID_mubiao].isantigovernment == false then
+			if char_juese[ID_s].shenfen == "主公" then
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 3
+			else
+				char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment + 1
+			end
+		else
+			char_juese[ID_s].antigovernment = char_juese[ID_s].antigovernment - 2
+		end
+	end
+	ai_judge_shenfen()
 	push_message(table.concat({"张辽获得", char_juese[ID_mubiao].name, "的一张手牌"}))
 	
 	t = math.random(#char_juese[ID_mubiao].shoupai)
@@ -1462,7 +1616,7 @@ end
 --  庞统：连环  --
 function skills_lianhuan_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
-
+	if card_highlighted <= 0 then return false end
 	skills_enter("请选择草花牌", "'确定': 选择目标A '取消': 重铸", "铁锁连环", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
