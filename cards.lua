@@ -1224,10 +1224,10 @@ function card_wuxie_query(card, ID_s, ID_mubiao)	--  无懈可击：从锦囊作
 			else
 				add_funcptr(card_wuxie_ai, {id, card, ID_s, ID_mubiao})
 			end
-
-			id = id + 1
-			if id > 5 then id = 1 end
 		end
+
+		id = id + 1
+		if id > 5 then id = 1 end
 	end
 
 	--  此时已经没有其他人再出无懈，进行原有锦囊的结算  --
@@ -1326,7 +1326,7 @@ function _wuxie_exe()
 	timer.stop()
 	funcptr_queue = {}
 
-	local items_to_remove, items_to_keep = {}, {}
+	local items_to_remove = {}
 	local current_query = true
 	for i = 1, #wuxie_queue_jinnang do
 		if wuxie_queue_jinnang[i].tag == "无懈轮询开始" then
@@ -1346,15 +1346,11 @@ function _wuxie_exe()
 			--  无懈可击有效，保留标记为有效结算的函数，以及下一次轮询之后的函数  --
 			if wuxie_queue_jinnang[i].tag ~= "无懈有效结算" or current_query == true then
 				table.insert(items_to_remove, i)
-			else
-				table.insert(items_to_keep, i)
 			end
 		else
 			--  无懈可击无效，保留标记为无效结算的函数，以及下一次轮询之后的函数  --
 			if wuxie_queue_jinnang[i].tag ~= "无懈无效结算" or current_query == true then
 				table.insert(items_to_remove, i)
-			else
-				table.insert(items_to_keep, i)
 			end
 		end
 	end
