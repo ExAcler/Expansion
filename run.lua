@@ -689,10 +689,10 @@ function on.enterKey()
 		if table.getn2(card_selected) ~= 0 then
 			card = char_juese[char_current_i].shoupai[card_highlighted]
 			if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
+				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 				card_selected = {}
 				set_hints("")
 				card_highlighted = 1
-				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 			end
 		end
 		return

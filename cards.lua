@@ -1270,8 +1270,10 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
 		timer.stop()
 		funcptr_queue = {}
-		funcptr_i = 0
+
+		add_funcptr(_wuxie_prepare_2)
 		card_wuxie_query(card_wx, id, ID_s)
+		funcptr_i = 0
 		timer.start(0.6)
 	else
 		msg = {char_juese[id].name, "放弃无懈"}
@@ -1305,8 +1307,10 @@ function _wuxie_zhudong_chu(card, i, va_list)	--  无懈可击：己方选择出
 	--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
 	timer.stop()
 	funcptr_queue = {}
-	funcptr_i = 0
+	
+	add_funcptr(_wuxie_prepare_2)
 	card_wuxie_query(card, char_current_i, ID_s)
+	funcptr_i = 0
 	timer.start(0.6)
 end
 function _wuxie_zhudong_fangqi()	--  无懈可击：己方放弃出无懈可击
@@ -1571,6 +1575,10 @@ function card_taoyuan(ID_shoupai, ID_s)
 	for i = 1, 5 do
 		if char_juese[id].siwang == false then
 			if char_juese[id].tili < char_juese[id].tili_max then
+				funcptr_add_tag = "无懈执行前"
+    			add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了桃园结义"})
+				funcptr_add_tag = nil
+
 				card_wuxie(card, ID_s, id, nil)
 
 				funcptr_add_tag = "无懈无效结算"
@@ -2105,6 +2113,10 @@ function _wugu_others_get_card_exe(card, ID_s)		--  五谷丰登：执行其他�
 			ID_mubiao = ID_s + counter
 		end
 		if char_juese[ID_mubiao].siwang == false then
+			funcptr_add_tag = "无懈执行前"
+    		add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[ID_mubiao].name, "使用了五谷丰登"})
+			funcptr_add_tag = nil
+
 			card_wuxie(card, ID_s, ID_mubiao, nil)
 
 			funcptr_add_tag = "无懈无效结算"
