@@ -823,7 +823,7 @@ function card_chupai(ID)
 	--  桃  --
 	if card == "桃" then
 	    if card_tao(card_highlighted, char_current_i, char_current_i, false) then
-		    consent_func_queue(0.2)
+		    consent_func_queue(0.6)
 		end
 		return false
 	end
@@ -831,21 +831,21 @@ function card_chupai(ID)
 	--  无中生有  --
 	if card == "无中生有" then
 	    card_wuzhong(card_highlighted, char_current_i)
-		consent_func_queue(0.2)
+		consent_func_queue(0.6)
 		return false
 	end
 	
 	--  桃园结义  --
 	if card == "桃园结义" then
 	    card_taoyuan(card_highlighted, char_current_i)
-		consent_func_queue(0.2)
+		consent_func_queue(0.6)
 		return false
 	end
 	
 	--  过河拆桥  --
 	if card == "过河拆桥" then
 		if card_chai(card_highlighted, char_current_i, gamerun_target_selected) then
-		    consent_func_queue(0.2)
+		    consent_func_queue(0.6)
 		end
 		return false
     end
@@ -853,7 +853,7 @@ function card_chupai(ID)
 	--  顺手牵羊  --
 	if card == "顺手牵羊" then
 		if card_shun(card_highlighted, char_current_i, gamerun_target_selected) then
-		    consent_func_queue(0.2)
+		    consent_func_queue(0.6)
 		end
 		return false
     end
@@ -1202,122 +1202,172 @@ function _card_sub2(va_list)    --  当技能将不同牌面的牌当作本牌�
 end
 
 --  使用无懈可击  --
-function card_wuxie(id)
-	local n, card
-	is_affect = true
-	wuxieused = false
-	wuxie_require = 0
-	card_ai_wuxie(id,id)
+function card_wuxie(card, ID_s, ID_mubiao, additional_func_ptr)
+	add_funcptr(_wuxie_prepare, nil, nil, "无懈轮询开始")
+	card_wuxie_query(card, ID_s, ID_mubiao)
+end
+function _wuxie_prepare()
+	push_message("等待其他玩家响应")
+	wuxie_in_effect = false
+	wuxie_queue_jinnang = table.copy(funcptr_queue)
+end
+function _wuxie_prepare_2()
+	push_message("等待其他玩家响应")
+end
+function card_wuxie_query(card, ID_s, ID_mubiao)	--  无懈可击：从锦囊作用目标开始，轮询确定各方是否出无懈可击
+	id = ID_mubiao
+	for i = 1, 5 do
+		if char_juese[id].siwang == false then
+			if id == char_current_i then
+				--  轮到己方出无懈可击，插入主动响应  --
+				add_funcptr(card_wuxie_zhudong, {card, ID_s, ID_mubiao})
+			else
+				add_funcptr(card_wuxie_ai, {id, card, ID_s, ID_mubiao})
+			end
+
+			id = id + 1
+			if id > 5 then id = 1 end
+		end
+	end
+
+	--  此时已经没有其他人再出无懈，进行原有锦囊的结算  --
+	add_funcptr(_wuxie_exe)
+end
+function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判断 
+	id = va_list[1]; card = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]
+
+	n = card_chazhao(id, "无懈可击")
+	if n < 0 then
+		if char_juese[id].name == "卧龙诸葛" then
+			n = _sha_chazhao_redblack(char_juese[id].shoupai, false)
+		end
+	end
+
+	local ai_should_use_wuxie = false
+
+	--  如果有害锦囊的作用对象是自己，则出无懈可击；此处预留AI判断是否应对应用于他人的锦囊出无懈可击  --
+	local should_use_wuxie = false
+	name = card[1]
+	if id == ID_mubiao and (name == "决斗" or name == "过河拆桥" or name == "顺手牵羊" or name == "万箭齐发" or name == "南蛮入侵" or name == "借刀杀人" or name == "无懈可击" or name == "火攻" or name == "铁锁连环") then
+		should_use_wuxie = true
+	elseif ai_should_use_wuxie then
+		should_use_wuxie = true
+	end
+
+	local card_wx
+	if n > 0 and should_use_wuxie then
+		card_wx = char_juese[id].shoupai[n]
+		if card_wx[1] ~= "无懈可击" then
+			push_message("卧龙诸葛使用了武将技能 '看破'")
+			msg = {char_juese[id].name, "使用了无懈可击 (", card_wx[2], card_wx[3], "的", card_wx[1], ")"}
+		else
+			msg = {char_juese[id].name, "使用了'", card_wx[2], card_wx[3], "的", card_wx[1], "'"}
+		end
+		push_message(table.concat(msg))
+		card_shanchu({id, n})
+		wuxie_in_effect = not wuxie_in_effect
+
+		--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
+		timer.stop()
+		funcptr_queue = {}
+		funcptr_i = 0
+		card_wuxie_query(card_wx, id, ID_s)
+		timer.start(0.6)
+	else
+		msg = {char_juese[id].name, "放弃无懈"}
+		push_message(table.concat(msg))
+	end
+end
+function card_wuxie_zhudong(va_list)	--  无懈可击：轮到己方出无懈可击时，状态转换至主动出牌
+	card = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]
+
+	wuxie_queue_xiangying = table.copy(funcptr_queue)
+	wuxie_queue_xiangying_i = funcptr_i + 1
+	wuxie_va = {ID_s, ID_mubiao}
+	timer.stop()
+	funcptr_queue = {}
+
+	gamerun_status = "主动出牌-无懈可击"
+	msg = {card[1], "是否无懈"}
+	set_hints(table.concat(msg))
+	msg = nil; collectgarbage()
+end
+function _wuxie_zhudong_chu(card, i, va_list)	--  无懈可击：己方选择出无懈可击
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+	
+	gamerun_status = "手牌生效中"
+	msg = {char_juese[char_current_i].name, "使用了'", card[2], card[3], "的", card[1], "'"}
+	push_message(table.concat(msg))
+	card_add_qipai(card)
+	card_remove({char_current_i, i})
+	wuxie_in_effect = not wuxie_in_effect
+
+	--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+	card_wuxie_query(card, char_current_i, ID_s)
+	timer.start(0.6)
+end
+function _wuxie_zhudong_fangqi()	--  无懈可击：己方放弃出无懈可击
+	gamerun_status = "手牌生效中"
+	jiaohu_text = ""
+	msg = {char_juese[char_current_i].name, "放弃无懈"}
+	push_message(table.concat(msg))
+
+	--  恢复原有的函数队列，继续原有轮询  --
+	funcptr_queue = wuxie_queue_xiangying
+	funcptr_i = wuxie_queue_xiangying_i
+	timer.start(0.6)
+
+	msg = nil; collectgarbage()
+end
+function _wuxie_exe()
+	timer.stop()
+	funcptr_queue = {}
+
+	local items_to_remove, items_to_keep = {}, {}
+	local current_query = true
+	for i = 1, #wuxie_queue_jinnang do
+		if wuxie_queue_jinnang[i].tag == "无懈轮询开始" then
+			--  第一次轮询需要删除  --
+			if current_query then
+				current_query = false
+			else
+				break
+			end
+		end
+
+		if wuxie_queue_jinnang[i].tag == "无懈执行完毕" or wuxie_queue_jinnang[i].tag == "无懈执行前" and current_query == false then
+			break
+		end
+
+		if wuxie_in_effect then
+			--  无懈可击有效，保留标记为有效结算的函数，以及下一次轮询之后的函数  --
+			if wuxie_queue_jinnang[i].tag ~= "无懈有效结算" or current_query == true then
+				table.insert(items_to_remove, i)
+			else
+				table.insert(items_to_keep, i)
+			end
+		else
+			--  无懈可击无效，保留标记为无效结算的函数，以及下一次轮询之后的函数  --
+			if wuxie_queue_jinnang[i].tag ~= "无懈无效结算" or current_query == true then
+				table.insert(items_to_remove, i)
+			else
+				table.insert(items_to_keep, i)
+			end
+		end
+	end
+
+	for i = #items_to_remove, 1, -1 do
+		table.remove(wuxie_queue_jinnang, items_to_remove[i])
+	end
+
+	funcptr_queue = table.copy(wuxie_queue_jinnang)
+	funcptr_i = 0
+	timer.start(0.6)
 end
 
-function card_ai_wuxie(ID_s,ID_mubiao)  -- 其他角色无懈 
-	print(ID_s)
-	n = card_chazhao(ID_s, "无懈可击")
-	if n < 0 then
-		if char_juese[ID_s].name == "卧龙诸葛" then
-			n = _sha_chazhao_redblack(char_juese[ID_s].shoupai, false)
-		end
-	end
-	
-	if ID_s==char_current_i then
-		mb=ID_mubiao
-		gamerun_status = "主动出牌-无懈可击"
-		jiaohu_text = "请您出无懈可击"
-		pause_func_queue()
-		platform.window:invalidate()
-	else
-		consent_func_queue(0.6)
-		if n > 0 then
-			card = char_juese[ID_s].shoupai[n]
-			if card[1] ~= "无懈可击" then
-				add_funcptr(push_message,"卧龙诸葛使用了武将技能 '看破'")
-				msg = {char_juese[ID_s].name, "使用了无懈可击 (", card[2], card[3], "的", card[1], ")"}
-			else
-				msg = {char_juese[ID_s].name, "使用了'", card[2], card[3], "的", card[1], "'"}
-			end
-			push_message(table.concat(msg))
-			card_shanchu({ID_s, n})
-			wuxieused = true
-			is_affect = not is_affect
-			if is_affect==true then
-				push_message("锦囊即将生效")
-			else
-				push_message("锦囊即将失效")
-			end
-			wuxie_require = 0
-			card_ai_wuxie(ID_mubiao,ID_mubiao)
-		else
-			push_message(char_juese[ID_s].name.."放弃")
-			local ID_next = ID_s + 1
-			wuxie_require = wuxie_require + 1
-			if ID_next > 5 then ID_next = ID_next - 5 end
-			while char_juese[ID_next].siwang==true do
-				ID_next = ID_next + 1
-				wuxie_require = wuxie_require + 1
-				if ID_next > 5 then ID_next = ID_next - 5 end
-			end
-			if wuxie_require < 4 then
-				card_ai_wuxie(ID_next,ID_mubiao)
-			else
-				if is_affect == false and gamerun_huihe == "判定" then
-					_wuxie_working()
-				elseif is_affect == false then
-					print("锦囊失效")
-					consent_func_queue(0.6)
-					_chai_sub2()
-				else
-					print("锦囊生效")
-					consent_func_queue(0.6)
-					_jinnang_working(ID_source,ID_mubiao)
-				end
-				platform.window:invalidate()
-			end
-		end
-	end
-end
---  无懈可击生效  --
-function _wuxie_working()
-	--  删除上一个中断  --
-	table.remove(guankan_d, guankan_s - 1)
-	
-	--  从队列中删除要生效的锦囊  --
-	table.remove(guankan_d, guankan_s - 1)
-	table.remove(guankan_d, guankan_s - 1)
-	--table.remove(guankan_d, guankan_s - 1)
-	
-	--[[
-	table.remove(guankan_d, guankan_s)
-	table.remove(guankan_d, guankan_s)
-	table.remove(guankan_d, guankan_s)
-	]]--
-	
-	--  弃掉判定牌  --
-	if char_juese[char_current_i].panding[1][1] == "闪电" then
-		_panding_pass(1)
-	else
-		card_add_qipai(char_juese[char_current_i].panding[1])
-		table.remove(char_juese[char_current_i].panding, 1)
-	end
-	
-	if #char_juese[char_current_i].panding > 0 then
-		add_funcptr(card_wuxie,char_current_i)
-	else
-		gamerun_status = ""
-		set_hints("")
-		card_selected = {}
-		wuxie_require = 0
-		timer.start(0.2)
-	end
-end
-function _jinnang_working(ID_source,ID_mubiao)
-	if working_jinnang=="无中生有" then
-		add_funcptr(_wuzhong_sub, ID_source)
-	elseif working_jinnang=="顺手牵羊" then
-		add_funcptr(_chai_sub1, {false, ID_s, ID_mubiao})
-	elseif working_jinnang=="过河拆桥" then
-		add_funcptr(_chai_sub1, {true, ID_s, ID_mubiao})
-	end
-end
 --  使用桃  --
 function card_tao(ID_shoupai, ID_s, ID_mubiao, binsi, p)
 	if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max then
@@ -1390,16 +1440,21 @@ end
 --  使用无中生有  --
 function card_wuzhong(ID_shoupai, ID_s)
 	gamerun_status = "手牌生效中"
-	
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s})
-	ID_source,working_jinnang=ID_shoupai,"无中生有"
-	--add_funcptr(card_wuxie,ID_s)
-	--if is_affect == true then
-		add_funcptr(_wuzhong_sub, ID_s)
-	--end
+	card_wuxie(card, ID_s, ID_s, nil)
+
+	funcptr_add_tag = "无懈无效结算"
+	add_funcptr(_wuzhong_sub1, ID_s)
+	funcptr_add_tag = "无懈执行完毕"
+	add_funcptr(_wuzhong_sub2, ID_s)
+	funcptr_add_tag = nil
 end
-function _wuzhong_sub(ID_s)
+function _wuzhong_sub1(ID_s)
 	card_fenfa({ID_s, 2, true})
+end
+function _wuzhong_sub2(ID_s)
 	gamerun_status = ""
     set_hints("请您出牌")
 end
@@ -1430,6 +1485,8 @@ end
 --  使用铁索连环 (连环效果)  --
 function card_lian_lianhuan(ID_shoupai, ID_s, ID_first, ID_second, doubl)
 	gamerun_status = "手牌生效中"
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+
 	if char_juese[ID_s].shoupai[ID_shoupai][1] == "铁锁连环" then
 		add_funcptr(_card_sub1, {ID_shoupai, ID_s})
 	else
@@ -1464,29 +1521,30 @@ function card_lian_lianhuan(ID_shoupai, ID_s, ID_first, ID_second, doubl)
 		_lian_sub1(ID_s, ID_first)
 	else
 		if ID_first > ID_second then
-			_lian_sub1(ID_s, ID_second)
-			_lian_sub1(ID_s, ID_first)
+			_lian_sub1(card, ID_s, ID_second)
+			_lian_sub1(card, ID_s, ID_first)
 		else
-			_lian_sub1(ID_s, ID_first)
-			_lian_sub1(ID_s, ID_second)
+			_lian_sub1(card, ID_s, ID_first)
+			_lian_sub1(card, ID_s, ID_second)
 		end
 	end
 	
+	funcptr_add_tag = "无懈执行完毕"
 	add_funcptr(_lian_sub3)
+	funcptr_add_tag = nil
+
 	return true
 end
-function _lian_sub1(ID_s, ID_mubiao)
-	add_funcptr(card_wuxie,ID_s)
+function _lian_sub1(card, ID_s, ID_mubiao)
+	card_wuxie(card, ID_s, ID_mubiao, nil)
 	
-	if is_affect == true then	
-		if char_juese[ID_mubiao].hengzhi == false then
-			add_funcptr(_lian_sub2, {ID_s, ID_mubiao, true})
-		else
-			add_funcptr(_lian_sub2, {ID_s, ID_mubiao, false})
-		end
+	funcptr_add_tag = "无懈无效结算"
+	if char_juese[ID_mubiao].hengzhi == false then
+		add_funcptr(_lian_sub2, {ID_s, ID_mubiao, true})
 	else
-		
+		add_funcptr(_lian_sub2, {ID_s, ID_mubiao, false})
 	end
+	funcptr_add_tag = nil
 end
 function _lian_sub2(va_list)
 	local ID_s, ID_mubiao, stat
@@ -1510,24 +1568,27 @@ function card_taoyuan(ID_shoupai, ID_s)
     local i, id
 	
     gamerun_status = "手牌生效中"
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s})
 	
 	id = ID_s
 	for i = 1, 5 do
 		if char_juese[id].siwang == false then
 			if char_juese[id].tili < char_juese[id].tili_max then
-				
-				add_funcptr(card_wuxie,id)
-				if is_affect == true then
-					add_funcptr(_taoyuan_sub1, id)
-				end
+				card_wuxie(card, ID_s, id, nil)
+
+				funcptr_add_tag = "无懈无效结算"
+				add_funcptr(_taoyuan_sub1, id)
+				funcptr_add_tag = nil
 			end
 		end
 	    id = id + 1
 		if id > 5 then id = 1 end
 	end
 	
-	add_funcptr(_taoyuan_sub2, nil)
+	funcptr_add_tag = "无懈执行完毕"
+	add_funcptr(_taoyuan_sub2)
+	funcptr_add_tag = nil
 end
 function _taoyuan_sub1(ID_mubiao)
     local msg
@@ -1546,6 +1607,7 @@ function card_chai(ID_shoupai, ID_s, ID_mubiao)
     --  只能对有牌角色使用  --
 	local p
 	p = char_juese[ID_mubiao]
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
 	
 	if p.name == "陆逊" then
 		return false
@@ -1564,14 +1626,14 @@ function card_chai(ID_shoupai, ID_s, ID_mubiao)
 	else
 		add_funcptr(_card_sub1, {ID_shoupai, ID_s, ID_mubiao})
 	end
-	ID_source,working_jinnang=ID_shoupai,"过河拆桥"
-	add_funcptr(card_wuxie,ID_mubiao)
 	
-	--if is_affect == false then
-		--add_funcptr(_chai_sub2)
-	--else
-		--add_funcptr(_chai_sub1, {true, ID_s, ID_mubiao})
-	--end
+	card_wuxie(card, ID_s, ID_mubiao, nil)
+
+	funcptr_add_tag = "无懈无效结算"
+	add_funcptr(_chai_sub1, {true, ID_s, ID_mubiao})
+	funcptr_add_tag = "无懈有效结算"
+	add_funcptr(_chai_sub2)
+	funcptr_add_tag = nil
 	
 	return true
 end
@@ -1641,6 +1703,7 @@ function card_shun(ID_shoupai, ID_s, ID_mubiao)
     --  只能对距离 1 以内、有牌角色使用  --
 	local p
 	p = char_juese[ID_mubiao]
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
 	
 	if p.name == "陆逊" then
 		return false
@@ -1652,14 +1715,15 @@ function card_shun(ID_shoupai, ID_s, ID_mubiao)
 
     gamerun_status = "手牌生效中"
     add_funcptr(_card_sub1, {ID_shoupai, ID_s, ID_mubiao})
-	ID_source,working_jinnang=ID_shoupai,"顺手牵羊"
-	add_funcptr(card_wuxie,ID_mubiao)
-	--if is_affect == false then
-		--add_funcptr(_chai_sub2)
-	--else
-		--add_funcptr(_chai_sub1, {false, ID_s, ID_mubiao})
-	--end
-	
+
+	card_wuxie(card, ID_s, ID_mubiao, nil)
+
+	funcptr_add_tag = "无懈无效结算"
+	add_funcptr(_chai_sub1, {false, ID_s, ID_mubiao})
+	funcptr_add_tag = "无懈有效结算"
+	add_funcptr(_chai_sub2)
+	funcptr_add_tag = nil
+
 	return true
 end
 function _shun_sub2()
@@ -1802,6 +1866,7 @@ end
 --  使用南蛮入侵  --
 function card_nanman(ID_shoupai, _ID_s)
     local i, id, ID_s
+	local source_card = char_juese[_ID_s].shoupai[ID_shoupai]
 	
 	ID_s = _ID_s
     gamerun_status = "手牌生效中"
@@ -1822,27 +1887,32 @@ function card_nanman(ID_shoupai, _ID_s)
 	
 	for i = 1, 4 do
 		if char_juese[id].siwang == false and char_juese[id].name ~= "孟获" and id ~= _ID_s then
-			_nanman_AI(ID_s, id)
+			_nanman_AI(source_card, ID_s, id)
 		end
 	    id = id + 1
 		if id > 5 then id = 1 end
 	end
 	
-	add_funcptr(_nanman_sub1, nil)
+	funcptr_add_tag = "无懈执行完毕"
+	add_funcptr(_nanman_sub1)
+	funcptr_add_tag = nil
 end
-function _nanman_AI(ID_s, ID_mubiao)    --  南蛮入侵：响应AI (临时)
+function _nanman_AI(source_card, ID_s, ID_mubiao)    --  南蛮入侵：响应AI (临时)
     local c_pos, card, card_origin
 	
+	funcptr_add_tag = "无懈执行前"
     add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[ID_mubiao].name, "使用了南蛮入侵"})
-	
-	add_funcptr(card_wuxie,ID_mubiao) 
-	if is_affect == false then return end
+	funcptr_add_tag = nil
+
+	card_wuxie(source_card, ID_s, ID_mubiao, nil)
+	funcptr_add_tag = "无懈无效结算"
 	
     --  若装备藤甲，免过  --
 	card = char_juese[ID_mubiao].fangju
 	if #card ~= 0 then
 	    if card[1] == "藤甲" then
 	        add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "装备藤甲，不用出杀"})
+			funcptr_add_tag = nil
 		    return
 	    end
 	end
@@ -1867,6 +1937,8 @@ function _nanman_AI(ID_s, ID_mubiao)    --  南蛮入侵：响应AI (临时)
 	    add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
 		char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao, nil, true})
 	end
+
+	funcptr_add_tag = nil
 end
 function _nanman_send_msg(msg)    --  南蛮入侵：发送游戏状态信息
 	push_message(table.concat(msg))
@@ -1892,6 +1964,7 @@ end
 --  使用万箭齐发  --
 function card_wanjian(ID_shoupai, ID_s)
     local i, id
+	local source_card = char_juese[ID_s].shoupai[ID_shoupai]
 	
     gamerun_status = "手牌生效中"
 	jiaohu_text = ""
@@ -1905,39 +1978,51 @@ function card_wanjian(ID_shoupai, ID_s)
 	if id > 5 then id = 1 end
 	for i = 1, 4 do
 	    if char_juese[id].siwang == false then
-			_wanjian_AI(ID_s, id)
+			_wanjian_AI(source_card, ID_s, id)
 	    end
 		id = id + 1
 		if id > 5 then id = 1 end
 	end
 	
+	funcptr_add_tag = "无懈执行完毕"
 	add_funcptr(_nanman_sub1, nil)
+	funcptr_add_tag = nil
+
 	return true
 end
-function _wanjian_AI(ID_s, ID_mubiao)    --  万箭齐发：响应AI (临时)
+function _wanjian_AI(source_card, ID_s, ID_mubiao)    --  万箭齐发：响应AI (临时)
     local c_pos, card
 
+	funcptr_add_tag = "无懈执行前"
     add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[ID_mubiao].name, "使用了万箭齐发"})
+	funcptr_add_tag = nil
 
-	add_funcptr(card_wuxie,ID_mubiao) 
-	if is_affect == false then return end
-	
+	card_wuxie(source_card, ID_s, ID_mubiao, nil)
+	funcptr_add_tag = "无懈无效结算"
+
     --  若装备藤甲，免过；若装备八卦阵，进行判定  --
 	card = char_juese[ID_mubiao].fangju
 	if #card ~= 0 then
 	    if card[1] == "藤甲" then
 	        add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "装备藤甲，不用出闪"})
+			funcptr_add_tag = nil
 		    return
 	    end
 		
 		if card[1] == "八卦阵" then
-		    if card_arm_bagua(ID_mubiao) then return end
+		    if card_arm_bagua(ID_mubiao) then
+				funcptr_add_tag = nil
+				return
+			end
 		end
 	else
 		--  卧龙诸葛亮若未装备防具，视为装备八卦阵  --
 		if char_juese[ID_mubiao].name == "卧龙诸葛" then
 			add_funcptr(skills_bazhen)
-		    if card_arm_bagua(ID_mubiao) then return end
+		    if card_arm_bagua(ID_mubiao) then
+				funcptr_add_tag = nil
+				return
+			end
 		end
 	end
 	
@@ -1976,10 +2061,13 @@ function _wanjian_AI(ID_s, ID_mubiao)    --  万箭齐发：响应AI (临时)
 	    add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
 		char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao, nil, true})
 	end
+
+	funcptr_add_tag = nil
 end
 
 --  使用五谷丰登 --
-function card_wugu(ID_shoupai,ID_s)
+function card_wugu(ID_shoupai, ID_s)
+	guankan_s = char_juese[ID_s].shoupai[ID_shoupai]
     gamerun_status = "手牌生效中"
 	jiaohu_text = ""
 	_card_sub1({ID_shoupai, ID_s, nil})
@@ -1999,16 +2087,10 @@ function card_wugu(ID_shoupai,ID_s)
 	end
 	add_funcptr(push_message, wugucardsdisplay)
 
-	--add_funcptr(card_wuxie,char_current_i)
-	--if is_affect == true then
 	gamerun_status = "牌堆选择-五谷"
 	gamerun_guankan_selected = 1
 	txt_messages:setVisible(false)
 	guankan_d = funcptr_queue
-	--pause_func_queue()
-	--else
-		--card_others_wugu(char_current_i)
-	--end
 	platform.window:invalidate()
 end
 function _wugu_mopai()	--  五谷丰登：从主牌堆摸一张牌到五谷丰登牌堆
@@ -2018,7 +2100,7 @@ function _wugu_mopai()	--  五谷丰登：从主牌堆摸一张牌到五谷丰�
 	table.insert(wugucards, card_yixi[1])
 	table.remove(card_yixi, 1)
 end
-function _wugu_others_get_card_exe(ID_s)		--  五谷丰登：执行其他角色获得五谷丰登手牌动作
+function _wugu_others_get_card_exe(card, ID_s)		--  五谷丰登：执行其他角色获得五谷丰登手牌动作
 	gamerun_status = "手牌生效中"
 	for counter = 1, 4 do
 		if ID_s + counter > 5 then
@@ -2027,14 +2109,17 @@ function _wugu_others_get_card_exe(ID_s)		--  五谷丰登：执行其他角色�
 			ID_mubiao = ID_s + counter
 		end
 		if char_juese[ID_mubiao].siwang == false then
-			--add_funcptr(card_wuxie,ID_mubiao)
-			--if is_affect == true then
+			card_wuxie(card, ID_s, ID_mubiao, nil)
+
+			funcptr_add_tag = "无懈无效结算"
 			add_funcptr(_wugu_get_card, {ID_mubiao})
-			--end
+			funcptr_add_tag = nil
 		end
 	end
+	funcptr_add_tag = "无懈执行完毕"
 	add_funcptr(_wugu_qipai)
 	add_funcptr(_nanman_sub1)
+	funcptr_add_tag = nil
 end
 function _wugu_get_card(va_list)	--  五谷丰登：获得五谷丰登牌堆中的牌（其他角色）
 	local ID_s = va_list[1]
@@ -2084,12 +2169,12 @@ function card_juedou(ID_shoupai, ID_s, ID_mubiao)
 		end
 	end
 	ai_judge_shenfen()
-	add_funcptr(card_wuxie,ID_mubiao)
-	if is_affect == false then
-		add_funcptr(_juedou_sub1)
-	else
+	--add_funcptr(card_wuxie,ID_mubiao)
+	--if is_affect == false then
+		--add_funcptr(_juedou_sub1)
+	--else
 		_juedou_exe(ID_s, ID_mubiao)
-	end
+	--end
 end
 function _juedou_exe(ID_s, ID_mubiao)    --  决斗：AI响应 (临时)
     local c_pos
@@ -2143,6 +2228,7 @@ function _juedou_exe_ji(ID_s, ID_mubiao, c_pos)    --  决斗：己方响应
 	add_funcptr(_juedou_sha, {ID_s, ID_mubiao, c_pos})
 	_juedou_exe(ID_s, ID_mubiao)
 end
+--[[
 function _wuxie_exe_ji(ID_s, ID_mubiao, c_pos)    --  无懈：己方响应
     gamerun_status = "手牌生效中"
 	jiaohu_text = ""
@@ -2204,6 +2290,7 @@ function _wuxie_exe_fangqi(ID_s, ID_mubiao)    --  无懈：己方放弃
 		platform.window:invalidate()
 	end
 end
+--]]
 function _juedou_exe_fangqi(ID_s, ID_mubiao)    --  决斗：己方放弃
     gamerun_status = "手牌生效中"
 	jiaohu_text = ""
@@ -2268,12 +2355,12 @@ function card_huogong(ID_shoupai, ID_s, ID_mubiao)
 	else
 		add_funcptr(_card_sub1, {ID_shoupai, ID_s, ID_mubiao})
 	end
-	add_funcptr(card_wuxie,ID_mubiao)
-	if is_affect == false then
-		add_funcptr(_huogong_sub1)
-	else
+	--add_funcptr(card_wuxie,ID_mubiao)
+	--if is_affect == false then
+	--	add_funcptr(_huogong_sub1)
+	--else
 		_huogong_exe_1(ID_s, ID_mubiao)
-	end
+	--end
     return true
 end
 function _huogong_exe_1(ID_s, ID_mubiao)    --  火攻执行一：被攻方展示手牌 (临时AI)

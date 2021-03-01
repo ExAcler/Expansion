@@ -39,11 +39,19 @@ imp_card = ""    -- 武将技能发动时要实现的卡牌名称
 
 gamerun_guankan_type = {}    -- "观看手牌"状态牌类型 (格式：{类型, 附加值})
 gamerun_guankan_selected = 1    -- "观看手牌"状态选取的目标牌
-guankan_s = 0    -- "观看手牌"作用源 (兼作火攻选择花色、贯石斧来源手牌临时存储，无懈可击响应之后要从队列中删除的函数位置，借刀杀人的目标A)
-guankan_d = 0    -- "观看手牌"作用目标 (兼作无懈可击定时器停止后队列记录)
+guankan_s = 0    -- "观看手牌"作用源 (兼作火攻选择花色、贯石斧（五谷丰登）来源手牌临时存储，借刀杀人的目标A)
+guankan_d = 0    -- "观看手牌"作用目标
 gamerun_temp = 0
 lianhuan_va = nil    -- 连环伤害传导前，若有麒麟弓结算，伤害函数va_list的存储
 sha_va = nil    -- 发动寒冰剑后，杀来源目标的va_list存储
+
+funcptr_add_tag = nil	-- 如果设置为一个字符串，则设置的字符串会被加入到之后的每一个funcptr_queue项的tag
+
+wuxie_queue_jinnang = {}	-- 无懈可击未执行时，原有的函数执行队列
+wuxie_queue_xiangying = {}	-- 无懈可击轮到己方响应时，记录原有的他方响应函数队列，以便己方不使用无懈时恢复原有轮询
+wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数队列的执行位置
+wuxie_va = nil		-- 无懈可击轮到己方响应时，原有锦囊来源目标的va_list存储
+wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能被其他无懈可击抵消导致失效）
 end
 
 --  定义变量  --
@@ -72,9 +80,14 @@ function table.copy(t)
 end
 
 --  将函数地址加入执行队列  --
-function add_funcptr(func, va_list, p)
+function add_funcptr(func, va_list, p, tag)
     local t = {}
 	t.func = func; t.va_list = va_list
+	if tag ~= nil then
+		t.tag = tag
+	else
+		t.tag = funcptr_add_tag
+	end
 	if p ~= nil then
 	    table.insert(funcptr_queue, p, t)
 	else
@@ -203,10 +216,6 @@ function gamerun_huihe_start()
 	
 	--  判定阶段  --
 	gamerun_huihe_panding()
-	if #char_juese[char_current_i].panding > 0 then
-		add_funcptr(_wuxie_zhudong_sub1, nil, gamerun_temp)
-		guankan_s = gamerun_temp
-	end
 	
 	--  摸牌阶段  --
 	--  周瑜英姿，多摸一张牌  --
@@ -226,14 +235,7 @@ function gamerun_huihe_start()
 	add_funcptr(card_mopai, nil)
 	
 	--  出牌阶段  --
-		add_funcptr(_start_sub1, nil)
-	--[[
-	if #char_juese[char_current_i].panding > 0 then
-		--  无懈可击主动响应  --
-		add_funcptr(_wuxie_zhudong_sub1, nil, gamerun_temp)
-		guankan_s = gamerun_temp
-	end
-	--]]
+	add_funcptr(_start_sub1, nil)
 end
 function _start_sub1()
     local msg
@@ -265,12 +267,23 @@ function gamerun_huihe_panding()
 	gamerun_temp = add_funcptr(gamerun_huihe_set, "判定") + 1
 	msg = nil; collectgarbage()
 	
-	for _, _ in ipairs(char_juese[char_current_i].panding) do
-		is_affect = true
+	for _, card in ipairs(char_juese[char_current_i].panding) do
+		card_wuxie(card, char_current_i, char_current_i, nil)
+
+		funcptr_add_tag = "无懈无效结算"
 	    add_funcptr(_panding_sub1, char_current_i)
 		p = add_funcptr(_panding_sub3, nil)    -- 记录位置，供判定阶段伤害结算插队
 		add_funcptr(_panding_sub2, {1, p})
+		funcptr_add_tag = nil
+
+		funcptr_add_tag = "无懈有效结算"
+		add_funcptr(_panding_wuxie)
+		funcptr_add_tag = nil
 	end
+
+	funcptr_add_tag = "无懈执行完毕"
+	add_funcptr(_panding_sub3)
+	funcptr_add_tag = nil
 end
 function _panding_sub1(ID)    -- 子函数1：翻开判定牌
     local msg
@@ -387,6 +400,15 @@ function _panding_pass(id)    -- 将闪电传给下一个玩家
 	
 	table.insert(char_juese[p].panding, 1, char_juese[char_current_i].panding[id])
 	table.remove(char_juese[char_current_i].panding, id)
+end
+function _panding_wuxie()	-- 判定被无懈
+	push_message("判定牌被无懈，无需判定")
+	if char_juese[char_current_i].panding[1][1] == "闪电" then
+		_panding_pass(1)
+	else
+		card_add_qipai(char_juese[char_current_i].panding[1])
+		table.remove(char_juese[char_current_i].panding, 1)
+	end
 end
 
 --  当前玩家回合结束 (弃牌阶段~回合结束阶段)
@@ -600,19 +622,25 @@ card_into_hand(5)
 --                     TI-Lua 系统事件                 --
 pause = false
 function on.timer()
-    if pause == false then 
+    --if pause == false then 
+		if funcptr_i == 0 then
+			funcptr_i = 1
+		end
+
 		if funcptr_i <= #funcptr_queue then
 			if funcptr_queue[funcptr_i].func ~= nil then
 				funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
+			else
+				print(funcptr_queue[funcptr_i].func)
 			end
 			funcptr_i = funcptr_i + 1
 		else
-			stick_at,funcptr_queue = nil,{}
+			--stick_at,funcptr_queue = nil,{}
 			timer.stop()
 		end
-	else
-		return
-	end
+	--else
+		--return
+	--end
 end
 
 --  脚本初始化  --
@@ -656,6 +684,20 @@ function on.enterKey()
 	local card
 	
 	card_into_hand(char_current_i)
+
+	if string.find(gamerun_status, "无懈") then
+		if table.getn2(card_selected) ~= 0 then
+			card = char_juese[char_current_i].shoupai[card_highlighted]
+			if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
+				card_selected = {}
+				set_hints("")
+				card_highlighted = 1
+				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
+			end
+		end
+		return
+	end
+
 	if gamerun_huihe == "摸牌" then
 		--  张辽突袭  --
 		if gamerun_status == "选择目标" then
@@ -714,7 +756,7 @@ function on.enterKey()
 			if string.find(gamerun_status, "五谷") then
 				funcptr_queue = {}
 				_wugu_get_card_zhudong(char_current_i, gamerun_guankan_selected)
-				_wugu_others_get_card_exe(char_current_i)
+				_wugu_others_get_card_exe(guankan_s, char_current_i)
 				consent_func_queue(0.6)
 			end
 		elseif string.find(gamerun_status, "主动出牌") then
@@ -724,17 +766,6 @@ function on.enterKey()
 					if string.find(card, "杀") then
 			            funcptr_queue = {}
 						_juedou_exe_ji(char_current_i, gamerun_target_selected, card_highlighted)
-			            consent_func_queue(0.6)
-					end
-				end
-			end
-			
-			if string.find(gamerun_status, "无懈") then
-			    if table.getn2(card_selected) ~= 0 then
-			        card = char_juese[char_current_i].shoupai[card_highlighted][1]
-					if string.find(card, "无懈可击") or char_juese[char_current_i].name=="卧龙诸葛" then
-			            funcptr_queue = {}
-						_wuxie_exe_ji(char_current_i, gamerun_target_selected, card_highlighted)
 			            consent_func_queue(0.6)
 					end
 				end
@@ -951,8 +982,8 @@ function on.escapeKey()
 	
 	if string.find(gamerun_status, "无懈") then
 		funcptr_queue = {}
-		_wuxie_exe_fangqi(char_current_i, gamerun_target_selected)
-		consent_func_queue(0.6)
+		_wuxie_zhudong_fangqi(char_current_i, gamerun_target_selected)
+		return
 	end
 	
 	if gamerun_huihe == "摸牌" then
@@ -976,6 +1007,10 @@ function on.escapeKey()
 				    funcptr_queue = {}
 				    _huogong_exe_3(char_current_i)
 					consent_func_queue(0.6)
+				end
+
+				if string.find(gamerun_status, "无懈") then
+					_wuxie_zhudong_fangqi()
 				end
 				
 				if string.find(gamerun_status, "青龙") or string.find(gamerun_status, "贯石") then
@@ -1194,7 +1229,7 @@ function on.tabKey()
 			    gamerun_target_selected = 0
 			end
 			
-			if gamerun_status == "技能选择-目标" or "技能选择-目标B" then
+			if gamerun_status == "技能选择-目标" or gamerun_status == "技能选择-目标B" then
 				if last_status ~= "技能选择-目标" and last_OK ~= false then
 					set_hints(skill_text_1)
 					gamerun_status = last_status
