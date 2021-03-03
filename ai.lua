@@ -14,7 +14,378 @@ function card_judge_arm(ID, card)
 	card_id = card_chazhaoarm(ID,card)
 	return card_id
 end
+
+-- AI距离与攻击范围测算 --
+-- 第一个参数是否在指定距离内，第二个参数返回是否在攻击范围内
+function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)
+	local distance_shun,distance_ni,indis,range,inrange=math.max(ID_d,ID_s)-math.min(ID_d,ID_s),math.min(ID_d,ID_s)+5-math.max(ID_d,ID_s),false,1,false
+	for i = 1,5 do
+		if char_juese[i].siwang == true then
+			if i < math.max(ID_d,ID_s) and i > math.min(ID_d,ID_s) then
+				distance_ni = distance_ni - 1
+			else
+				distance_shun = distance_shun - 1
+			end
+		end
+	end
+	distance = math.min(distance_ni,distance_shun)
+	if #char_juese[ID_s].gongma ~= 0 and ID_s ~= ID_d and horse_ignore == nil then
+		distance = distance-1
+	end
+	if #char_juese[ID_d].fangma ~= 0 and ID_s ~= ID_d then
+		distance = distance+1
+	end
+	if char_juese[ID_s].skill["马术"] == "available" and ID_s ~= ID_d then
+		distance = distance-1
+	end
+	if char_juese[ID_s].skill["义从"] == "available" and char_juese[ID_s].tili > 2 and ID_s ~= ID_d then
+		distance = distance-1
+	end
+	if char_juese[ID_d].skill["义从"] == "available" and char_juese[ID_d].tili <= 2 and ID_s ~= ID_d then
+		distance = distance+1
+	end
+	if char_juese[ID_d].skill["飞影"] == "available" and ID_s ~= ID_d then
+		distance = distance+1
+	end
+	if #char_juese[ID_s].wuqi ~= 0 and weapon_ignore == nil then
+		range = card_wuqi_r[char_juese[ID_s].wuqi]
+	end
+	distance = distance + delta
+	if distance <= limdis then
+		indis = true
+	end
+	if distance <= range then
+		inrange = true
+	end
+	return indis,inrange
+end
+
+-- AI内奸场上局势判断 --
+--返回false装反,返回true装忠
+function ai_judge_blackjack(ID)
+	local lord,rebel=200,200
+	for i=1,5 do
+		if i==ID then
+			
+		elseif char_juese[i].siwang == true and char_juese[i].shenfen == "忠臣" then
+			lord = lord - 100
+		elseif char_juese[i].siwang == true and char_juese[i].shenfen == "反贼" then
+			rebel = rebel - 100
+		elseif char_juese[i].siwang == false and char_juese[i].isantigovernment == true then
+			lord = lord + 10 * char_juese[i].tili + 5 * #char_juese[i].shoupai - 20 * #char_juese[i].panding
+			if #char_juese[i].wuqi ~= 0 then
+				lord = lord + 5
+			end
+			if #char_juese[i].fangju ~= 0 then
+				lord = lord + 5
+			end
+			if #char_juese[i].gongma ~= 0 then
+				lord = lord + 5
+			end
+			if #char_juese[i].fangma ~= 0 then
+				lord = lord + 5
+			end
+		elseif char_juese[i].siwang == false and char_juese[i].isantigovernment == false then
+			rebel = rebel + 10 * char_juese[i].tili + 5 * #char_juese[i].shoupai - 20 * #char_juese[i].panding
+			if #char_juese[i].wuqi ~= 0 then
+				rebel = rebel + 5
+			end
+			if #char_juese[i].fangju ~= 0 then
+				rebel = rebel + 5
+			end
+			if #char_juese[i].gongma ~= 0 then
+				rebel = rebel + 5
+			end
+			if #char_juese[i].fangma ~= 0 then
+				rebel = rebel + 5
+			end
+		end
+	end
+	if lord > rebel then
+		return false
+	else
+		return true
+	end
+end
+
+-- AI使用牌颜色、花色与点数判断 --
+function ai_judge_cardinfo(ID,cards)
+	local yanse,huase,dianshu = "无","无",0
+	if #cards == 1 then
+		huase,dianshu = card_leixing[cards[1]][2],card_leixing[cards[1]][3]
+		if huase == "黑桃" and char_juese[ID].skill["红颜"] == "available" then
+			huase = "红桃"
+		end
+		if huase == "黑桃" or huase == "草花" then
+			yanse = "黑色"
+		else
+			yanse = "红色"
+		end
+	elseif #cards > 1 then
+		dianshu == 0
+		local huase_included = {0,0,0,0}
+		for i=1,#cards do
+			if card_leixing[cards[i]][2] == "黑桃" and char_juese[ID].skill["红颜"] == "available" then
+				huase_included[3] = huase_included[3]+1
+			elseif card_leixing[cards[i]][2] == "黑桃" then
+				huase_included[1] = huase_included[1]+1
+			elseif card_leixing[cards[i]][2] == "草花" then
+				huase_included[2] = huase_included[2]+1
+			elseif card_leixing[cards[i]][2] == "红桃" then
+				huase_included[3] = huase_included[3]+1
+			elseif card_leixing[cards[i]][2] == "方块" then
+				huase_included[4] = huase_included[4]+1
+			end
+		end
+		if huase_included[2] + huase_included[3] + huase_included[4] == 0 then
+			huase,yanse = "黑桃","黑色"
+		elseif huase_included[1] + huase_included[3] + huase_included[4] == 0 then
+			huase,yanse = "草花","黑色"
+		elseif huase_included[1] + huase_included[2] + huase_included[4] == 0 then
+			huase,yanse = "红桃","红色"
+		elseif huase_included[1] + huase_included[2] + huase_included[3] == 0 then
+			huase,yanse = "方块","红色"
+		elseif huase_included[3] + huase_included[4] == 0 then
+			yanse = "黑色"
+		elseif huase_included[1] + huase_included[2] == 0 then
+			yanse = "红色"
+		end
+	end
+	return yanse,huase,dianshu
+end
+
+-- AI攻击范围内有哪些目标 --
+function ai_judge_in_range(ID,weapon_ignore,horse_ignore)
+	local inrange = {}
+	for i = 1,5 do
+		if char_juese[ID].siwang == false and i ~= ID then
+			local _,ans = ai_judge_distance(ID,i,1,weapon_ignore,horse_ignore)
+			if ans then
+				table.insert(inrange,i)
+			end
+		end
+	end
+	return inrange
+end
+
+-- AI使用牌目标选择 --
+function ai_judge_target(ID,card_treated,cards,target_number)
+	if target_number == nil then
+		target_number = 1
+	end
+	local possible_target = {1,2,3,4,5}
+	for i=5,1,-1 do
+		if char_juese[possible_target[i]].siwang == true then
+			table.remove(possible_target,i)
+		elseif card_treated ~= "借刀杀人" and string.find(card_treated,"杀") ~= nil and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["帷幕"] == "available" then
+			table.remove(possible_target,i)
+		elseif ID == possible_target[i] and card_treated == "铁索连环" and char_juese[ID].hengzhi == true then
+			
+		elseif ID == possible_target[i] then
+			table.remove(possible_target,i)
+		elseif char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣" then
+			if char_juese[possible_target[i]].isantigovernment == false and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
+				
+			elseif char_juese[possible_target[i]].isantigovernment == false then
+				table.remove(possible_target,i)
+			end
+		elseif char_juese[ID].shenfen == "反贼" then
+			if char_juese[possible_target[i]].isantigovernment == true and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
+			
+			elseif char_juese[possible_target[i]].isantigovernment ~= false then
+				table.remove(possible_target,i)
+			end
+		elseif char_juese[ID].shenfen == "内奸" then
+			if ai_judge_blackjack(ID)==true then
+				if char_juese[possible_target[i]].isantigovernment == false then
+					table.remove(possible_target,i)
+				end
+			else
+				if char_juese[possible_target[i]].isantigovernment ~= false then
+					table.remove(possible_target,i)
+				end
+			end
+		end
+	end
+	if card_treated == "顺手牵羊" then
+		--剔除距离不够的目标
+		for i=#possible_target,1,-1 do
+			if ai_judge_distance(ID,possible_target[i],1) == false and char_juese[ID].skill["奇才"] ~= "available" then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除没有牌的目标
+		for i=#possible_target,1,-1 do
+			if #char_juese[possible_target[i]].shoupai == 0 and #char_juese[possible_target[i]].wuqi == 0 and #char_juese[possible_target[i]].fangju == 0 and #char_juese[possible_target[i]].gongma == 0 and #char_juese[possible_target[i]].fangma == 0 and #char_juese[possible_target[i]].panding == 0 then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除只有判定区有牌的对手
+		for i=#possible_target,1,-1 do
+			if #char_juese[possible_target[i]].shoupai == 0 and #char_juese[possible_target[i]].wuqi == 0 and #char_juese[possible_target[i]].fangju == 0 and #char_juese[possible_target[i]].gongma == 0 and #char_juese[possible_target[i]].fangma == 0 and #char_juese[possible_target[i]].panding ~= 0 and (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[possible_target[i]].isantigovernment ~= false then
+				table.remove(possible_target,i)
+			elseif #char_juese[possible_target[i]].shoupai == 0 and #char_juese[possible_target[i]].wuqi == 0 and #char_juese[possible_target[i]].fangju == 0 and #char_juese[possible_target[i]].gongma == 0 and #char_juese[possible_target[i]].fangma == 0 and #char_juese[possible_target[i]].panding ~= 0 and char_juese[ID].shenfen == "反贼" and char_juese[possible_target[i]].isantigovernment ~= true then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除谦逊
+		for i=#possible_target,1,-1 do
+			if char_juese[possible_target[i]].skill["谦逊"] == "available" then
+				table.remove(possible_target,i)
+			end
+		end
+	elseif card_treated == "过河拆桥" then
+		--剔除没有牌的目标
+		for i=#possible_target,1,-1 do
+			if #char_juese[possible_target[i]].shoupai == 0 and #char_juese[possible_target[i]].wuqi == 0 and #char_juese[possible_target[i]].fangju == 0 and #char_juese[possible_target[i]].gongma == 0 and #char_juese[possible_target[i]].fangma == 0 and #char_juese[possible_target[i]].panding == 0 then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除只有判定区有牌的对手
+		for i=#possible_target,1,-1 do
+			if #char_juese[possible_target[i]].shoupai == 0 and #char_juese[possible_target[i]].wuqi == 0 and #char_juese[possible_target[i]].fangju == 0 and #char_juese[possible_target[i]].gongma == 0 and #char_juese[possible_target[i]].fangma == 0 and #char_juese[possible_target[i]].panding ~= 0 and (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[possible_target[i]].isantigovernment ~= false then
+				table.remove(possible_target,i)
+			elseif #char_juese[possible_target[i]].shoupai == 0 and #char_juese[possible_target[i]].wuqi == 0 and #char_juese[possible_target[i]].fangju == 0 and #char_juese[possible_target[i]].gongma == 0 and #char_juese[possible_target[i]].fangma == 0 and #char_juese[possible_target[i]].panding ~= 0 and char_juese[ID].shenfen == "反贼" and char_juese[possible_target[i]].isantigovernment ~= true then
+				table.remove(possible_target,i)
+			end
+		end
+	elseif card_treated == "决斗" then
+		--剔除空城
+		for i=#possible_target,1,-1 do
+			if char_juese[possible_target[i]].skill["空城"] == "available" and #char_juese[possible_target[i]].shoupai == 0 then
+				table.remove(possible_target,i)
+			end
+		end
+	elseif card_treated == "火攻" then
+		--剔除没有手牌的目标
+		for i=#possible_target,1,-1 do
+			if #char_juese[possible_target[i]].shoupai == 0 then
+				table.remove(possible_target,i)
+			end
+		end
+	elseif card_treated == "借刀杀人" then
+		--剔除没有武器的目标
+		for i=#possible_target,1,-1 do
+			if #char_juese[possible_target[i]].wuqi == 0 then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除够不到人的角色
+		for i=#possible_target,1,-1 do
+			local jiedao_target = ai_judge_in_range(i)
+			if #jiedao_target == 0 then
+				table.remove(possible_target,i)
+			end
+		end
+	elseif card_treated == "兵粮寸断" then
+		--剔除距离不够的目标
+		for i=#possible_target,1,-1 do
+			if ai_judge_distance(ID,possible_target[i],1) == false and char_juese[ID].skill["奇才"] ~= "available" then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除判定区里已有同名牌的目标
+		for i=#possible_target,1,-1 do
+			for _, v in ipairs(char_juese[possible_target[i]].panding) do
+				if v[1] == "兵粮寸断" then
+					table.remove(possible_target,i)
+				end
+			end
+		end
+	elseif card_treated == "乐不思蜀" then
+		--剔除谦逊
+		for i=#possible_target,1,-1 do
+			if char_juese[possible_target[i]].skill["谦逊"] == "available" then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除判定区里已有同名牌的目标
+		for i=#possible_target,1,-1 do
+			for _, v in ipairs(char_juese[possible_target[i]].panding) do
+				if v[1] == "乐不思蜀" then
+					table.remove(possible_target,i)
+				end
+			end
+		end
+	elseif card_treated == "铁索连环" then
+		--剔除已经横置的对手
+		for i=#possible_target,1,-1 do
+			if #char_juese[possible_target[i]].hengzhi == true and (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[possible_target[i]].isantigovernment ~= false then
+				table.remove(possible_target,i)
+			elseif #char_juese[possible_target[i]].hengzhi == true and char_juese[ID].shenfen == "反贼" and char_juese[possible_target[i]].isantigovernment ~= true then
+				table.remove(possible_target,i)
+			end
+		end
+	elseif string.find(card_treated,"杀") then
+		--剔除空城
+		for i=#possible_target,1,-1 do
+			if char_juese[possible_target[i]].skill["空城"] == "available" and #char_juese[possible_target[i]].shoupai == 0 then
+				table.remove(possible_target,i)
+			end
+		end
+		local shuxing = false
+		if card_treated == "火杀" or card_treated=="雷杀" then
+			shuxing = true
+		end
+		--剔除普杀藤甲
+		for i=#possible_target,1,-1 do
+			if char_juese[possible_target[i]].fangju[1] == "藤甲" and shuxing == false and #char_juese[ID].wuqi ~= "朱雀扇" and #char_juese[ID].wuqi ~= "青钢剑" then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除黑杀仁王
+		for i=#possible_target,1,-1 do
+			if char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and #char_juese[ID].wuqi ~= "青钢剑" then
+				table.remove(possible_target,i)
+			end
+		end
+		--剔除能流离给队友的角色
+		for i=#possible_target,1,-1 do
+			if char_juese[possible_target[i]].skill["流离"] == "available" then
+				local liuli_target = ai_judge_in_range(i)
+				if (#char_juese[possible_target[i]].shoupai ~= 0 or #char_juese[possible_target[i]].fangju ~= 0 or #char_juese[possible_target[i]].fangma ~= 0) and #liuli_target > 0 and (#liuli_target ~= 1 or liuli_target[1] ~= ID) then
+					for j=1,#liuli_target do
+						if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[j].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[j].isantigovernment == true) then
+							table.remove(possible_target,i)
+							break
+						end
+					end
+				else
+					if #char_juese[possible_target[i]].gongma ~= 0 then
+						local liuli_target = ai_judge_in_range(i,nil,true)
+						if  #liuli_target > 0 and (#liuli_target ~= 1 or liuli_target[1] ~= ID) then
+							for j=1,#liuli_target do
+								if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[j].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[j].isantigovernment == true) then
+									table.remove(possible_target,i)
+									break
+								end
+							end
+						end
+					elseif #char_juese[possible_target[i]].wuqi ~= 0 then
+						local liuli_target = ai_judge_in_range(i,true)
+						if  #liuli_target > 0 and (#liuli_target ~= 1 or liuli_target[1] ~= ID) then
+							for j=1,#liuli_target do
+								if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[j].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[j].isantigovernment == true) then
+									table.remove(possible_target,i)
+									break
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	while #possible_target > target_number do
+		table.remove(possible_target,math.random(#possible_target))
+	end
+	return possible_target
+end
+
 --  AI身份判定 --
+--[[isantigovernment:nil未确定,false为忠臣,true为反贼
+isblackjack:true为内奸
+]]
 function ai_judge_shenfen()
 	for i = 1,5 do
 		if char_juese[i].shenfen == "主公" then
@@ -23,10 +394,10 @@ function ai_judge_shenfen()
 			char_juese[i].antigovernmentmax = math.max(char_juese[i].antigovernmentmax,char_juese[i].antigovernment)
 			char_juese[i].antigovernmentmin = math.min(char_juese[i].antigovernmentmin,char_juese[i].antigovernment)
 			if char_juese[i].antigovernmentmax-char_juese[i].antigovernmentmin > 10 then
-				char_juese[i].isblackjack,char_juese[i].isantigovernment = true,false
+				char_juese[i].isblackjack,char_juese[i].isantigovernment = true,nil
 			elseif char_juese[i].antigovernmentmax > 5 then
 				char_juese[i].isblackjack,char_juese[i].isantigovernment = false,true
-			else
+			elseif char_juese[i].antigovernment < 5 then
 			    char_juese[i].isblackjack,char_juese[i].isantigovernment = false,false
 			end
 		end

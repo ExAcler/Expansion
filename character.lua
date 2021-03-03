@@ -1,63 +1,64 @@
 
 -- 各角色拥有技能 --
 char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
-    ["刘备"] = {4, "蜀", true, {"仁德", "激将"}, "男"}, 
-	["关羽"] = {4, "蜀", false, {"武圣"}, "男"},
-    ["张飞"] = {4, "蜀", false, {"咆哮"}, "男"}, 
-	["赵云"] = {4, "蜀", false, {"龙胆"}, "男"}, 
-	["马超"] = {4, "蜀", false, {"马术", "铁骑"}, "男"}, 
-	["诸葛亮"] = {3, "蜀", false, {"观星", "空城"}, "男"}, 
-	["黄月英"] = {3, "蜀", false, {"集智", "奇才"}, "女"}, 
-	["黄忠"] = {4, "蜀", false, {"烈弓"}, "男"},
-    ["魏延"] = {4, "蜀", false, {"狂骨"}, "男"},
-    ["庞统"] = {3, "蜀", false, {"连环", "涅槃"}, "男"},  
-	["卧龙诸葛"] = {3, "蜀", false, {"火计", "看破", "八阵"}, "男"},  
-	["孟获"] = {4, "蜀", false, {"祸首", "再起"}, "男"},  
-	["祝融"] = {4, "蜀", false, {"巨象", "烈刃"}, "女"},  
-	["姜维"] = {4, "蜀", false, {"挑衅", "志继"}, "男"},  
-	["刘禅"] = {3, "蜀", true, {"享乐", "放权", "若愚"}, "男"}, 
-    ["关索"] = {4,"蜀",false,{"征南","撷芳"},"男"},	
-	["曹操"] = {4, "魏", true, {"奸雄", "护驾"}, "男"},  
-	["司马懿"] = {3, "魏", false, {"鬼才", "反馈"}, "男"},  
-	["郭嘉"] = {3, "魏", false, {"遗计", "天妒"}, "男"},
-    ["张辽"] = {4, "魏", false, {"突袭"}, "男"},
-    ["甄姬"] = {3, "魏", false, {"洛神", "倾国"}, "女"},
-    ["夏侯惇"] = {4, "魏", false, {"刚烈"}, "男"}, 
-    ["曹仁"] = {4, "魏", false, {"据守"}, "男"},
-    ["许褚"] = {4, "魏", false, {"裸衣"}, "男"}, 
-    ["夏侯渊"] = {4, "魏", false, {"神速"}, "男"},  
-    ["荀彧"] = {3, "魏", false, {"驱虎", "节命"}, "男"}, 
-    ["典韦"] = {4, "魏", false, {"强袭"}, "男"}, 
-    ["曹丕"] = {3, "魏", true, {"放逐", "行殇", "颂威"}, "男"},    
-    ["徐晃"] = {4, "魏", false, {"断粮"}, "男"}, 
-    ["邓艾"] = {4, "魏", false, {"屯田", "凿险"}, "男"}, 
-    ["张颌"] = {4, "魏", false, {"巧变"}, "男"}, 
-	["张春华"] = {3,"魏",false,{"绝情","伤逝"},"女"},
-    ["孙权"] = {4, "吴", true, {"制衡", "救援"}, "男"}, 
-    ["甘宁"] = {4, "吴", false, {"奇袭"}, "男"}, 
-    ["黄盖"] = {4, "吴", false, {"苦肉"}, "男"}, 
-    ["周瑜"] = {3, "吴", false, {"英姿", "反间"}, "男"}, 
-    ["陆逊"] = {3, "吴", false, {"谦逊", "连营"}, "男"}, 
-    ["大乔"] = {3, "吴", false, {"国色", "流离"}, "女"}, 
-    ["小乔"] = {3, "吴", false, {"天香", "红颜"}, "女"},
-	["吕蒙"] = {4, "吴", false, {"克己"}, "男"}, 
-    ["孙尚香"] = {3, "吴", false, {"结姻", "枭姬"}, "女"}, 
-    ["周泰"] = {4, "吴", false, {"不屈"}, "男"}, 
-    ["太史慈"] = {4, "吴", false, {"天义"}, "男"}, 
-    ["鲁肃"] = {3, "吴", false, {"好施", "缔盟"}, "男"}, 
-    ["孙坚"] = {4, "吴", false, {"英魂"}, "男"}, 
-    ["张昭张宏"] = {3, "吴", false, {"直谏", "固政"}, "男"}, 
-    ["孙策"] = {4, "吴", true, {"激昂", "魂姿", "制霸"}, "男"}, 
-    ["吕布"] = {4, "群", false, {"无双"}, "男"}, 
-    ["貂蝉"] = {3, "群", false, {"闭月", "离间"}, "女"}, 	
-	["华佗"] = {3, "群", false, {"急救", "青囊"}, "男"}, 
-	["张角"] = {3, "群", true, {"雷击", "鬼道", "黄天"}, "男"}, 
-    ["庞德"] = {4, "群", false, {"猛进", "马术"}, "男"}, 
-    ["袁绍"] = {4, "群", true, {"乱击", "血裔"}, "男"}, 
-    ["董卓"] = {8, "群", true, {"酒池", "肉林", "崩坏", "暴虐"}, "男"}, 
-    ["蔡文姬"] = {3, "群", false, {"悲歌", "断肠"}, "女"}, 
-    ["左慈"] = {3, "群", false, {"化身", "新生"}, "男"}, 		
-	["神曹操"] = {3,"神",false,{"归心","飞影"},"男"},
+    ["刘备"] = {4, "蜀", true, {"仁德", "激将"}, "男", {"","主公"}}, 
+	["关羽"] = {4, "蜀", false, {"武圣"}, "男", {""}},
+    ["张飞"] = {4, "蜀", false, {"咆哮"}, "男", {"锁定"}}, 
+	["赵云"] = {4, "蜀", false, {"龙胆"}, "男", {""}}, 
+	["马超"] = {4, "蜀", false, {"马术", "铁骑"}, "男", {"锁定",""}}, 
+	["诸葛亮"] = {3, "蜀", false, {"观星", "空城"}, "男", {"","锁定"}}, 
+	["黄月英"] = {3, "蜀", false, {"集智", "奇才"}, "女", {"","锁定"}}, 
+	["黄忠"] = {4, "蜀", false, {"烈弓"}, "男", {"锁定"}},
+    ["魏延"] = {4, "蜀", false, {"狂骨"}, "男", {"锁定"}},
+    ["庞统"] = {3, "蜀", false, {"连环", "涅槃"}, "男", {"","限定"}},  
+	["卧龙诸葛"] = {3, "蜀", false, {"火计", "看破", "八阵"}, "男", {"","","锁定"}},  
+	["孟获"] = {4, "蜀", false, {"祸首", "再起"}, "男", {"锁定",""}},  
+	["祝融"] = {4, "蜀", false, {"巨象", "烈刃"}, "女", {"锁定",""}},  
+	["姜维"] = {4, "蜀", false, {"挑衅", "志继"}, "男", {"","觉醒"}},  
+	["刘禅"] = {3, "蜀", true, {"享乐", "放权", "若愚"}, "男", {"锁定","","主公"}}, 
+    ["关索"] = {4,"蜀",false,{"征南","撷芳"},"男", {"","锁定"}},	
+	["曹操"] = {4, "魏", true, {"奸雄", "护驾"}, "男", {"","主公"}},  
+	["司马懿"] = {3, "魏", false, {"鬼才", "反馈"}, "男", {"",""}},  
+	["郭嘉"] = {3, "魏", false, {"遗计", "天妒"}, "男", {"",""}},
+    ["张辽"] = {4, "魏", false, {"突袭"}, "男", {""}},
+    ["甄姬"] = {3, "魏", false, {"洛神", "倾国"}, "女", {"锁定",""}},
+    ["夏侯惇"] = {4, "魏", false, {"刚烈"}, "男", {""}}, 
+    ["曹仁"] = {4, "魏", false, {"据守"}, "男", {""}},
+    ["许褚"] = {4, "魏", false, {"裸衣"}, "男", {""}}, 
+    ["夏侯渊"] = {4, "魏", false, {"神速"}, "男", {""}},  
+    ["荀彧"] = {3, "魏", false, {"驱虎", "节命"}, "男", {"",""}}, 
+    ["典韦"] = {4, "魏", false, {"强袭"}, "男", {""}}, 
+    ["曹丕"] = {3, "魏", true, {"放逐", "行殇", "颂威"}, "男", {"","","主公"}},    
+    ["徐晃"] = {4, "魏", false, {"断粮"}, "男", {""}}, 
+    ["邓艾"] = {4, "魏", false, {"屯田", "凿险"}, "男", {"","觉醒"}}, 
+    ["张颌"] = {4, "魏", false, {"巧变"}, "男", {""}}, 
+	["张春华"] = {3,"魏",false,{"绝情","伤逝"},"女", {"锁定",""}},
+    ["孙权"] = {4, "吴", true, {"制衡", "救援"}, "男", {"","主公"}}, 
+    ["甘宁"] = {4, "吴", false, {"奇袭"}, "男", {""}}, 
+    ["黄盖"] = {4, "吴", false, {"苦肉"}, "男", {""}}, 
+    ["周瑜"] = {3, "吴", false, {"英姿", "反间"}, "男", {"",""}}, 
+    ["陆逊"] = {3, "吴", false, {"谦逊", "连营"}, "男", {"锁定",""}}, 
+    ["大乔"] = {3, "吴", false, {"国色", "流离"}, "女", {"",""}}, 
+    ["小乔"] = {3, "吴", false, {"天香", "红颜"}, "女", {"","锁定"}},
+	["吕蒙"] = {4, "吴", false, {"克己"}, "男", {""}}, 
+    ["孙尚香"] = {3, "吴", false, {"结姻", "枭姬"}, "女", {"",""}}, 
+    ["周泰"] = {4, "吴", false, {"不屈"}, "男", {""}}, 
+    ["太史慈"] = {4, "吴", false, {"天义"}, "男", {""}}, 
+    ["鲁肃"] = {3, "吴", false, {"好施", "缔盟"}, "男", {"",""}}, 
+    ["孙坚"] = {4, "吴", false, {"英魂"}, "男", {"",""}}, 
+    ["张昭张宏"] = {3, "吴", false, {"直谏", "固政"}, "男", {"",""}}, 
+    ["孙策"] = {4, "吴", true, {"激昂", "魂姿", "制霸"}, "男", {"","觉醒","主公"}}, 
+    ["吕布"] = {4, "群", false, {"无双"}, "男", {"锁定"}}, 
+    ["貂蝉"] = {3, "群", false, {"闭月", "离间"}, "女", {"",""}}, 	
+	["华佗"] = {3, "群", false, {"急救", "青囊"}, "男", {"",""}}, 
+	["张角"] = {3, "群", true, {"雷击", "鬼道", "黄天"}, "男", {"","","主公"}}, 
+    ["庞德"] = {4, "群", false, {"猛进", "马术"}, "男", {"","锁定"}}, 
+    ["袁绍"] = {4, "群", true, {"乱击", "血裔"}, "男", {"","主公"}}, 
+    ["董卓"] = {8, "群", true, {"酒池", "肉林", "崩坏", "暴虐"}, "男", {"","锁定","锁定","主公"}}, 
+    ["蔡文姬"] = {3, "群", false, {"悲歌", "断肠"}, "女", {"","锁定"}}, 
+    ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}}, 		
+	["神曹操"] = {3,"神",false,{"归心","飞影"},"男", {"","锁定"}},
+	["孙笑川"] = {4,"神",false,{"苦肉","绝情","伤逝","乱击"},"男", {"","锁定","",""}},
 }
 
 -- 武器攻击范围 --
@@ -72,8 +73,8 @@ card_wuqi_r =
 
 function init_character()
 -- 各角色武将牌 --
-char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "关索","司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张颌","张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张宏", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈","神曹操"}
-char_wujiang_zhugong = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓"}  -- 主公武将牌
+char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "关索","司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张颌","张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张宏", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈","神曹操","孙笑川"}
+char_wujiang_zhugong = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓","孙笑川"}  -- 主公武将牌
 char_wujiang_f = {}  -- 洗后的武将牌
 
 -- 各角色身份牌 --
@@ -84,6 +85,8 @@ char_juese_fid = {}  -- 洗后的身份牌
 char_juese = {
     {   
 	    name = "", 
+		shili = "",
+		xingbie = "",
 		shenfen = "", 
 		hengzhi = false, 
 		fanmian = false,
@@ -100,11 +103,15 @@ char_juese = {
 		fangju = {}, 
 		gongma = {}, 
 		fangma = {}, 
+		skill = {},
+		skillname = {},
 		siwang = false, 
 		shenfen_unknown = true, 
 	}, 
 	{
 	    name = "",
+		shili = "",
+		xingbie = "",
 		shenfen = "",
 		hengzhi = false, 
 		fanmian = false,
@@ -121,11 +128,15 @@ char_juese = {
 		fangju = {}, 
 		gongma = {}, 
 		fangma = {}, 
+		skill = {},
+		skillname = {},
 		siwang = false, 
 		shenfen_unknown = true, 
 	}, 
 	{
 	    name = "",
+		shili = "",
+		xingbie = "",
 		shenfen = "",
 		hengzhi = false,
 		fanmian = false,
@@ -142,11 +153,15 @@ char_juese = {
 		fangju = {}, 
 		gongma = {}, 
 		fangma = {}, 
+		skill = {},
+		skillname = {},
 		siwang = false, 
 		shenfen_unknown = true, 
 	}, 
 	{
 	    name = "",
+		shili = "",
+		xingbie = "",
 		shenfen = "",
 		hengzhi = false, 
 		fanmian = false,
@@ -163,11 +178,15 @@ char_juese = {
 		fangju = {}, 
 		gongma = {}, 
 		fangma = {}, 
+		skill = {},
+		skillname = {},
 		siwang = false, 
 		shenfen_unknown = true, 
 	}, 
 	{
 	    name = "",
+		shili = "",
+		xingbie = "",
 		shenfen = "",
 		hengzhi = false, 
 		fanmian = false,
@@ -184,6 +203,8 @@ char_juese = {
 		fangju = {}, 
 		gongma = {}, 
 		fangma = {}, 
+		skill = {},
+		skillname = {},
 		siwang = false, 
 		shenfen_unknown = true, 
 	}, 
@@ -246,11 +267,21 @@ function _wujiang_sub1()
     for i = 1, 5 do
 	    if char_juese[i].shenfen == "主公" then
 		    t = math.random(#char_wujiang_zhugong)
-			t = 5
+			t = 10
 			char_juese[i].name = char_wujiang_zhugong[t]
 			char_juese[i].tili_max = char_juese_jineng[char_wujiang_zhugong[t]][1] + 1
+			char_juese[i].shili = char_juese_jineng[char_wujiang_zhugong[t]][2]
+			char_juese[i].xingbie = char_juese_jineng[char_wujiang_zhugong[t]][5]
 			table.remove(char_wujiang_f, t)
 			char_juese[i].tili = char_juese[i].tili_max
+			for j = 1,#char_juese_jineng[char_juese[i].name][4] do
+				if char_juese_jineng[char_juese[i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[i].name][4][j] == "反间" or char_juese_jineng[char_juese[i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[i].name][4][j] == "制衡" or char_juese_jineng[char_juese[i].name][4][j] == "结姻" or char_juese_jineng[char_juese[i].name][4][j] == "天义"  or char_juese_jineng[char_juese[i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[i].name][4][j] == "离间" or char_juese_jineng[char_juese[i].name][4][j] == "青囊" then
+					char_juese[i].skill[char_juese_jineng[char_juese[i].name][4][j]] = 1
+				else
+					char_juese[i].skill[char_juese_jineng[char_juese[i].name][4][j]] = "available"
+				end
+				table.insert(char_juese[i].skillname,char_juese_jineng[char_juese[i].name][4][j])
+			end
 		    msg = {"玩家", i, "(主公)选择", char_juese[i].name}
 	        push_message(table.concat(msg))
 			msg = nil; collectgarbage()
@@ -271,8 +302,21 @@ function _wujiang_sub2(va_list)
 		char_juese[i].name = char_wujiang_f[t]
 		char_juese[i].tili_max = char_juese_jineng[char_wujiang_f[t]][1]
 		table.remove(char_wujiang_f, t)
+		char_juese[i].shili = char_juese_jineng[char_wujiang_f[t]][2]
+		char_juese[i].xingbie = char_juese_jineng[char_wujiang_f[t]][5]
 		char_juese[i].tili = char_juese[i].tili_max
 		--char_juese[i].tili = 1
+		for j = 1,#char_juese_jineng[char_juese[i].name][4] do
+			if char_juese_jineng[char_juese[i].name][4][j] == "激将" or char_juese_jineng[char_juese[i].name][4][j] == "护驾" or char_juese_jineng[char_juese[i].name][4][j] == "救援" or char_juese_jineng[char_juese[i].name][4][j] == "黄天" or char_juese_jineng[char_juese[i].name][4][j] == "血裔" or char_juese_jineng[char_juese[i].name][4][j] == "颂威" or char_juese_jineng[char_juese[i].name][4][j] == "暴虐" or char_juese_jineng[char_juese[i].name][4][j] == "若愚" or char_juese_jineng[char_juese[i].name][4][j] == "制霸" then
+				
+			elseif char_juese_jineng[char_juese[i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[i].name][4][j] == "反间" or char_juese_jineng[char_juese[i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[i].name][4][j] == "制衡" or char_juese_jineng[char_juese[i].name][4][j] == "结姻" or char_juese_jineng[char_juese[i].name][4][j] == "天义"  or char_juese_jineng[char_juese[i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[i].name][4][j] == "离间" or char_juese_jineng[char_juese[i].name][4][j] == "青囊" then
+				char_juese[i].skill[char_juese_jineng[char_juese[i].name][4][j]] = 1
+				table.insert(char_juese[i].skillname,char_juese_jineng[char_juese[i].name][4][j])
+			else
+				char_juese[i].skill[char_juese_jineng[char_juese[i].name][4][j]] = "available"
+				table.insert(char_juese[i].skillname,char_juese_jineng[char_juese[i].name][4][j])
+			end
+		end
 		msg = {"玩家", i, "选择", char_juese[i].name}
 	    push_message(table.concat(msg))
 		msg = nil; collectgarbage()
@@ -330,7 +374,7 @@ function char_calc_distance(_ID_s, _ID_d)
 	if #char_juese[_ID_d].fangma ~= 0 then
 	    dist = dist + 1
 	end
-	if (char_juese[_ID_d].name == "神曹操") then
+	if (char_juese[_ID_d].skill["飞影"] == "available") then
 		dist = dist + 1
 	end	
 	--  攻击马计算距离时，减1  --
@@ -339,7 +383,7 @@ function char_calc_distance(_ID_s, _ID_d)
 	end
 	
 	--  马超、庞德拥有马术，距离减1  --
-	if (char_juese[_ID_s].name == "马超" or char_juese[_ID_s].name == "庞德") and dist > 1 then
+	if char_juese[_ID_s].skill["马术"] == "available" and dist > 1 then
 		dist = dist - 1
 	end
 	
@@ -466,29 +510,29 @@ function char_skills_sellblood(va_list)
 	tili = char_juese[id].tili - _deduct_count(va_list)
 
 	-- 张春华触发绝情 --
-	if laiyuan~=nil then
-		if char_juese[laiyuan].name == "张春华" then
-			add_funcptr(push_message,"张春华触发了武将技能 '绝情'")
+	--[[if laiyuan~=nil then
+		if char_juese[laiyuan].skill["绝情"] == "available" then
+			add_funcptr(push_message,char_juese[laiyuan].name.."触发了武将技能 '绝情'")
 		end
-	end
+	end]]--
 
 	--  郭嘉发动遗计  --
-	if char_juese[id].name == "郭嘉" and cansellblood == true then
+	if char_juese[id].skill["遗计"] == "available" and cansellblood == true then
 		skills_yiji(id, _deduct_count(va_list))
 	end
 
 	--  司马懿发动反馈  --
-	if char_juese[id].name == "司马懿" and cansellblood == true then
+	if char_juese[id].skill["反馈"] == "available" and cansellblood == true then
 		skills_fankui(id, laiyuan)
 	end
 	
 	-- 神曹操发动归心 --
-	if char_juese[id].name == "神曹操" and cansellblood == true then
+	if char_juese[id].skill["归心"] == "available" and cansellblood == true then
 		skills_guixin(id)
 	end
 	
 	--  夏侯惇发动刚烈  --
-	if char_juese[id].name == "夏侯惇" and AOE ~= true and cansellblood == true then
+	if char_juese[id].skill["刚烈"] == "available" and AOE ~= true and cansellblood == true then
 		if hengzhi == true then
 			lianhuan_va = va_list
 		else
@@ -498,14 +542,12 @@ function char_skills_sellblood(va_list)
 		return
 	end
 	
-	-- Bug? 暂时屏蔽
-	--[[
+
 	-- 张春华在手牌不足时摸牌 --
-	if char_juese[id].name == "张春华" and #char_juese[id].shoupai < char_juese[id].tili_max-char_juese[id] then
-		push_message("张春华发动了武将技能 '伤逝'")
-		card_fenfa(id, char_juese[id].tili_max-char_juese[id].tili-#char_juese[id].shoupai, true)
+	if char_juese[id].skill["伤逝"] == "available" and table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max-char_juese[id].tili then
+		push_message(char_juese[id].name.."发动了武将技能 '伤逝'")
+		card_fenfa(id, char_juese[id].tili_max-table.maxn(char_juese[id].tili-#char_juese[id].shoupai), true)
 	end
-	--]]
 end
 
 --  体力扣减结算  --
@@ -526,14 +568,15 @@ function char_tili_deduct(va_list, _p)
 			cansellblood = false
 		end
 		if laiyuan~=nil then
-			if char_juese[laiyuan].name == "张春华" then
+			if char_juese[laiyuan].skill["绝情"] == "available" and shuxing~="流失" then
+				add_funcptr(push_message,char_juese[laiyuan].name.."触发了武将技能 '绝情'")
 				cansellblood,shuxing = false,"流失"
 			end
 		end
 		
 		if laiyuan ~= nil then
 			--  魏延对距离1以内的玩家造成伤害，回复1点体力  --
-			if char_juese[laiyuan].name == "魏延" and char_calc_distance(laiyuan, id) <= 1 and char_juese[laiyuan].tili < char_juese[laiyuan].tili_max then
+			if char_juese[laiyuan].skill["狂骨"] == "available" and char_calc_distance(laiyuan, id) <= 1 and char_juese[laiyuan].tili < char_juese[laiyuan].tili_max then
 				skills_kuanggu(laiyuan)
 			end
 		end
@@ -551,7 +594,7 @@ function char_tili_deduct(va_list, _p)
 			
 			--  若最终死亡，进行胜利条件判断  --
 			if tili <= 0 then
-				if shuxing~="流失" then
+				if shuxing=="流失" then
 					if char_judge_shengli(id, nil) then
 						return
 					end
@@ -730,7 +773,7 @@ function char_binsi(id, tili, p)
 					n = card_chazhao(id, "桃")
 					
 					--  华佗可用红色手牌代替桃  --
-					if n < 0 and char_juese[id].name == "华佗" then
+					if n < 0 and char_juese[id].skill["急救"] == "available" then
 						n = skills_jijiu_chazhao(id)
 					end
 					
@@ -777,7 +820,7 @@ function char_binsi(id, tili, p)
 	--  如果有曹丕，发动行殇  --
 	local xingshang_id = 0
 	for i = 1, 5 do
-		if i ~= id and char_juese[i].name == "曹丕" and char_juese[i].siwang == false then
+		if i ~= id and char_juese[i].skill["行殇"] == "available" and char_juese[i].siwang == false then
 			xingshang_id = i
 			break
 		end
@@ -785,7 +828,7 @@ function char_binsi(id, tili, p)
 	--  如果有关索，发动征南  --
 	local zhengnan_id = 0
 	for i = 1, 5 do
-		if i ~= id and char_juese[i].name == "关索" and char_juese[i].siwang == false then
+		if i ~= id and char_juese[i].skill["征南"] == "available" and char_juese[i].siwang == false then
 			zhengnan_id = i
 			break
 		end

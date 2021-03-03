@@ -29,8 +29,22 @@ function draw_opponent(gc)
 		gc:fillRect(x1, y1, 88, 57)    -- (5, 5, 88, 57)
 		
 		-- 体力显示区域填色
-	    gc:setColorRGB(153, 153, 153)
-	    gc:fillRect(x1 + 76, y1 + 1, 12, 56)    -- (81, 6, 12, 56)
+	    if char_juese[id].shili == "蜀" then
+			gc:setColorRGB(255, 140, 0)
+		elseif char_juese[id].shili == "魏" then
+			gc:setColorRGB(65, 105, 225)
+		elseif char_juese[id].shili == "吴" then
+			gc:setColorRGB(50, 205, 50)
+		elseif char_juese[id].shili == "群" then
+			gc:setColorRGB(211, 211, 211)
+		elseif char_juese[id].shili == "晋" then
+			gc:setColorRGB(238, 130, 238)
+		elseif char_juese[id].shili == "神" then
+			gc:setColorRGB(255, 215, 0)
+		else
+			gc:setColorRGB(153, 153, 153)
+	    end
+		gc:fillRect(x1 + 76, y1 + 1, 12, 56)    -- (81, 6, 12, 56)
 		
 		if char_juese[id].siwang == false then
 			gc:setColorRGB(0, 0, 0)
@@ -206,7 +220,7 @@ function draw_opponent(gc)
 				gc:setColorRGB(0, 0, 0)
 				gc:fillRect(x1, y1 + 19, 76, 38)
 				gc:setColorRGB(255, 255, 255)
-				if char_juese[char_current_i].name == "黄忠" and (card == "杀" or card == "火杀" or card == "雷杀") then
+				if char_juese[char_current_i].skill["烈弓"]=="available" and (card == "杀" or card == "火杀" or card == "雷杀") then
 					--  黄忠：显示 "可烈弓" 状态  --
 					if skills_judge_liegong(char_current_i, id) then
 						msg = {"距离 ", char_calc_distance(char_current_i, id)}
@@ -271,7 +285,21 @@ function draw_self(gc)
 		gc:setColorRGB(229, 195, 147)
 	end    -- 信息区域填色
 	gc:fillRect(224, 151, 88, 57)
-	gc:setColorRGB(153, 153, 153)    -- 体力显示区域填色
+	if char_juese[char_current_i].shili == "蜀" then
+		gc:setColorRGB(255, 140, 0)
+	elseif char_juese[char_current_i].shili == "魏" then
+		gc:setColorRGB(65, 105, 225)
+	elseif char_juese[char_current_i].shili == "吴" then
+		gc:setColorRGB(50, 205, 50)
+	elseif char_juese[char_current_i].shili == "群" then
+		gc:setColorRGB(211, 211, 211)
+	elseif char_juese[char_current_i].shili == "晋" then
+		gc:setColorRGB(238, 130, 238)
+	elseif char_juese[char_current_i].shili == "神" then
+		gc:setColorRGB(255, 215, 0)
+	else
+		gc:setColorRGB(153, 153, 153)
+	end    -- 体力显示区域填色
 	gc:fillRect(224 + 76, 152, 12, 56)
 	gc:setColorRGB(0, 0, 0)
 	gc:drawRect(224, 151, 88, 57)    -- 信息区域
@@ -333,11 +361,11 @@ function draw_self(gc)
 	
 	-- 角色信息 & 技能 --
 	gc:drawString(char_juese[char_current_i].name, 224 + 3, 151 + 20)
-	for i = 1, #char_juese_jineng[char_juese[char_current_i].name][4] do
+	for i = 1, #char_juese[char_current_i].skillname do
 	    if i < 3 then
-	        gc:drawString(char_juese_jineng[char_juese[char_current_i].name][4][i], 227 + 38 * (i - 1), 171 + 19)
+	        gc:drawString(char_juese[char_current_i].skillname[i], 227 + 38 * (i - 1), 171 + 19)
 		else
-	        gc:drawString(char_juese_jineng[char_juese[char_current_i].name][4][i], 227 + 38 * (i - 3), 171 + 38)
+	        gc:drawString(char_juese[char_current_i].skillname[i], 227 + 38 * (i - 3), 171 + 38)
 		end
 	end
 	

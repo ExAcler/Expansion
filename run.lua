@@ -220,15 +220,15 @@ function gamerun_huihe_start()
 	--  摸牌阶段  --
 	--  周瑜英姿，多摸一张牌  --
 	if char_juese[char_current_i].name == "周瑜" then
-		add_funcptr(skills_yingzi)
+		add_funcptr(skills_yingzi,char_current_i)
 	end
 	if char_juese[char_current_i].name == "许褚" then
-		add_funcptr(skills_luoyi_enter)
+		add_funcptr(skills_luoyi_enter,char_current_i)
 		return
 	end
 	if game_skip_mopai == false then
 		if char_juese[char_current_i].name == "张辽" then
-			add_funcptr(skills_tuxi_enter)
+			add_funcptr(skills_tuxi_enter,char_current_i)
 			return
 		end
 	end
@@ -362,10 +362,10 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			table.remove(char_juese[char_current_i].panding, id)
 		end
 		
-		if char_juese[char_current_i].name ~= "郭嘉" then
+		if char_juese[char_current_i].skill["天妒"] == "available" then
 			card_add_qipai(card_panding_card)
 		else
-			push_message("郭嘉发动了武将技能 '天妒'")
+			push_message(char_juese[char_current_i].name.."发动了武将技能 '天妒'")
 			skills_tiandu_add({char_current_i, card_panding_card})
 		end
 	end
@@ -423,21 +423,21 @@ function gamerun_huihe_jieshu(qipai)
         add_funcptr(push_message, table.concat(msg))
 		
 		if skills_judge_keji(char_current_i) and #char_juese[char_current_i].shoupai > char_juese[char_current_i].tili_max then
-			add_funcptr(push_message, "吕蒙发动了武将技能 '克己'")
+			add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '克己'")
 		end
 	end
 	
 	if skills_judge_xueyi(char_current_i) > 0 and #char_juese[char_current_i].shoupai > char_juese[char_current_i].tili_max then
-		add_funcptr(push_message, "袁绍发动了武将技能 '血裔'")
+		add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '血裔'")
 	end
 	
 	--  回合结束  --
 	
 	--  貂蝉闭月：可在回合结束阶段摸一张牌  --
-	if char_juese[char_current_i].name == "貂蝉" then
+	if char_juese[char_current_i].skill["闭月"] == "available" then
 		skills_biyue(char_current_i)
 	end
-	if char_juese[char_current_i].name == "董卓" then
+	if char_juese[char_current_i].skill["崩坏"] == "available" then
 		if skills_judge_benghuai(char_current_i) then
 			add_funcptr(skills_benghuai_enter)
 			return
@@ -448,7 +448,13 @@ function gamerun_huihe_jieshu(qipai)
 	char_rende_given = 0
 	last_OK = false
 	char_luoyi = false
-	
+	for i = 1,5 do
+		for k,v in pairs(char_juese[i].skill) do
+			if v=="locked" then
+				char_juese[i].skill[k]=1
+			end
+		end
+	end
 	msg = {char_juese[char_current_i].name, "回合结束"}
     add_funcptr(push_message, table.concat(msg))
 	
@@ -688,11 +694,11 @@ function on.enterKey()
 	if string.find(gamerun_status, "无懈") then
 		if table.getn2(card_selected) ~= 0 then
 			card = char_juese[char_current_i].shoupai[card_highlighted]
-			if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
-				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
+			if string.find(card[1], "无懈可击") or char_juese[char_current_i].skill["看破"] == "available" then
 				card_selected = {}
 				set_hints("")
 				card_highlighted = 1
+				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 			end
 		end
 		return
@@ -1328,14 +1334,14 @@ function on.charIn(char)
 	if char_juese[char_current_i].name == "" then return end
 	if gamerun_huihe ~= "出牌" then return end
 	
-	skills = char_juese_jineng[char_juese[char_current_i].name][4]
+	skills = char_juese[char_current_i].skillname
 	
 	if char == '1' then
 		if gamerun_skill_selected == 1 then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[1] ~= nil then 
+			if skills[1] ~= nil and char_juese[char_current_i].skill[skills[1]]~="locked" then 
 				if skills_func[skills[1]] ~= nil then
 					if skills_func[skills[1]]() then
 						gamerun_skill_selected = 1
@@ -1350,7 +1356,7 @@ function on.charIn(char)
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[2] ~= nil then
+			if skills[2] ~= nil and char_juese[char_current_i].skill[skills[2]]~="locked" then
 				if skills_func[skills[2]] ~= nil then
 					if skills_func[skills[2]]() then
 						gamerun_skill_selected = 2
@@ -1365,7 +1371,7 @@ function on.charIn(char)
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[3] ~= nil then
+			if skills[3] ~= nil and char_juese[char_current_i].skill[skills[3]]~="locked" then
 				if skills_func[skills[3]] ~= nil then
 					if skills_func[skills[3]]() then
 						gamerun_skill_selected = 3
@@ -1380,7 +1386,7 @@ function on.charIn(char)
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[4] ~= nil then
+			if skills[4] ~= nil and char_juese[char_current_i].skill[skills[4]]~="locked" then
 				if skills_func[skills[4]] ~= nil then
 					if skills_func[skills[4]]() then
 						gamerun_skill_selected = 4
