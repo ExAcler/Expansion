@@ -52,6 +52,8 @@ wuxie_queue_xiangying = {}	-- 无懈可击轮到己方响应时，记录原有�
 wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数队列的执行位置（兼鬼才、鬼道）
 wuxie_va = nil		-- 无懈可击轮到己方响应时，原有锦囊来源目标的va_list存储
 wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能被其他无懈可击抵消导致失效）
+
+skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 end
 
 --  定义变量  --
@@ -170,6 +172,7 @@ end
 --  向游戏记录中插入一条消息  --
 function push_message(message)
     table.insert(message_list, message)
+	print(message)
 	draw_messages_r()
 	platform.window:invalidate()
 end
@@ -455,6 +458,7 @@ function gamerun_huihe_jieshu(qipai)
 	char_rende_given = 0
 	last_OK = false
 	char_luoyi = false
+	skill_disrow = 0
 	for i = 1,5 do
 		for k,v in pairs(char_juese[i].skill) do
 			if v=="locked" then
@@ -666,7 +670,8 @@ function on.timer()
 		if funcptr_i == 0 then
 			funcptr_i = 1
 		end
-
+		for i = 1,#funcptr_queue do
+		end
 		if funcptr_i <= #funcptr_queue then
 			if funcptr_queue[funcptr_i].func ~= nil then
 				funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
@@ -1247,6 +1252,24 @@ function on.arrowKey(key)
 			end
 		end
 	end
+	if key == "up" then
+		if string.find(gamerun_status, "选项选择") then
+		    if gamerun_guankan_selected > 1 then
+				gamerun_guankan_selected = gamerun_guankan_selected - 1
+			end
+		elseif #char_juese[char_current_i].skillname > 4 and skill_disrow > 0 then
+			skill_disrow = skill_disrow - 1
+		end
+	end
+	if key == "down" then
+		if string.find(gamerun_status, "选项选择") then
+		    if gamerun_guankan_selected < #choose_option then
+				gamerun_guankan_selected = gamerun_guankan_selected - 1
+			end
+		elseif #char_juese[char_current_i].skillname > 4 and math.ceil(#char_juese[char_current_i].skillname / 2) - 2 > skill_disrow then
+			skill_disrow = skill_disrow + 1
+		end
+	end
 	platform.window:invalidate()
 end
 
@@ -1386,14 +1409,14 @@ function on.charIn(char)
 	skills = char_juese[char_current_i].skillname
 	
 	if char == '1' then
-		if gamerun_skill_selected == 1 then
+		if gamerun_skill_selected == 1 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[1] ~= nil and char_juese[char_current_i].skill[skills[1]]~="locked" then 
-				if skills_func[skills[1]] ~= nil then
-					if skills_func[skills[1]]() then
-						gamerun_skill_selected = 1
+			if skills[1 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[1 + 2 * skill_disrow]]~="locked" then 
+				if skills_func[skills[1 + 2 * skill_disrow]] ~= nil then
+					if skills_func[skills[1 + 2 * skill_disrow]]() then
+						gamerun_skill_selected = 1 + 2 * skill_disrow
 					end
 				end
 			end
@@ -1401,14 +1424,14 @@ function on.charIn(char)
 	end
 	
 	if char == '2' then
-		if gamerun_skill_selected == 2 then
+		if gamerun_skill_selected == 2 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[2] ~= nil and char_juese[char_current_i].skill[skills[2]]~="locked" then
-				if skills_func[skills[2]] ~= nil then
-					if skills_func[skills[2]]() then
-						gamerun_skill_selected = 2
+			if skills[2 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[2 + 2 * skill_disrow]]~="locked" then
+				if skills_func[skills[2 + 2 * skill_disrow]] ~= nil then
+					if skills_func[skills[2 + 2 * skill_disrow]]() then
+						gamerun_skill_selected = 2 + 2 * skill_disrow
 					end
 				end
 			end
@@ -1416,14 +1439,14 @@ function on.charIn(char)
 	end
 	
 	if char == '3' then
-		if gamerun_skill_selected == 3 then
+		if gamerun_skill_selected == 3 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[3] ~= nil and char_juese[char_current_i].skill[skills[3]]~="locked" then
-				if skills_func[skills[3]] ~= nil then
-					if skills_func[skills[3]]() then
-						gamerun_skill_selected = 3
+			if skills[3 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[3 + 2 * skill_disrow]]~="locked" then
+				if skills_func[skills[3 + 2 * skill_disrow]] ~= nil then
+					if skills_func[skills[3 + 2 * skill_disrow]]() then
+						gamerun_skill_selected = 3 + 2 * skill_disrow
 					end
 				end
 			end
@@ -1431,14 +1454,14 @@ function on.charIn(char)
 	end
 	
 	if char == '4' then
-		if gamerun_skill_selected == 4 then
+		if gamerun_skill_selected == 4 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[4] ~= nil and char_juese[char_current_i].skill[skills[4]]~="locked" then
-				if skills_func[skills[4]] ~= nil then
-					if skills_func[skills[4]]() then
-						gamerun_skill_selected = 4
+			if skills[4 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[4 + 2 * skill_disrow]]~="locked" then
+				if skills_func[skills[4 + 2 * skill_disrow]] ~= nil then
+					if skills_func[skills[4 + 2 * skill_disrow]]() then
+						gamerun_skill_selected = 4 + 2 * skill_disrow
 					end
 				end
 			end

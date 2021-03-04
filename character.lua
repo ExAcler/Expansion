@@ -58,7 +58,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["蔡文姬"] = {3, "群", false, {"悲歌", "断肠"}, "女", {"","锁定"}}, 
     ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}}, 		
 	["神曹操"] = {3,"神",false,{"归心","飞影"},"男", {"","锁定"}},
-	["孙笑川"] = {4,"神",false,{"苦肉","鬼才","伤逝","乱击"},"男", {"","锁定","",""}},
+	["孙笑川"] = {4,"神",false,{"苦肉","绝情","伤逝","乱击","制衡","结姻","强袭","英姿","涅槃"},"男", {"","锁定","","","","","","","限定"}},
 }
 
 -- 武器攻击范围 --
@@ -526,6 +526,12 @@ function char_skills_sellblood(va_list)
 		skills_fankui(id, laiyuan)
 	end
 	
+	--  曹丕发动放逐  --
+	if char_juese[id].skill["放逐"] == "available" and cansellblood == true then
+		skills_fangzhu(id, laiyuan)
+	end
+	
+	
 	-- 神曹操发动归心 --
 	if char_juese[id].skill["归心"] == "available" and cansellblood == true then
 		skills_guixin(id)
@@ -546,7 +552,7 @@ function char_skills_sellblood(va_list)
 	-- 张春华在手牌不足时摸牌 --
 	if char_juese[id].skill["伤逝"] == "available" and table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max-char_juese[id].tili then
 		push_message(char_juese[id].name.."发动了武将技能 '伤逝'")
-		card_fenfa(id, char_juese[id].tili_max-table.maxn(char_juese[id].tili-#char_juese[id].shoupai), true)
+		card_fenfa({id, char_juese[id].tili_max-char_juese[id].tili-table.maxn(#char_juese[id].shoupai), true})
 	end
 end
 
@@ -589,8 +595,13 @@ function char_tili_deduct(va_list, is_insert)
 		end
 		
 		if tili <= 0 then
-			--  进入濒死状态  --
-			tili = char_binsi(id, tili)
+			if char_juese[id].skill["涅槃"] == 1 then
+				_niepan_sub(id)
+				tili = 3
+			else
+				--  进入濒死状态  --
+				tili = char_binsi(id, tili)
+			end
 			
 			--  若最终死亡，进行胜利条件判断  --
 			if tili <= 0 then
@@ -634,11 +645,17 @@ function char_tili_deduct(va_list, is_insert)
 	else
 		local ins_pos = _deduct_find_cutin_position()
 
-		--  插入函数队列中间  --
+		--  插入函数队列中间（闪电伤害）  --
 		add_funcptr(_char_tili_deduct, va_list, ins_pos)
 		if tili <= 0 then
-			local p
-			tili, p = char_binsi(id, tili, ins_pos + 1)
+			--  暂时禁用，这个有问题，以后修复
+			--if char_juese[id].skill["涅槃"] == 1 then
+			--	_niepan_sub(id)
+			--	tili = 3
+			--else
+				local p
+				tili, p = char_binsi(id, tili, ins_pos + 1)
+			--end
 			
 			if tili <= 0 then
 				char_judge_shengli(id, laiyuan, p)
@@ -753,7 +770,6 @@ function char_binsi(id, tili, p)
 	else
 		add_funcptr(push_message, table.concat(msg), p) -- p + 1
 	end
-	
 	--  求桃救命  --
 	local i, cur, msg_i
 	local k = tili
@@ -765,11 +781,15 @@ function char_binsi(id, tili, p)
 	else
 		msg_i = 0
 	end
+	if char_juese[char_current_i].skill["完杀"]== "available" then
+		msg = {char_juese[char_current_i].name, "触发了技能'完杀'"}
+		add_funcptr(push_message, table.concat(msg))
+	end
 	for i = 1, 4 do
 		if char_juese[cur].siwang == false then
 			msg_i = msg_i + 1
 			
-			if cur ~= id then
+			if cur ~= id and char_juese[char_current_i].skill["完杀"]~= "available" then
 				--  他人则放弃 (临时)  --
 				msg = {char_juese[cur].name, "放弃"}
 				if p == nil then
@@ -777,7 +797,7 @@ function char_binsi(id, tili, p)
 				else
 					add_funcptr(push_message, table.concat(msg), msg_i)  -- p + 2
 				end
-			else
+			elseif cur == id then
 				--  自己则喝酒/吃桃  --
 				local j = true
 				local n
@@ -835,14 +855,6 @@ function char_binsi(id, tili, p)
 	for i = 1, 5 do
 		if i ~= id and char_juese[i].skill["行殇"] == "available" and char_juese[i].siwang == false then
 			xingshang_id = i
-			break
-		end
-	end
-	--  如果有关索，发动征南  --
-	local zhengnan_id = 0
-	for i = 1, 5 do
-		if i ~= id and char_juese[i].skill["征南"] == "available" and char_juese[i].siwang == false then
-			zhengnan_id = i
 			break
 		end
 	end

@@ -344,28 +344,30 @@ function draw_self(gc)
 	if char_juese[char_current_i].name == "" then return end
 	--  选取的技能高亮显示  --
 	local s = gamerun_skill_selected
-	gc:setColorRGB(153, 217, 234)
-	if s == 1 then
-		gc:fillRect(225, 151 + 20, 37, 18)
-	end
-	if s == 2 then
-		gc:fillRect(225 + 38, 151 + 20, 37, 18)
-	end
-	if s == 3 then
-		gc:fillRect(225, 170 + 20, 37, 18)
-	end
-	if s == 4 then
-		gc:fillRect(225 + 38, 170 + 20, 37, 18)
+	if s ~= nil then
+		gc:setColorRGB(153, 217, 234)
+		if s - 2 * skill_disrow == 1 then
+			gc:fillRect(225, 151 + 20, 37, 18)
+		end
+		if s - 2 * skill_disrow == 2 then
+			gc:fillRect(225 + 38, 151 + 20, 37, 18)
+		end
+		if s - 2 * skill_disrow == 3 then
+			gc:fillRect(225, 170 + 20, 37, 18)
+		end
+		if s - 2 * skill_disrow == 4 then
+			gc:fillRect(225 + 38, 170 + 20, 37, 18)
+		end
 	end
 	gc:setColorRGB(0, 0, 0)
 	
 	-- 角色信息 & 技能 --
 	gc:drawString(char_juese[char_current_i].name, 224 + 3, 151 + 20)
-	for i = 1, #char_juese[char_current_i].skillname do
+	for i = 1, math.min(#char_juese[char_current_i].skillname - 2 * skill_disrow,4) do
 	    if i < 3 then
-	        gc:drawString(char_juese[char_current_i].skillname[i], 227 + 38 * (i - 1), 171 + 19)
+	        gc:drawString(char_juese[char_current_i].skillname[i + 2 * skill_disrow], 227 + 38 * (i - 1), 171 + 19)
 		else
-	        gc:drawString(char_juese[char_current_i].skillname[i], 227 + 38 * (i - 3), 171 + 38)
+	        gc:drawString(char_juese[char_current_i].skillname[i + 2 * skill_disrow], 227 + 38 * (i - 3), 171 + 38)
 		end
 	end
 	
@@ -558,6 +560,18 @@ function draw_others(gc)
 		gc:setPen("medium")
 	    gc:setColorRGB(255, 0, 0)
 	    gc:drawRect(83 + 18 * gamerun_guankan_selected, 117 - 10 - 27, 41, 57)
+	elseif string.find(gamerun_status, "选项选择") then
+		gc:setColorRGB(255, 255, 255)
+		gc:fillRect(50, 15, 220, 190)
+        gc:setColorRGB(0, 0, 0)
+        gc:drawRect(50, 15, 220, 190)
+		gc:drawString(choose_name, 130, 45)
+		for i = 1,#choose_option do
+	        gc:drawString(i.."."..choose_option[i], 87 , 139 - 10 - 27 + 30 * (i - 1))
+		end
+		gc:setPen("medium")
+	    gc:setColorRGB(255, 0, 0)
+	    gc:drawRect(87, 137 - 10 - 27 + 30 * (i - 1), gc:getStringWidth(gamerun_guankan_selected.."."..choose_option[i])+4, gc:getStringHeight(gamerun_guankan_selected.."."..choose_option[i])+4)
 	end
 end
 
