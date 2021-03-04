@@ -66,64 +66,64 @@ cards_img_str = {
 }
 -- 各角色拥有技能 --
 char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
-    ["刘备"] = {4, "蜀", true, {"仁德", "激将"}, "男"}, 
-	["关羽"] = {4, "蜀", false, {"武圣"}, "男"},
-    ["张飞"] = {4, "蜀", false, {"咆哮"}, "男"}, 
-	["赵云"] = {4, "蜀", false, {"龙胆"}, "男"}, 
-	["马超"] = {4, "蜀", false, {"马术", "铁骑"}, "男"}, 
-	["诸葛亮"] = {3, "蜀", false, {"观星", "空城"}, "男"}, 
-	["黄月英"] = {3, "蜀", false, {"集智", "奇才"}, "女"}, 
-	["黄忠"] = {4, "蜀", false, {"烈弓"}, "男"},
-    ["魏延"] = {4, "蜀", false, {"狂骨"}, "男"},
-    ["庞统"] = {3, "蜀", false, {"连环", "涅槃"}, "男"},  
-	["卧龙诸葛"] = {3, "蜀", false, {"火计", "看破", "八阵"}, "男"},  
-	["孟获"] = {4, "蜀", false, {"祸首", "再起"}, "男"},  
-	["祝融"] = {4, "蜀", false, {"巨象", "烈刃"}, "女"},  
-	["姜维"] = {4, "蜀", false, {"挑衅", "志继"}, "男"},  
-	["刘禅"] = {3, "蜀", true, {"享乐", "放权", "若愚"}, "男"}, 
-    ["关索"] = {4,"蜀",false,{"征南","撷芳"},"男"},	
-	["曹操"] = {4, "魏", true, {"奸雄", "护驾"}, "男"},  
-	["司马懿"] = {3, "魏", false, {"鬼才", "反馈"}, "男"},  
-	["郭嘉"] = {3, "魏", false, {"遗计", "天妒"}, "男"},
-    ["张辽"] = {4, "魏", false, {"突袭"}, "男"},
-    ["甄姬"] = {3, "魏", false, {"洛神", "倾国"}, "女"},
-    ["夏侯惇"] = {4, "魏", false, {"刚烈"}, "男"}, 
-    ["曹仁"] = {4, "魏", false, {"据守"}, "男"},
-    ["许褚"] = {4, "魏", false, {"裸衣"}, "男"}, 
-    ["夏侯渊"] = {4, "魏", false, {"神速"}, "男"},  
-    ["荀彧"] = {3, "魏", false, {"驱虎", "节命"}, "男"}, 
-    ["典韦"] = {4, "魏", false, {"强袭"}, "男"}, 
-    ["曹丕"] = {3, "魏", true, {"放逐", "行殇", "颂威"}, "男"},    
-    ["徐晃"] = {4, "魏", false, {"断粮"}, "男"}, 
-    ["邓艾"] = {4, "魏", false, {"屯田", "凿险"}, "男"}, 
-    ["张颌"] = {4, "魏", false, {"巧变"}, "男"}, 
-	["张春华"] = {3,"魏",false,{"绝情","伤逝"},"女"},
-    ["孙权"] = {4, "吴", true, {"制衡", "救援"}, "男"}, 
-    ["甘宁"] = {4, "吴", false, {"奇袭"}, "男"}, 
-    ["黄盖"] = {4, "吴", false, {"苦肉"}, "男"}, 
-    ["周瑜"] = {3, "吴", false, {"英姿", "反间"}, "男"}, 
-    ["陆逊"] = {3, "吴", false, {"谦逊", "连营"}, "男"}, 
-    ["大乔"] = {3, "吴", false, {"国色", "流离"}, "女"}, 
-    ["小乔"] = {3, "吴", false, {"天香", "红颜"}, "女"},
-	["吕蒙"] = {4, "吴", false, {"克己"}, "男"}, 
-    ["孙尚香"] = {3, "吴", false, {"结姻", "枭姬"}, "女"}, 
-    ["周泰"] = {4, "吴", false, {"不屈"}, "男"}, 
-    ["太史慈"] = {4, "吴", false, {"天义"}, "男"}, 
-    ["鲁肃"] = {3, "吴", false, {"好施", "缔盟"}, "男"}, 
-    ["孙坚"] = {4, "吴", false, {"英魂"}, "男"}, 
-    ["张昭张宏"] = {3, "吴", false, {"直谏", "固政"}, "男"}, 
-    ["孙策"] = {4, "吴", true, {"激昂", "魂姿", "制霸"}, "男"}, 
-    ["吕布"] = {4, "群", false, {"无双"}, "男"}, 
-    ["貂蝉"] = {3, "群", false, {"闭月", "离间"}, "女"}, 	
-	["华佗"] = {3, "群", false, {"急救", "青囊"}, "男"}, 
-	["张角"] = {3, "群", true, {"雷击", "鬼道", "黄天"}, "男"}, 
-    ["庞德"] = {4, "群", false, {"猛进", "马术"}, "男"}, 
-    ["袁绍"] = {4, "群", true, {"乱击", "血裔"}, "男"}, 
-    ["董卓"] = {8, "群", true, {"酒池", "肉林", "崩坏", "暴虐"}, "男"}, 
-    ["蔡文姬"] = {3, "群", false, {"悲歌", "断肠"}, "女"}, 
-    ["左慈"] = {3, "群", false, {"化身", "新生"}, "男"}, 		
-	["神曹操"] = {3,"神",false,{"归心","飞影"},"男"},
-	["孙笑川"] = {4,"神",false,{"苦肉","绝情","伤逝","乱击"},"男"},
+    ["刘备"] = {4, "蜀", true, {"仁德", "激将"}, "男", {"","主公"}}, 
+	["关羽"] = {4, "蜀", false, {"武圣"}, "男", {""}},
+    ["张飞"] = {4, "蜀", false, {"咆哮"}, "男", {"锁定"}}, 
+	["赵云"] = {4, "蜀", false, {"龙胆"}, "男", {""}}, 
+	["马超"] = {4, "蜀", false, {"马术", "铁骑"}, "男", {"锁定",""}}, 
+	["诸葛亮"] = {3, "蜀", false, {"观星", "空城"}, "男", {"","锁定"}}, 
+	["黄月英"] = {3, "蜀", false, {"集智", "奇才"}, "女", {"","锁定"}}, 
+	["黄忠"] = {4, "蜀", false, {"烈弓"}, "男", {"锁定"}},
+    ["魏延"] = {4, "蜀", false, {"狂骨"}, "男", {"锁定"}},
+    ["庞统"] = {3, "蜀", false, {"连环", "涅槃"}, "男", {"","限定"}},  
+	["卧龙诸葛"] = {3, "蜀", false, {"火计", "看破", "八阵"}, "男", {"","","锁定"}},  
+	["孟获"] = {4, "蜀", false, {"祸首", "再起"}, "男", {"锁定",""}},  
+	["祝融"] = {4, "蜀", false, {"巨象", "烈刃"}, "女", {"锁定",""}},  
+	["姜维"] = {4, "蜀", false, {"挑衅", "志继"}, "男", {"","觉醒"}},  
+	["刘禅"] = {3, "蜀", true, {"享乐", "放权", "若愚"}, "男", {"锁定","","主公"}}, 
+    ["关索"] = {4,"蜀",false,{"征南","撷芳"},"男", {"","锁定"}},	
+	["曹操"] = {4, "魏", true, {"奸雄", "护驾"}, "男", {"","主公"}},  
+	["司马懿"] = {3, "魏", false, {"鬼才", "反馈"}, "男", {"",""}},  
+	["郭嘉"] = {3, "魏", false, {"遗计", "天妒"}, "男", {"",""}},
+    ["张辽"] = {4, "魏", false, {"突袭"}, "男", {""}},
+    ["甄姬"] = {3, "魏", false, {"洛神", "倾国"}, "女", {"锁定",""}},
+    ["夏侯惇"] = {4, "魏", false, {"刚烈"}, "男", {""}}, 
+    ["曹仁"] = {4, "魏", false, {"据守"}, "男", {""}},
+    ["许褚"] = {4, "魏", false, {"裸衣"}, "男", {""}}, 
+    ["夏侯渊"] = {4, "魏", false, {"神速"}, "男", {""}},  
+    ["荀彧"] = {3, "魏", false, {"驱虎", "节命"}, "男", {"",""}}, 
+    ["典韦"] = {4, "魏", false, {"强袭"}, "男", {""}}, 
+    ["曹丕"] = {3, "魏", true, {"放逐", "行殇", "颂威"}, "男", {"","","主公"}},    
+    ["徐晃"] = {4, "魏", false, {"断粮"}, "男", {""}}, 
+    ["邓艾"] = {4, "魏", false, {"屯田", "凿险"}, "男", {"","觉醒"}}, 
+    ["张颌"] = {4, "魏", false, {"巧变"}, "男", {""}}, 
+	["张春华"] = {3,"魏",false,{"绝情","伤逝"},"女", {"锁定",""}},
+    ["孙权"] = {4, "吴", true, {"制衡", "救援"}, "男", {"","主公"}}, 
+    ["甘宁"] = {4, "吴", false, {"奇袭"}, "男", {""}}, 
+    ["黄盖"] = {4, "吴", false, {"苦肉"}, "男", {""}}, 
+    ["周瑜"] = {3, "吴", false, {"英姿", "反间"}, "男", {"",""}}, 
+    ["陆逊"] = {3, "吴", false, {"谦逊", "连营"}, "男", {"锁定",""}}, 
+    ["大乔"] = {3, "吴", false, {"国色", "流离"}, "女", {"",""}}, 
+    ["小乔"] = {3, "吴", false, {"天香", "红颜"}, "女", {"","锁定"}},
+	["吕蒙"] = {4, "吴", false, {"克己"}, "男", {""}}, 
+    ["孙尚香"] = {3, "吴", false, {"结姻", "枭姬"}, "女", {"",""}}, 
+    ["周泰"] = {4, "吴", false, {"不屈"}, "男", {""}}, 
+    ["太史慈"] = {4, "吴", false, {"天义"}, "男", {""}}, 
+    ["鲁肃"] = {3, "吴", false, {"好施", "缔盟"}, "男", {"",""}}, 
+    ["孙坚"] = {4, "吴", false, {"英魂"}, "男", {"",""}}, 
+    ["张昭张宏"] = {3, "吴", false, {"直谏", "固政"}, "男", {"",""}}, 
+    ["孙策"] = {4, "吴", true, {"激昂", "魂姿", "制霸"}, "男", {"","觉醒","主公"}}, 
+    ["吕布"] = {4, "群", false, {"无双"}, "男", {"锁定"}}, 
+    ["貂蝉"] = {3, "群", false, {"闭月", "离间"}, "女", {"",""}}, 	
+	["华佗"] = {3, "群", false, {"急救", "青囊"}, "男", {"",""}}, 
+	["张角"] = {3, "群", true, {"雷击", "鬼道", "黄天"}, "男", {"","","主公"}}, 
+    ["庞德"] = {4, "群", false, {"猛进", "马术"}, "男", {"","锁定"}}, 
+    ["袁绍"] = {4, "群", true, {"乱击", "血裔"}, "男", {"","主公"}}, 
+    ["董卓"] = {8, "群", true, {"酒池", "肉林", "崩坏", "暴虐"}, "男", {"","锁定","锁定","主公"}}, 
+    ["蔡文姬"] = {3, "群", false, {"悲歌", "断肠"}, "女", {"","锁定"}}, 
+    ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}}, 		
+	["神曹操"] = {3,"神",false,{"归心","飞影"},"男", {"","锁定"}},
+	["孙笑川"] = {4,"神",false,{"苦肉","绝情","伤逝","乱击","制衡","结姻","强袭","英姿","涅槃"},"男", {"","锁定","","","","","","","限定"}},
 }
 
 -- 武器攻击范围 --
@@ -151,6 +151,7 @@ char_juese = {
     {   
 	    name = "", 
 		shili = "",
+		xingbie = "",
 		shenfen = "", 
 		hengzhi = false, 
 		fanmian = false,
@@ -175,6 +176,7 @@ char_juese = {
 	{
 	    name = "",
 		shili = "",
+		xingbie = "",
 		shenfen = "",
 		hengzhi = false, 
 		fanmian = false,
@@ -199,6 +201,7 @@ char_juese = {
 	{
 	    name = "",
 		shili = "",
+		xingbie = "",
 		shenfen = "",
 		hengzhi = false,
 		fanmian = false,
@@ -223,6 +226,7 @@ char_juese = {
 	{
 	    name = "",
 		shili = "",
+		xingbie = "",
 		shenfen = "",
 		hengzhi = false, 
 		fanmian = false,
@@ -247,6 +251,7 @@ char_juese = {
 	{
 	    name = "",
 		shili = "",
+		xingbie = "",
 		shenfen = "",
 		hengzhi = false, 
 		fanmian = false,
@@ -331,6 +336,7 @@ function _wujiang_sub1()
 			char_juese[i].name = char_wujiang_zhugong[t]
 			char_juese[i].tili_max = char_juese_jineng[char_wujiang_zhugong[t]][1] + 1
 			char_juese[i].shili = char_juese_jineng[char_wujiang_zhugong[t]][2]
+			char_juese[i].xingbie = char_juese_jineng[char_wujiang_zhugong[t]][5]
 			table.remove(char_wujiang_f, t)
 			char_juese[i].tili = char_juese[i].tili_max
 			for j = 1,#char_juese_jineng[char_juese[i].name][4] do
@@ -362,6 +368,7 @@ function _wujiang_sub2(va_list)
 		char_juese[i].tili_max = char_juese_jineng[char_wujiang_f[t]][1]
 		table.remove(char_wujiang_f, t)
 		char_juese[i].shili = char_juese_jineng[char_wujiang_f[t]][2]
+		char_juese[i].xingbie = char_juese_jineng[char_wujiang_f[t]][5]
 		char_juese[i].tili = char_juese[i].tili_max
 		--char_juese[i].tili = 1
 		for j = 1,#char_juese_jineng[char_juese[i].name][4] do
@@ -584,6 +591,12 @@ function char_skills_sellblood(va_list)
 		skills_fankui(id, laiyuan)
 	end
 	
+	--  曹丕发动放逐  --
+	if char_juese[id].skill["放逐"] == "available" and cansellblood == true then
+		skills_fangzhu(id, laiyuan)
+	end
+	
+	
 	-- 神曹操发动归心 --
 	if char_juese[id].skill["归心"] == "available" and cansellblood == true then
 		skills_guixin(id)
@@ -604,7 +617,7 @@ function char_skills_sellblood(va_list)
 	-- 张春华在手牌不足时摸牌 --
 	if char_juese[id].skill["伤逝"] == "available" and table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max-char_juese[id].tili then
 		push_message(char_juese[id].name.."发动了武将技能 '伤逝'")
-		card_fenfa(id, char_juese[id].tili_max-table.maxn(char_juese[id].tili-#char_juese[id].shoupai), true)
+		card_fenfa({id, char_juese[id].tili_max-char_juese[id].tili-table.maxn(#char_juese[id].shoupai), true})
 	end
 end
 
@@ -647,8 +660,13 @@ function char_tili_deduct(va_list, _p)
 		end
 		
 		if tili <= 0 then
-			--  进入濒死状态  --
-			tili = char_binsi(id, tili)
+			if char_juese[id].skill["涅槃"] == 1 then
+				_niepan_sub(id)
+				tili = 3
+			else
+				--  进入濒死状态  --
+				tili = char_binsi(id, tili)
+			end
 			
 			--  若最终死亡，进行胜利条件判断  --
 			if tili <= 0 then
@@ -693,7 +711,12 @@ function char_tili_deduct(va_list, _p)
 		--  插入函数队列中间  --
 		add_funcptr(_char_tili_deduct, va_list, p)
 		if tili <= 0 then
-			tili, p = char_binsi(id, tili, p + 1)
+			if char_juese[id].skill["涅槃"] == 1 then
+				_niepan_sub(id)
+				tili = 3
+			else
+				tili, p = char_binsi(id, tili, p + 1)
+			end
 			
 			if tili <= 0 then
 				char_judge_shengli(id, laiyuan, p)
@@ -798,7 +821,6 @@ function char_binsi(id, tili, p)
 	else
 		add_funcptr(push_message, table.concat(msg), p) -- p + 1
 	end
-	
 	--  求桃救命  --
 	local i, cur, msg_i
 	local k = tili
@@ -810,11 +832,15 @@ function char_binsi(id, tili, p)
 	else
 		msg_i = 0
 	end
+	if char_juese[char_current_i].skill["完杀"]== "available" then
+		msg = {char_juese[char_current_i].name, "触发了技能'完杀'"}
+		add_funcptr(push_message, table.concat(msg))
+	end
 	for i = 1, 4 do
 		if char_juese[cur].siwang == false then
 			msg_i = msg_i + 1
 			
-			if cur ~= id then
+			if cur ~= id and char_juese[char_current_i].skill["完杀"]~= "available" then
 				--  他人则放弃 (临时)  --
 				msg = {char_juese[cur].name, "放弃"}
 				if p == nil then
@@ -822,7 +848,7 @@ function char_binsi(id, tili, p)
 				else
 					add_funcptr(push_message, table.concat(msg), msg_i)  -- p + 2
 				end
-			else
+			elseif cur == id then
 				--  自己则喝酒/吃桃  --
 				local j = true
 				local n
@@ -880,14 +906,6 @@ function char_binsi(id, tili, p)
 	for i = 1, 5 do
 		if i ~= id and char_juese[i].skill["行殇"] == "available" and char_juese[i].siwang == false then
 			xingshang_id = i
-			break
-		end
-	end
-	--  如果有关索，发动征南  --
-	local zhengnan_id = 0
-	for i = 1, 5 do
-		if i ~= id and char_juese[i].skill["征南"] == "available" and char_juese[i].siwang == false then
-			zhengnan_id = i
 			break
 		end
 	end
@@ -978,7 +996,7 @@ skills_func =
 --  黄月英：集智  --
 function skills_jizhi(ID_s)
 	push_message(char_juese[ID_s].name.."发动了武将技能 '集智'")
-	card_fenfa({ID_s, 1, true})
+	card_fenfa( {ID_s, 1, true})
 end
 
 --  魏延：狂骨  --
@@ -1183,6 +1201,68 @@ end
 function skills_jiang(ID)
 	add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '激昂'")
 	add_funcptr(card_fenfa, {ID, 1, true})
+end
+
+--  神曹操：归心 --
+function skills_guixin(ID)
+    add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '归心'")
+	for i = 1,5 do
+		if i ~= ID and char_juese[i].siwang == false then
+			--  简易AI  --
+			--  拿走诸葛连弩  --
+			if #char_juese[i].wuqi > 0 and char_juese[i].wuqi[1] == "诸葛连弩" then
+				add_funcptr(_guixin_exe_2, {ID, i})
+				--  拿走防具  --
+			else 
+				if #char_juese[i].fangju > 0 then
+					add_funcptr(_guixin_exe_2, {ID, i})
+				else
+					--  拿走手牌  --
+					if #char_juese[i].shoupai > 0 then
+						add_funcptr(_guixin_exe_1, {ID, i})
+					end
+				end
+			end
+		end
+	end
+	add_funcptr(push_message, char_juese[ID].name.."将武将牌翻面")
+	add_funcptr(char_fanmian, ID)
+end
+function _guixin_exe_1(va_list)    --  拿走手牌
+	local ID, i
+	ID = va_list[1]; i = va_list[2]
+
+	local t = math.random(#char_juese[i].shoupai)
+	push_message(table.concat({char_juese[ID].name.."获得", char_juese[i].name, "的一张手牌"}))
+	table.insert(char_juese[ID].shoupai, char_juese[i].shoupai[t])
+	card_remove({i, t})
+end
+function _guixin_exe_2(va_list)    --  拿走防具
+	local ID, i
+	ID = va_list[1]; i = va_list[2]
+
+	local card = char_juese[i].fangju
+	push_message(table.concat({char_juese[ID].name.."获得", char_juese[i].name, "的防具 '", card[2], card[3], "的", card[1], "'"}))
+	table.insert(char_juese[ID].shoupai, char_juese[i].fangju)
+	char_juese[i].fangju = {}
+end
+function _guixin_exe_2(va_list)    --  拿走武器
+	local ID, i
+	ID = va_list[1]; i = va_list[2]
+
+	local card = char_juese[i].wuqi
+	push_message(table.concat({char_juese[ID].name.."获得", char_juese[i].name, "的武器 '", card[2], card[3], "的", card[1], "'"}))
+	table.insert(char_juese[ID].shoupai, char_juese[i].wuqi)
+	char_juese[i].wuqi = {}
+end
+
+--  曹丕：放逐 --
+-- 暂时默认放逐伤害来源
+function skills_fangzhu(ID, laiyuan)
+	add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '放逐'")
+	add_funcptr(card_fenfa, {laiyuan, char_juese[ID].tili_max-char_juese[ID].tili, true})
+	add_funcptr(push_message, char_juese[laiyuan].name.."将武将牌翻面")
+	add_funcptr(char_fanmian, laiyuan)
 end
 
 --  司马懿：反馈  --
@@ -1732,7 +1812,7 @@ end
 
 --  孙尚香：结姻  --
 function skills_jieyin_enter()
-	if char_juese[char_current_i].tili == char_juese[char_current_i].tili_max then return false end
+	--if char_juese[char_current_i].tili == char_juese[char_current_i].tili_max then return false end
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 	
 	skills_enter("请选择两张牌", "请选择受伤男性", "结姻", "技能选择-多牌")
@@ -1782,7 +1862,9 @@ function skills_jieyin(ID_s, ID_mubiao)
 	end
 	
 	add_funcptr(_jieyin_sub1, {ID_s, h1, h2})
-	add_funcptr(_tao_sub, {ID_s, true})
+	if char_juese[ID_s].tili < char_juese[ID_s].tili_max then
+		add_funcptr(_tao_sub, {ID_s, true})
+	end
 	add_funcptr(_tao_sub, {ID_mubiao, false})
 	--add_funcptr(_skills_rst)
 	return true
@@ -2548,6 +2630,17 @@ function _dimeng_sub2()
 	card_highlighted = 1
 	set_hints("请您出牌")
 	gamerun_status = ""
+end
+
+function _niepan_sub(id)
+	msg = {char_juese[id].name, "发动了技能'涅槃'"}
+	push_message(table.concat(msg))
+	char_juese[id].skill["涅槃"] = "locked_whole_game"
+	card_qipai_all(id)
+	char_juese[id].hengzhi = false
+	char_juese[id].fanmian = false
+	card_fenfa({id, 3, true})
+	char_juese[id].tili = 3
 end
 function init_cards()
 -- 卡牌类型 --
@@ -3774,10 +3867,10 @@ function card_wuxie_query(card, ID_s, ID_mubiao)	--  无懈可击：从锦囊作
 			else
 				add_funcptr(card_wuxie_ai, {id, card, ID_s, ID_mubiao})
 			end
-
-			id = id + 1
-			if id > 5 then id = 1 end
 		end
+
+		id = id + 1
+		if id > 5 then id = 1 end
 	end
 
 	--  此时已经没有其他人再出无懈，进行原有锦囊的结算  --
@@ -3785,6 +3878,10 @@ function card_wuxie_query(card, ID_s, ID_mubiao)	--  无懈可击：从锦囊作
 end
 function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判断 
 	id = va_list[1]; card = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]
+
+	if char_juese[id].siwang == true then
+		return
+	end
 
 	n = card_chazhao(id, "无懈可击")
 	if n < 0 then
@@ -3829,8 +3926,10 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
 		timer.stop()
 		funcptr_queue = {}
-		funcptr_i = 0
+
+		add_funcptr(_wuxie_prepare_2)
 		card_wuxie_query(card_wx, id, ID_s)
+		funcptr_i = 0
 		timer.start(0.6)
 	else
 		msg = {char_juese[id].name, "放弃无懈"}
@@ -3871,8 +3970,10 @@ function _wuxie_zhudong_chu(card, i, va_list)	--  无懈可击：己方选择出
 	--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
 	timer.stop()
 	funcptr_queue = {}
-	funcptr_i = 0
+	
+	add_funcptr(_wuxie_prepare_2)
 	card_wuxie_query(card, char_current_i, ID_s)
+	funcptr_i = 0
 	timer.start(0.6)
 end
 function _wuxie_zhudong_fangqi()	--  无懈可击：己方放弃出无懈可击
@@ -3892,7 +3993,7 @@ function _wuxie_exe()
 	timer.stop()
 	funcptr_queue = {}
 
-	local items_to_remove, items_to_keep = {}, {}
+	local items_to_remove = {}
 	local current_query = true
 	for i = 1, #wuxie_queue_jinnang do
 		if wuxie_queue_jinnang[i].tag == "无懈轮询开始" then
@@ -3912,15 +4013,11 @@ function _wuxie_exe()
 			--  无懈可击有效，保留标记为有效结算的函数，以及下一次轮询之后的函数  --
 			if wuxie_queue_jinnang[i].tag ~= "无懈有效结算" or current_query == true then
 				table.insert(items_to_remove, i)
-			else
-				table.insert(items_to_keep, i)
 			end
 		else
 			--  无懈可击无效，保留标记为无效结算的函数，以及下一次轮询之后的函数  --
 			if wuxie_queue_jinnang[i].tag ~= "无懈无效结算" or current_query == true then
 				table.insert(items_to_remove, i)
-			else
-				table.insert(items_to_keep, i)
 			end
 		end
 	end
@@ -3936,7 +4033,7 @@ end
 
 --  使用桃  --
 function card_tao(ID_shoupai, ID_s, ID_mubiao, binsi, p)
-	if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max then
+	if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max and binsi == false then
 	    return false
 	end
 	if binsi == false then
@@ -4141,6 +4238,10 @@ function card_taoyuan(ID_shoupai, ID_s)
 	for i = 1, 5 do
 		if char_juese[id].siwang == false then
 			if char_juese[id].tili < char_juese[id].tili_max then
+				funcptr_add_tag = "无懈执行前"
+    			add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了桃园结义"})
+				funcptr_add_tag = nil
+
 				card_wuxie(card, ID_s, id, nil)
 
 				funcptr_add_tag = "无懈无效结算"
@@ -4675,6 +4776,10 @@ function _wugu_others_get_card_exe(card, ID_s)		--  五谷丰登：执行其他�
 			ID_mubiao = ID_s + counter
 		end
 		if char_juese[ID_mubiao].siwang == false then
+			funcptr_add_tag = "无懈执行前"
+    		add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[ID_mubiao].name, "使用了五谷丰登"})
+			funcptr_add_tag = nil
+
 			card_wuxie(card, ID_s, ID_mubiao, nil)
 
 			funcptr_add_tag = "无懈无效结算"
@@ -5792,6 +5897,8 @@ wuxie_queue_xiangying = {}	-- 无懈可击轮到己方响应时，记录原有�
 wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数队列的执行位置
 wuxie_va = nil		-- 无懈可击轮到己方响应时，原有锦囊来源目标的va_list存储
 wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能被其他无懈可击抵消导致失效）
+
+skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 end
 
 --  定义变量  --
@@ -5910,6 +6017,7 @@ end
 --  向游戏记录中插入一条消息  --
 function push_message(message)
     table.insert(message_list, message)
+	print(message)
 	draw_messages_r()
 	platform.window:invalidate()
 end
@@ -6102,7 +6210,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			table.remove(char_juese[char_current_i].panding, id)
 		end
 		
-		if char_juese[char_current_i].skill["天妒"] == "available" then
+		if char_juese[char_current_i].skill["天妒"] ~= "available" then
 			card_add_qipai(card_panding_card)
 		else
 			push_message(char_juese[char_current_i].name.."发动了武将技能 '天妒'")
@@ -6188,6 +6296,7 @@ function gamerun_huihe_jieshu(qipai)
 	char_rende_given = 0
 	last_OK = false
 	char_luoyi = false
+	skill_disrow = 0
 	for i = 1,5 do
 		for k,v in pairs(char_juese[i].skill) do
 			if v=="locked" then
@@ -6372,7 +6481,8 @@ function on.timer()
 		if funcptr_i == 0 then
 			funcptr_i = 1
 		end
-
+		for i = 1,#funcptr_queue do
+		end
 		if funcptr_i <= #funcptr_queue then
 			if funcptr_queue[funcptr_i].func ~= nil then
 				funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
@@ -6434,11 +6544,11 @@ function on.enterKey()
 	if string.find(gamerun_status, "无懈") then
 		if table.getn2(card_selected) ~= 0 then
 			card = char_juese[char_current_i].shoupai[card_highlighted]
-			if string.find(card[1], "无懈可击") or char_juese[char_current_i].skill["看破"] == "available" then
+			if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
+				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 				card_selected = {}
 				set_hints("")
 				card_highlighted = 1
-				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 			end
 		end
 		return
@@ -6938,6 +7048,24 @@ function on.arrowKey(key)
 			end
 		end
 	end
+	if key == "up" then
+		if string.find(gamerun_status, "选项选择") then
+		    if gamerun_guankan_selected > 1 then
+				gamerun_guankan_selected = gamerun_guankan_selected - 1
+			end
+		elseif #char_juese[char_current_i].skillname > 4 and skill_disrow > 0 then
+			skill_disrow = skill_disrow - 1
+		end
+	end
+	if key == "down" then
+		if string.find(gamerun_status, "选项选择") then
+		    if gamerun_guankan_selected < #choose_option then
+				gamerun_guankan_selected = gamerun_guankan_selected - 1
+			end
+		elseif #char_juese[char_current_i].skillname > 4 and math.ceil(#char_juese[char_current_i].skillname / 2) - 2 > skill_disrow then
+			skill_disrow = skill_disrow + 1
+		end
+	end
 	platform.window:invalidate()
 end
 
@@ -7077,14 +7205,14 @@ function on.charIn(char)
 	skills = char_juese[char_current_i].skillname
 	
 	if char == '1' then
-		if gamerun_skill_selected == 1 then
+		if gamerun_skill_selected == 1 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[1] ~= nil and char_juese[char_current_i].skill[skills[1]]~="locked" then 
-				if skills_func[skills[1]] ~= nil then
-					if skills_func[skills[1]]() then
-						gamerun_skill_selected = 1
+			if skills[1 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[1 + 2 * skill_disrow]]~="locked" then 
+				if skills_func[skills[1 + 2 * skill_disrow]] ~= nil then
+					if skills_func[skills[1 + 2 * skill_disrow]]() then
+						gamerun_skill_selected = 1 + 2 * skill_disrow
 					end
 				end
 			end
@@ -7092,14 +7220,14 @@ function on.charIn(char)
 	end
 	
 	if char == '2' then
-		if gamerun_skill_selected == 2 then
+		if gamerun_skill_selected == 2 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[2] ~= nil and char_juese[char_current_i].skill[skills[2]]~="locked" then
-				if skills_func[skills[2]] ~= nil then
-					if skills_func[skills[2]]() then
-						gamerun_skill_selected = 2
+			if skills[2 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[2 + 2 * skill_disrow]]~="locked" then
+				if skills_func[skills[2 + 2 * skill_disrow]] ~= nil then
+					if skills_func[skills[2 + 2 * skill_disrow]]() then
+						gamerun_skill_selected = 2 + 2 * skill_disrow
 					end
 				end
 			end
@@ -7107,14 +7235,14 @@ function on.charIn(char)
 	end
 	
 	if char == '3' then
-		if gamerun_skill_selected == 3 then
+		if gamerun_skill_selected == 3 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[3] ~= nil and char_juese[char_current_i].skill[skills[3]]~="locked" then
-				if skills_func[skills[3]] ~= nil then
-					if skills_func[skills[3]]() then
-						gamerun_skill_selected = 3
+			if skills[3 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[3 + 2 * skill_disrow]]~="locked" then
+				if skills_func[skills[3 + 2 * skill_disrow]] ~= nil then
+					if skills_func[skills[3 + 2 * skill_disrow]]() then
+						gamerun_skill_selected = 3 + 2 * skill_disrow
 					end
 				end
 			end
@@ -7122,14 +7250,14 @@ function on.charIn(char)
 	end
 	
 	if char == '4' then
-		if gamerun_skill_selected == 4 then
+		if gamerun_skill_selected == 4 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
 		else
-			if skills[4] ~= nil and char_juese[char_current_i].skill[skills[4]]~="locked" then
-				if skills_func[skills[4]] ~= nil then
-					if skills_func[skills[4]]() then
-						gamerun_skill_selected = 4
+			if skills[4 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[4 + 2 * skill_disrow]]~="locked" then
+				if skills_func[skills[4 + 2 * skill_disrow]] ~= nil then
+					if skills_func[skills[4 + 2 * skill_disrow]]() then
+						gamerun_skill_selected = 4 + 2 * skill_disrow
 					end
 				end
 			end
@@ -7546,28 +7674,30 @@ function draw_self(gc)
 	if char_juese[char_current_i].name == "" then return end
 	--  选取的技能高亮显示  --
 	local s = gamerun_skill_selected
-	gc:setColorRGB(153, 217, 234)
-	if s == 1 then
-		gc:fillRect(225, 151 + 20, 37, 18)
-	end
-	if s == 2 then
-		gc:fillRect(225 + 38, 151 + 20, 37, 18)
-	end
-	if s == 3 then
-		gc:fillRect(225, 170 + 20, 37, 18)
-	end
-	if s == 4 then
-		gc:fillRect(225 + 38, 170 + 20, 37, 18)
+	if s ~= nil then
+		gc:setColorRGB(153, 217, 234)
+		if s - 2 * skill_disrow == 1 then
+			gc:fillRect(225, 151 + 20, 37, 18)
+		end
+		if s - 2 * skill_disrow == 2 then
+			gc:fillRect(225 + 38, 151 + 20, 37, 18)
+		end
+		if s - 2 * skill_disrow == 3 then
+			gc:fillRect(225, 170 + 20, 37, 18)
+		end
+		if s - 2 * skill_disrow == 4 then
+			gc:fillRect(225 + 38, 170 + 20, 37, 18)
+		end
 	end
 	gc:setColorRGB(0, 0, 0)
 	
 	-- 角色信息 & 技能 --
 	gc:drawString(char_juese[char_current_i].name, 224 + 3, 151 + 20)
-	for i = 1, #char_juese[char_current_i].skillname do
+	for i = 1, math.min(#char_juese[char_current_i].skillname - 2 * skill_disrow,4) do
 	    if i < 3 then
-	        gc:drawString(char_juese[char_current_i].skillname[i], 227 + 38 * (i - 1), 171 + 19)
+	        gc:drawString(char_juese[char_current_i].skillname[i + 2 * skill_disrow], 227 + 38 * (i - 1), 171 + 19)
 		else
-	        gc:drawString(char_juese[char_current_i].skillname[i], 227 + 38 * (i - 3), 171 + 38)
+	        gc:drawString(char_juese[char_current_i].skillname[i + 2 * skill_disrow], 227 + 38 * (i - 3), 171 + 38)
 		end
 	end
 	
@@ -7760,6 +7890,18 @@ function draw_others(gc)
 		gc:setPen("medium")
 	    gc:setColorRGB(255, 0, 0)
 	    gc:drawRect(83 + 18 * gamerun_guankan_selected, 117 - 10 - 27, 41, 57)
+	elseif string.find(gamerun_status, "选项选择") then
+		gc:setColorRGB(255, 255, 255)
+		gc:fillRect(50, 15, 220, 190)
+        gc:setColorRGB(0, 0, 0)
+        gc:drawRect(50, 15, 220, 190)
+		gc:drawString(choose_name, 130, 45)
+		for i = 1,#choose_option do
+	        gc:drawString(i.."."..choose_option[i], 87 , 139 - 10 - 27 + 30 * (i - 1))
+		end
+		gc:setPen("medium")
+	    gc:setColorRGB(255, 0, 0)
+	    gc:drawRect(87, 137 - 10 - 27 + 30 * (i - 1), gc:getStringWidth(gamerun_guankan_selected.."."..choose_option[i])+4, gc:getStringHeight(gamerun_guankan_selected.."."..choose_option[i])+4)
 	end
 end
 
