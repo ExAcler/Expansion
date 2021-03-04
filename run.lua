@@ -362,7 +362,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			table.remove(char_juese[char_current_i].panding, id)
 		end
 		
-		if char_juese[char_current_i].skill["天妒"] == "available" then
+		if char_juese[char_current_i].skill["天妒"] ~= "available" then
 			card_add_qipai(card_panding_card)
 		else
 			push_message(char_juese[char_current_i].name.."发动了武将技能 '天妒'")
@@ -694,11 +694,11 @@ function on.enterKey()
 	if string.find(gamerun_status, "无懈") then
 		if table.getn2(card_selected) ~= 0 then
 			card = char_juese[char_current_i].shoupai[card_highlighted]
-			if string.find(card[1], "无懈可击") or char_juese[char_current_i].skill["看破"] == "available" then
+			if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
+				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 				card_selected = {}
 				set_hints("")
 				card_highlighted = 1
-				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 			end
 		end
 		return

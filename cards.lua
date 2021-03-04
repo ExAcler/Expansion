@@ -1224,10 +1224,10 @@ function card_wuxie_query(card, ID_s, ID_mubiao)	--  无懈可击：从锦囊作
 			else
 				add_funcptr(card_wuxie_ai, {id, card, ID_s, ID_mubiao})
 			end
-
-			id = id + 1
-			if id > 5 then id = 1 end
 		end
+
+		id = id + 1
+		if id > 5 then id = 1 end
 	end
 
 	--  此时已经没有其他人再出无懈，进行原有锦囊的结算  --
@@ -1235,6 +1235,10 @@ function card_wuxie_query(card, ID_s, ID_mubiao)	--  无懈可击：从锦囊作
 end
 function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判断 
 	id = va_list[1]; card = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]
+
+	if char_juese[id].siwang == true then
+		return
+	end
 
 	n = card_chazhao(id, "无懈可击")
 	if n < 0 then
@@ -1279,8 +1283,10 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
 		timer.stop()
 		funcptr_queue = {}
-		funcptr_i = 0
+
+		add_funcptr(_wuxie_prepare_2)
 		card_wuxie_query(card_wx, id, ID_s)
+		funcptr_i = 0
 		timer.start(0.6)
 	else
 		msg = {char_juese[id].name, "放弃无懈"}
@@ -1321,8 +1327,10 @@ function _wuxie_zhudong_chu(card, i, va_list)	--  无懈可击：己方选择出
 	--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
 	timer.stop()
 	funcptr_queue = {}
-	funcptr_i = 0
+	
+	add_funcptr(_wuxie_prepare_2)
 	card_wuxie_query(card, char_current_i, ID_s)
+	funcptr_i = 0
 	timer.start(0.6)
 end
 function _wuxie_zhudong_fangqi()	--  无懈可击：己方放弃出无懈可击
@@ -1342,7 +1350,7 @@ function _wuxie_exe()
 	timer.stop()
 	funcptr_queue = {}
 
-	local items_to_remove, items_to_keep = {}, {}
+	local items_to_remove = {}
 	local current_query = true
 	for i = 1, #wuxie_queue_jinnang do
 		if wuxie_queue_jinnang[i].tag == "无懈轮询开始" then
@@ -1362,15 +1370,11 @@ function _wuxie_exe()
 			--  无懈可击有效，保留标记为有效结算的函数，以及下一次轮询之后的函数  --
 			if wuxie_queue_jinnang[i].tag ~= "无懈有效结算" or current_query == true then
 				table.insert(items_to_remove, i)
-			else
-				table.insert(items_to_keep, i)
 			end
 		else
 			--  无懈可击无效，保留标记为无效结算的函数，以及下一次轮询之后的函数  --
 			if wuxie_queue_jinnang[i].tag ~= "无懈无效结算" or current_query == true then
 				table.insert(items_to_remove, i)
-			else
-				table.insert(items_to_keep, i)
 			end
 		end
 	end
@@ -1386,7 +1390,7 @@ end
 
 --  使用桃  --
 function card_tao(ID_shoupai, ID_s, ID_mubiao, binsi, p)
-	if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max then
+	if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max and binsi == false then
 	    return false
 	end
 	if binsi == false then
@@ -1591,6 +1595,10 @@ function card_taoyuan(ID_shoupai, ID_s)
 	for i = 1, 5 do
 		if char_juese[id].siwang == false then
 			if char_juese[id].tili < char_juese[id].tili_max then
+				funcptr_add_tag = "无懈执行前"
+    			add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了桃园结义"})
+				funcptr_add_tag = nil
+
 				card_wuxie(card, ID_s, id, nil)
 
 				funcptr_add_tag = "无懈无效结算"
@@ -2125,6 +2133,10 @@ function _wugu_others_get_card_exe(card, ID_s)		--  五谷丰登：执行其他�
 			ID_mubiao = ID_s + counter
 		end
 		if char_juese[ID_mubiao].siwang == false then
+			funcptr_add_tag = "无懈执行前"
+    		add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[ID_mubiao].name, "使用了五谷丰登"})
+			funcptr_add_tag = nil
+
 			card_wuxie(card, ID_s, ID_mubiao, nil)
 
 			funcptr_add_tag = "无懈无效结算"
