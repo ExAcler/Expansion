@@ -58,7 +58,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["蔡文姬"] = {3, "群", false, {"悲歌", "断肠"}, "女", {"","锁定"}}, 
     ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}}, 		
 	["神曹操"] = {3,"神",false,{"归心","飞影"},"男", {"","锁定"}},
-	["孙笑川"] = {4,"神",false,{"苦肉","绝情","伤逝","乱击"},"男", {"","锁定","",""}},
+	["孙笑川"] = {4,"神",false,{"苦肉","鬼才","伤逝","乱击"},"男", {"","锁定","",""}},
 }
 
 -- 武器攻击范围 --
@@ -551,14 +551,14 @@ function char_skills_sellblood(va_list)
 end
 
 --  体力扣减结算  --
-function char_tili_deduct(va_list, _p)
+function char_tili_deduct(va_list, is_insert)
 	local id, laiyuan, tili, shuxing, AOE
 	local hengzhi
-	local p = _p, fp
+	local fp
 	id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]; fp = va_list[6]; AOE = va_list[7]
 	tili = char_juese[id].tili - _deduct_count(va_list)
 	
-	if p == nil then
+	if is_insert == nil then
 		--  插入函数队列末尾  --
 		add_funcptr(_char_tili_deduct, va_list)
 			
@@ -632,18 +632,31 @@ function char_tili_deduct(va_list, _p)
 			end
 		end
 	else
+		local ins_pos = _deduct_find_cutin_position()
+
 		--  插入函数队列中间  --
-		add_funcptr(_char_tili_deduct, va_list, p)
+		add_funcptr(_char_tili_deduct, va_list, ins_pos)
 		if tili <= 0 then
-			tili, p = char_binsi(id, tili, p + 1)
+			local p
+			tili, p = char_binsi(id, tili, ins_pos + 1)
 			
 			if tili <= 0 then
 				char_judge_shengli(id, laiyuan, p)
 			end
 		else
-			add_funcptr(_binsi_sub2, nil, p + 1)
+			add_funcptr(_binsi_sub2, nil, ins_pos + 1)
 		end
 	end
+end
+function _deduct_find_cutin_position()	--  体力扣减：寻找插入伤害函数的位置（闪电）
+	for i = 1, #funcptr_queue do
+		if funcptr_queue[i].tag ~= nil then
+			if string.find(funcptr_queue[i].tag, "伤害插队") then
+				return i + 1
+			end
+		end
+	end
+	return nil
 end
 function _deduct_chongzhi(ID)    --  体力扣减：横置状态重置
 	local msg

@@ -48,8 +48,8 @@ sha_va = nil    -- 发动寒冰剑后，杀来源目标的va_list存储
 funcptr_add_tag = nil	-- 如果设置为一个字符串，则设置的字符串会被加入到之后的每一个funcptr_queue项的tag
 
 wuxie_queue_jinnang = {}	-- 无懈可击未执行时，原有的函数执行队列
-wuxie_queue_xiangying = {}	-- 无懈可击轮到己方响应时，记录原有的他方响应函数队列，以便己方不使用无懈时恢复原有轮询
-wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数队列的执行位置
+wuxie_queue_xiangying = {}	-- 无懈可击轮到己方响应时，记录原有的他方响应函数队列，以便己方不使用无懈时恢复原有轮询（兼鬼才、鬼道）
+wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数队列的执行位置（兼鬼才、鬼道）
 wuxie_va = nil		-- 无懈可击轮到己方响应时，原有锦囊来源目标的va_list存储
 wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能被其他无懈可击抵消导致失效）
 end
@@ -272,7 +272,14 @@ function gamerun_huihe_panding()
 
 		funcptr_add_tag = "无懈无效结算"
 	    add_funcptr(_panding_sub1, char_current_i)
+
+		if skills_judge_guicai_guidao(char_current_i) ~= "" then
+			add_funcptr(skills_guicai_guidao_zhudong_enter)
+		end
+
+		funcptr_add_tag = "无懈无效结算/翻判定牌"
 		p = add_funcptr(_panding_sub3, nil)    -- 记录位置，供判定阶段伤害结算插队
+		funcptr_add_tag = "无懈无效结算/伤害插队"
 		add_funcptr(_panding_sub2, {1, p})
 		funcptr_add_tag = nil
 
@@ -340,7 +347,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	    if card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
 		    msg = {char_juese[char_current_i].name, "的'闪电'判定成功"}
 			push_message(table.concat(msg))
-			char_tili_deduct({3, char_current_i, nil, "雷", ID_mubiao}, p + 3)
+			char_tili_deduct({3, char_current_i, nil, "雷", ID_mubiao}, true)
 		else
 		    msg = {char_juese[char_current_i].name, "的'闪电'判定失败"}
 			push_message(table.concat(msg))
@@ -690,6 +697,14 @@ function on.enterKey()
 	local card
 	
 	card_into_hand(char_current_i)
+
+	if gamerun_huihe == "判定" then
+		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
+		    gamerun_OK = true
+			gamerun_OK_ptr()
+		end
+		return
+	end
 
 	if string.find(gamerun_status, "无懈") then
 		if table.getn2(card_selected) ~= 0 then
@@ -1130,6 +1145,13 @@ function on.escapeKey()
 			gamerun_OK_ptr()
 		end
 	end
+
+	if gamerun_huihe == "判定" then
+		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
+		    gamerun_OK = false
+			gamerun_OK_ptr()
+		end
+	end
 end
 
 --  左/右键 (移动高亮的牌/选择卡牌使用目标)  --
@@ -1228,7 +1250,7 @@ function on.tabKey()
 			end
 		end
 		
-		if (gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and string.find(gamerun_status, "无懈"))) and table.getn2(card_selected) == 0 then
+		if (gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or imp_card == "鬼才"))) and table.getn2(card_selected) == 0 then
 		    if string.find(gamerun_status, "选择目标") or gamerun_status == "" then
 			    set_hints("请您出牌")
 			    gamerun_status = ""
@@ -1272,7 +1294,7 @@ function on.tabKey()
 			end
 		end
 	else
-	    if gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and string.find(gamerun_status, "无懈")) then
+	    if gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or imp_card == "鬼才")) then
 			if gamerun_status == "技能选择-单牌" or gamerun_status == "技能选择-多牌" then
 				card_selected[card_highlighted] = 0
 				if gamerun_tab_ptr ~= nil then

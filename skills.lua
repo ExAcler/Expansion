@@ -41,7 +41,7 @@ function _kuanggu_sub1(ID_s)
 end
 
 --  孟获：祸首  --
-function skills_huoshou()
+function skills_huoshou(ID_s)
 	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '祸首'")
 end
 
@@ -1597,4 +1597,123 @@ function _dimeng_sub2()
 	card_highlighted = 1
 	set_hints("请您出牌")
 	gamerun_status = ""
+end
+
+--  司马懿：鬼才 / 张角：鬼道  --
+function skills_judge_guicai_guidao(id)		--  判断角色是否拥有鬼才或鬼道技能
+	if char_juese[id].skill["鬼才"] == "available" then
+		return "鬼才"
+	elseif char_juese[id].skill["鬼道"] == "available" then
+		return "鬼道"
+	else
+		return ""
+	end
+end
+function skills_judge_guicai_guidao_use()	--  判断替换判定牌是否合法（张角只能使用黑色牌）
+	if table.getn2(card_selected) ~= 1 then
+		return false
+	end
+
+	local card = card_selected[1]
+	if skills_judge_guicai_guidao(char_current_i) == "鬼道" then
+		if card[2] == "草花" or card[2] == "黑桃" then
+			return true
+		else
+			return false
+		end
+	else
+		return true
+	end
+end
+function skills_guicai_guidao_zhudong_enter()	--  询问是否发动鬼才或鬼道（主动）
+	timer.stop()
+	id = char_current_i
+
+	wuxie_queue_xiangying = table.copy(funcptr_queue)
+	wuxie_queue_xiangying_i = funcptr_i
+
+	funcptr_queue = {}
+
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+
+	if skills_judge_guicai_guidao(id) == "鬼才" then
+		jiaohu_text = "是否发动 '鬼才'?"
+	else
+		jiaohu_text = "是否发动 '鬼道'?"
+	end
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+	
+		if gamerun_OK then
+			skills_guicai_guidao_zhudong_choose(old_gamerun_status)
+	    else
+			set_hints("")
+			gamerun_status = old_gamerun_status
+			funcptr_queue = wuxie_queue_xiangying
+			funcptr_i = wuxie_queue_xiangying_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function skills_guicai_guidao_zhudong_choose(old_gamerun_status)
+	id = char_current_i
+	skills_enter("请选择手牌并按 '确定'", "", "鬼才", "技能选择-单牌")
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if skills_judge_guicai_guidao_use() and gamerun_OK == true then
+			local card = char_juese[id].shoupai[card_highlighted]
+			_guicai_guidao_replace_func(id, card)
+
+			set_hints("")
+			gamerun_status = old_gamerun_status
+			if skills_judge_guicai_guidao(id) == "鬼才" then
+				push_message(char_juese[id].name .. "发动了武将技能 '鬼才'")
+			else
+				push_message(char_juese[id].name .. "发动了武将技能 '鬼道'")
+			end
+
+			card_selected = {}
+			table.remove(char_juese[id].shoupai, card_highlighted)
+			card_highlighted = 1
+			imp_card = ""
+			timer.start(0.6)
+		end
+	end
+end
+function _guicai_guidao_replace_func(id, card)	--  将原有占空的函数替换为鬼才的执行函数
+	funcptr_queue = wuxie_queue_xiangying
+	funcptr_i = wuxie_queue_xiangying_i + 1
+
+	for i = 1, #funcptr_queue do
+		if funcptr_queue[i].tag ~= nil then
+			if string.find(funcptr_queue[i].tag, "翻判定牌") then
+				change_funcptr(_guicai_guidao_exe, {id, card}, i)
+				break
+			end
+		end
+	end
+end
+function _guicai_guidao_exe(va_list)
+	id = va_list[1]; card = va_list[2]
+
+	if skills_judge_guicai_guidao(id) == "鬼道" then
+		--  张角可将原有判定牌收入手牌  --
+		table.insert(char_juese[id].shoupai, card_panding_card)
+	else
+		--  否则原有判定牌进入弃牌堆  --
+		card_add_qipai(card_panding_card)
+	end
+
+	--  将判定牌替换为玩家选择的手牌  --
+	card_panding_card = card
+	msg = {char_juese[id].name, "将判定牌替换为'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}
+	push_message(table.concat(msg))
+	msg = nil; collectgarbage()
 end

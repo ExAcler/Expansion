@@ -560,7 +560,7 @@ end
 
 --  判断卡牌类型  --
 function card_get_leixing(name)
-    if name == "杀" or name == "闪" or name == "桃" then
+    if name == "杀" or name == "火杀" or name == "雷杀" or name == "闪" or name == "桃" then
 	    return "基本牌"
 	end
 	
@@ -1368,12 +1368,20 @@ function _wuxie_exe()
 
 		if wuxie_in_effect then
 			--  无懈可击有效，保留标记为有效结算的函数，以及下一次轮询之后的函数  --
-			if wuxie_queue_jinnang[i].tag ~= "无懈有效结算" or current_query == true then
+			if wuxie_queue_jinnang[i].tag ~= nil then
+				if string.find(wuxie_queue_jinnang[i].tag, "无懈有效结算") == nil or current_query == true then
+					table.insert(items_to_remove, i)
+				end
+			else
 				table.insert(items_to_remove, i)
 			end
 		else
 			--  无懈可击无效，保留标记为无效结算的函数，以及下一次轮询之后的函数  --
-			if wuxie_queue_jinnang[i].tag ~= "无懈无效结算" or current_query == true then
+			if wuxie_queue_jinnang[i].tag ~= nil then
+				if string.find(wuxie_queue_jinnang[i].tag, "无懈无效结算") == nil or current_query == true then
+					table.insert(items_to_remove, i)
+				end
+			else
 				table.insert(items_to_remove, i)
 			end
 		end
@@ -1733,7 +1741,7 @@ function card_shun(ID_shoupai, ID_s, ID_mubiao)
 		return false
 	end
 	
-	if (char_juese[ID_s].skill["奇才"] == "available" and char_calc_distance(ID_s, ID_mubiao) > 1) or #p.shoupai < 1 and #p.fangju == 0 and #p.wuqi == 0 and #p.gongma == 0 and #p.fangma == 0 and #p.panding == 0 then
+	if (char_juese[ID_s].skill["奇才"] ~= "available" and char_calc_distance(ID_s, ID_mubiao) > 1) or #p.shoupai < 1 and #p.fangju == 0 and #p.wuqi == 0 and #p.gongma == 0 and #p.fangma == 0 and #p.panding == 0 then
 	    return false
 	end
 
@@ -1901,7 +1909,7 @@ function card_nanman(ID_shoupai, _ID_s)
 	for i = 1, 5 do
 		if char_juese[i].siwang == false and char_juese[i].skill["祸首"] == "available" then
 			ID_s = i
-			skills_huoshou()
+			skills_huoshou(ID_s)
 			break
 		end
 	end
@@ -2929,6 +2937,7 @@ function _sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)    --  杀：扣
 					return
 				end
 			end
+			add_funcptr(_sha_sub2, nil)
 		end
 	end
 	
