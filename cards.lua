@@ -275,25 +275,28 @@ function card_shanchu(va_list)
 	ID_juese = va_list[1]; ID_shoupai = va_list[2]
 	if ID_shoupai == -1 then
 		_qipai_sub4(ID_juese)
-		char_juese[ID_juese].shoupai[-1] = {}
 	elseif ID_shoupai == -2 then
 		_qipai_sub5(ID_juese)
-		char_juese[ID_juese].shoupai[-2] = {}
 	elseif ID_shoupai == -3 then
 		_qipai_sub6(ID_juese)
-		char_juese[ID_juese].shoupai[-3] = {}
 	elseif ID_shoupai == -4 then
 		_qipai_sub7(ID_juese)
-		char_juese[ID_juese].shoupai[-4] = {}
 	else
 		card_add_qipai(char_juese[ID_juese].shoupai[ID_shoupai])
-		card_remove({ID_juese, ID_shoupai})
 	end
+
+	card_remove({ID_juese, ID_shoupai})
 end
 
 function card_remove(va_list)
 	local ID_juese, ID_shoupai
 	ID_juese = va_list[1]; ID_shoupai = va_list[2]
+
+	--  如果选择的手牌为装备牌，实际删除装备牌  --
+	if ID_shoupai < 0 then
+		gamerun_wuqi_in_hand_chu(ID_juese, ID_shoupai)
+		return
+	end
 	
 	table.remove(char_juese[ID_juese].shoupai, ID_shoupai)
 	
@@ -484,39 +487,47 @@ function _qipai_sub3(va_list)    --  丢弃判定区
 	card_add_qipai(char_juese[ID].panding[cardID])
     table.remove(char_juese[ID].panding, cardID)
 end
-function _qipai_sub4(ID)    --  丢弃武器
+function _qipai_sub4(ID, hide_msg)    --  丢弃武器
     local msg
 	
-	msg = {char_juese[ID].name, "丢弃'", char_juese[ID].wuqi[2], char_juese[ID].wuqi[3], "的", char_juese[ID].wuqi[1], "'"}
-    push_message(table.concat(msg))
-	msg = nil; collectgarbage()
+	if hide_msg ~= true then
+		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].wuqi[2], char_juese[ID].wuqi[3], "的", char_juese[ID].wuqi[1], "'"}
+    	push_message(table.concat(msg))
+		msg = nil; collectgarbage()
+	end
 	card_add_qipai(char_juese[ID].wuqi)
     char_juese[ID].wuqi = {}
 end
-function _qipai_sub5(ID)    --  丢弃防具
+function _qipai_sub5(ID, hide_msg)    --  丢弃防具
     local msg
 	
-	msg = {char_juese[ID].name, "丢弃'", char_juese[ID].fangju[2], char_juese[ID].fangju[3], "的", char_juese[ID].fangju[1], "'"}
-    push_message(table.concat(msg))
-	msg = nil; collectgarbage()
+	if hide_msg ~= true then
+		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].fangju[2], char_juese[ID].fangju[3], "的", char_juese[ID].fangju[1], "'"}
+    	push_message(table.concat(msg))
+		msg = nil; collectgarbage()
+	end
 	card_add_qipai(char_juese[ID].fangju)
     char_juese[ID].fangju = {}
 end
-function _qipai_sub6(ID)    --  丢弃-1马
+function _qipai_sub6(ID, hide_msg)    --  丢弃-1马
     local msg
 	
-	msg = {char_juese[ID].name, "丢弃'", char_juese[ID].gongma[2], char_juese[ID].gongma[3], "的", char_juese[ID].gongma[1], "'"}
-    push_message(table.concat(msg))
-	msg = nil; collectgarbage()
+	if hide_msg ~= true then
+		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].gongma[2], char_juese[ID].gongma[3], "的", char_juese[ID].gongma[1], "'"}
+    	push_message(table.concat(msg))
+		msg = nil; collectgarbage()
+	end
 	card_add_qipai(char_juese[ID].gongma)
     char_juese[ID].gongma = {}
 end
-function _qipai_sub7(ID)    --  丢弃+1马
+function _qipai_sub7(ID, hide_msg)    --  丢弃+1马
     local msg
 	
-	msg = {char_juese[ID].name, "丢弃'", char_juese[ID].fangma[2], char_juese[ID].fangma[3], "的", char_juese[ID].fangma[1], "'"}
-    push_message(table.concat(msg))
-	msg = nil; collectgarbage()
+	if hide_msg ~= true then
+		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].fangma[2], char_juese[ID].fangma[3], "的", char_juese[ID].fangma[1], "'"}
+    	push_message(table.concat(msg))
+		msg = nil; collectgarbage()
+	end
 	card_add_qipai(char_juese[ID].fangma)
     char_juese[ID].fangma = {}
 end
@@ -801,7 +812,7 @@ function card_chupai(ID)
     --  武器牌  --
 	if card_get_leixing(card) == "武器" or card_get_leixing(card) == "防具" or card_get_leixing(card) == "+1马" or card_get_leixing(card) == "-1马" then
 		card_arm(card_highlighted)
-		card_into_hand(char_current_i)
+		--card_into_hand(char_current_i)
 		return true
     end
 		
@@ -2264,69 +2275,6 @@ function _juedou_exe_ji(ID_s, ID_mubiao, c_pos)    --  决斗：己方响应
 	add_funcptr(_juedou_sha, {ID_s, ID_mubiao, c_pos})
 	_juedou_exe(ID_s, ID_mubiao)
 end
---[[
-function _wuxie_exe_ji(ID_s, ID_mubiao, c_pos)    --  无懈：己方响应
-    gamerun_status = "手牌生效中"
-	jiaohu_text = ""
-	
-	--on.tabKey()
-	card_selected = {}
-	card_highlighted = 1
-	platform.window:invalidate()
-	
-	add_funcptr(_wuxie_wuxie, {ID_s, ID_mubiao, c_pos})
-	wuxieused = true
-	is_affect = not is_affect
-	if is_affect==true then
-		push_message("锦囊即将生效")
-	else
-		push_message("锦囊即将失效")
-	end
-	wuxie_require = 0
-	card_ai_wuxie(ID_s, ID_mubiao)
-end
-function _wuxie_wuxie(va_list)    --  无懈：出无懈
-    local ID_mubiao, c_pos, msg, card
-	ID_s = va_list[1]; ID_mubiao = va_list[2]; c_pos = va_list[3]
-	
-	card = char_juese[ID_s].shoupai[c_pos]
-	card_add_qipai(card)
-	card_remove({ID_s, c_pos})
-	
-	msg = {char_juese[ID_s].name, "'无懈'", char_juese[ID_mubiao].name, " (", card[2], card[3], "的", card[1], ")"}
-	push_message(table.concat(msg))
-	msg = nil; collectgarbage()
-end
-function _wuxie_exe_fangqi(ID_s, ID_mubiao)    --  无懈：己方放弃
-    gamerun_status = "手牌生效中"
-	jiaohu_text = ""
-	
-	add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "放弃"})
-	local ID_next = ID_s + 1
-	wuxie_require = wuxie_require + 1
-	if ID_next > 5 then ID_next = ID_next - 5 end
-	while char_juese[ID_next].siwang==true do
-		ID_next = ID_next + 1
-		wuxie_require = wuxie_require + 1
-		if ID_next > 5 then ID_next = ID_next - 5 end
-	end
-	if wuxie_require < 4 then
-		card_ai_wuxie(ID_next,ID_mubiao)
-	else
-		if is_affect == false and gamerun_huihe == "判定" then
-			_wuxie_working()
-			return false
-		elseif is_affect == false then
-			_chai_sub2()
-			return false
-		else
-			_jinnang_working(ID_source,ID_mubiao)
-			return true
-		end
-		platform.window:invalidate()
-	end
-end
---]]
 function _juedou_exe_fangqi(ID_s, ID_mubiao)    --  决斗：己方放弃
     gamerun_status = "手牌生效中"
 	jiaohu_text = ""

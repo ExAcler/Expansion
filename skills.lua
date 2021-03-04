@@ -291,6 +291,7 @@ end
 function skills_qixi_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 
+	gamerun_wuqi_into_hand(char_current_i)
 	skills_enter("请选择黑色手牌", "使用过河拆桥", "过河拆桥", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
@@ -308,6 +309,7 @@ end
 function skills_qixi()
 	if skills_judge_black() then
 		if card_chai(card_highlighted, char_current_i, gamerun_target_selected) then
+			gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()
 		    consent_func_queue(0.2)
 		end
@@ -574,6 +576,7 @@ end
 function skills_guose_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 
+	gamerun_wuqi_into_hand(char_current_i)
 	skills_enter("请选择方块牌", "使用乐不思蜀", "乐不思蜀", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
@@ -592,6 +595,7 @@ function skills_guose()
 	if skills_judge_huase("方块") then
 		funcptr_queue = {}
 		if card_le(card_highlighted, char_current_i, gamerun_target_selected) then
+			gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()
 			skills_rst()
 		end
@@ -602,6 +606,7 @@ end
 function skills_duanliang_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 
+	gamerun_wuqi_into_hand(char_current_i)
 	skills_enter("请选择黑色基本或装备牌", "使用兵粮寸断", "兵粮寸断", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
@@ -631,6 +636,7 @@ function skills_duanliang()
 	if skills_judge_duanliang() then
 		funcptr_queue = {}
 		if card_bingliang(card_highlighted, char_current_i, gamerun_target_selected) then
+			gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()
 			skills_rst()
 		end
@@ -943,10 +949,12 @@ end
 function skills_zhiheng_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 	
+	gamerun_wuqi_into_hand(char_current_i)
 	skills_enter("请选择手牌", "", "制衡", "技能选择-多牌")
 	
 	gamerun_OK_ptr = function()
 		if skills_zhiheng(char_current_i) then
+			gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()
 			consent_func_queue(0.2)
 		end

@@ -586,9 +586,39 @@ function gamerun_select_target(dir)
 	end
 end
 
-  --  临时将装备牌收入手牌  --
-function card_into_hand(ID_s)
-	shoupai_temp[ID_s] = table.copy(char_juese[ID_s].shoupai)
+--  部分技能选择可打出的装备  --
+function gamerun_card_select_zhuangbei(i)
+	if char_juese[char_current_i].shoupai[i] ~= nil then
+		if card_selected[i] == 1 then
+			card_selected[i] = nil
+			card_highlighted = 1
+
+			if gamerun_status == "技能选择-目标" then
+				set_hints(skill_text_1)
+				gamerun_status = last_status
+				gamerun_target_selected = 0
+				return
+			end
+		else	
+			if gamerun_status ~= "技能选择-单牌" and gamerun_status ~= "技能选择-多牌" then
+				return
+			end
+
+			if gamerun_status == "技能选择-单牌" and table.getn2(card_selected) > 0 then
+				return
+			end
+			card_highlighted = i
+			card_selected[i] = 1
+		end
+
+		if gamerun_tab_ptr ~= nil then
+			gamerun_tab_ptr()
+		end
+	end
+end
+
+--  临时将装备牌收入手牌  --
+function gamerun_wuqi_into_hand(ID_s)
 	if #char_juese[ID_s].wuqi ~= 0 then
 		char_juese[ID_s].shoupai[-1] = table.copy(char_juese[ID_s].wuqi)
 	end
@@ -603,30 +633,27 @@ function card_into_hand(ID_s)
 	end
 end
 
---  收回临时收入手牌的装备牌  --
-shoupai_temp = {}
-shoupai_temp[1] = {}
-shoupai_temp[2] = {}
-shoupai_temp[3] = {}
-shoupai_temp[4] = {}
-shoupai_temp[5] = {}
-for ID_s =1,5 do
-	char_juese[ID_s].shoupai[-1] = {}
-	char_juese[ID_s].shoupai[-2] = {}
-	char_juese[ID_s].shoupai[-3] = {}
-	char_juese[ID_s].shoupai[-4] = {}
+--  收回临时收入手牌的装备牌  -- 
+function gamerun_wuqi_out_hand(ID_s)
+	char_juese[ID_s].shoupai[-1] = nil
+	char_juese[ID_s].shoupai[-2] = nil
+	char_juese[ID_s].shoupai[-3] = nil
+	char_juese[ID_s].shoupai[-4] = nil
 end
-function card_back_arm(ID_s)
-	char_juese[ID_s].wuqi = table.copy(char_juese[ID_s].shoupai[-1])
-	char_juese[ID_s].fangju = table.copy(char_juese[ID_s].shoupai[-2])
-	char_juese[ID_s].gongma = table.copy(char_juese[ID_s].shoupai[-3])
-	char_juese[ID_s].fangma = table.copy(char_juese[ID_s].shoupai[-4])
+
+--  技能出装备牌后，实际删除该装备牌  --
+function gamerun_wuqi_in_hand_chu(ID_s, i)
+	if i == -1 then
+		char_juese[ID_s].wuqi = {}
+	elseif i == -2 then
+		char_juese[ID_s].fangju = {}
+	elseif i == -3 then
+		char_juese[ID_s].gongma = {}
+	elseif i == -4 then
+		char_juese[ID_s].fangma = {}
+	end
 end
-card_into_hand(1)
-card_into_hand(2)
-card_into_hand(3)
-card_into_hand(4)
-card_into_hand(5)
+
 
 
 
@@ -696,7 +723,7 @@ function on.enterKey()
 
 	local card
 	
-	card_into_hand(char_current_i)
+	--card_into_hand(char_current_i)
 
 	if gamerun_huihe == "判定" then
 		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
@@ -1156,7 +1183,7 @@ end
 
 --  左/右键 (移动高亮的牌/选择卡牌使用目标)  --
 function on.arrowKey(key)
-	if card_highlighted <=0 then card_highlighted = 1 end
+	--if card_highlighted <= 0 then return end
 	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then return end
     if gamerun_huihe == "结束" or gamerun_status == "手牌生效中" or string.find(gamerun_status, "确认操作") then return end
 
@@ -1419,51 +1446,19 @@ function on.charIn(char)
 	end
 	
 	if char == 'a' then
-		if #char_juese[char_current_i].shoupai[-1] ~= 0 then
-			if card_selected[-1] == 1 then
-				card_selected[-1] = nil
-				card_highlighted = 1
-			else
-				card_highlighted = -1
-				card_selected[-1] = 1
-			end
-		end
+		gamerun_card_select_zhuangbei(-1)
 	end
 	
 	if char == 'b' then
-		if #char_juese[char_current_i].shoupai[-2] ~= 0 then
-			if card_selected[-2] == 1 then
-				card_selected[-2] = nil
-				card_highlighted = 1
-			else
-				card_highlighted = -2
-				card_selected[-2] = 1
-			end
-		end
+		gamerun_card_select_zhuangbei(-2)
 	end
 	
 	if char == 'c' then
-		if #char_juese[char_current_i].shoupai[-3] ~= 0 then
-			if card_selected[-3] == 1 then
-				card_selected[-3] = nil
-				card_highlighted = 1
-			else
-				card_highlighted = -3
-				card_selected[-3] = 1
-			end
-		end
+		gamerun_card_select_zhuangbei(-3)
 	end
 	
 	if char == 'd' then
-		if #char_juese[char_current_i].shoupai[-4] ~= 0 then
-			if card_selected[-4] == 1 then
-				card_selected[-4] = nil
-				card_highlighted = 1
-			else
-				card_highlighted = -4
-				card_selected[-4] = 1
-			end
-		end
+		gamerun_card_select_zhuangbei(-4)
 	end
 	platform.window:invalidate()
 end
