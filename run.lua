@@ -462,7 +462,7 @@ function gamerun_huihe_jieshu(qipai)
 	for i = 1,5 do
 		for k,v in pairs(char_juese[i].skill) do
 			if v=="locked" then
-				char_juese[i].skill[k]=1
+				char_juese[i].skill[k] = 1
 			end
 		end
 	end
