@@ -23,7 +23,7 @@ gamerun_status = ""    --[[游戏状态
 						   手牌生效中：卡牌需要队列执行效果时
 						   观看手牌 ("-拆、-顺"、"-杀")：使用一些卡牌需要选择对方手牌时
 						   牌堆选择 ("-五谷")：使用一些卡牌、技能等需要翻开牌堆顶数张牌并选择时
-						   主动出牌 ("-决斗"、"-火攻"、"-青龙"、"-贯石"、"-刚烈")：使用一些卡牌需要己方进一步响应时
+						   主动出牌 ("-决斗"、"-火攻"、"-青龙"、"-贯石"、"-刚烈"|"-杀"、"-南蛮"、"-万箭"、"-借刀")：使用一些卡牌需要己方进一步响应时
 						   技能选择 ("-单牌"：选取单张牌、"-多牌"：选取多张牌、"-目标"：选取目标状态)
 						   确认操作：技能等需要确认发动的
 					   --]]
@@ -52,6 +52,11 @@ wuxie_queue_xiangying = {}	-- 无懈可击轮到己方响应时，记录原有�
 wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数队列的执行位置（兼鬼才、鬼道）
 wuxie_va = nil		-- 无懈可击轮到己方响应时，原有锦囊来源目标的va_list存储
 wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能被其他无懈可击抵消导致失效）
+
+zhudong_queue = {}	-- 卡牌效果轮到己方被动响应时，记录原有的函数队列
+zhudong_queue_i = 0	-- 卡牌效果轮到己方被动响应时，原有函数队列的执行位置
+zhudong_queue_2 = {}
+zhudong_queue_2_i = 0
 
 skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 end
@@ -816,15 +821,16 @@ function on.enterKey()
 		    if string.find(gamerun_status, "决斗") then
 			    if table.getn2(card_selected) ~= 0 then
 			        card = char_juese[char_current_i].shoupai[card_highlighted][1]
-					if string.find(card, "杀") then
+					if card_judge_if_sha(char_current_i, card_highlighted) then
 			            funcptr_queue = {}
-						_juedou_exe_ji(char_current_i, gamerun_target_selected, card_highlighted)
+						_juedou_exe_ji(wuxie_va[2], wuxie_va[1], card_highlighted)
 			            consent_func_queue(0.6)
 					end
 				end
+				return
 			end
 			
-			if string.find(gamerun_status, "火攻") then
+			if string.find(gamerun_status, "火攻A") then
 			    if table.getn2(card_selected) ~= 0 then
 			        card = char_juese[char_current_i].shoupai[card_highlighted][2]
 					if card == guankan_s then
@@ -833,13 +839,60 @@ function on.enterKey()
 			            consent_func_queue(0.6)
 					end
 				end
+				return
+			end
+
+			if string.find(gamerun_status, "火攻B") then
+			    if table.getn2(card_selected) ~= 0 then
+			        card = char_juese[char_current_i].shoupai[card_highlighted][2]
+			        funcptr_queue = {}
+					_huogong_beidong_exe_2(wuxie_va[1], wuxie_va[2], card_highlighted)
+			        consent_func_queue(0.6)
+				end
+				return
+			end
+
+			if string.find(gamerun_status, "南蛮") then
+				if table.getn2(card_selected) ~= 0 then
+					card = char_juese[char_current_i].shoupai[card_highlighted]
+					if card_judge_if_sha(char_current_i, card_highlighted) then
+						funcptr_queue = {}
+						_nanman_zhudong_chu(wuxie_va)
+						consent_func_queue(0.6)
+					end
+				end
+				return
+			end
+
+			if string.find(gamerun_status, "万箭") then
+				if table.getn2(card_selected) ~= 0 then
+					card = char_juese[char_current_i].shoupai[card_highlighted]
+					if card_judge_if_shan(char_current_i, card_highlighted) then
+						funcptr_queue = {}
+						_wanjian_zhudong_chu(wuxie_va)
+						consent_func_queue(0.6)
+					end
+				end
+				return
+			end
+
+			if string.find(gamerun_status, "借刀") then
+				if table.getn2(card_selected) ~= 0 then
+					card = char_juese[char_current_i].shoupai[card_highlighted]
+					if card_judge_if_sha(char_current_i, card_highlighted) then
+						funcptr_queue = {}
+						_jiedao_beidong_chu(char_current_i, wuxie_va)
+						consent_func_queue(0.6)
+					end
+				end
+				return
 			end
 			
 			--  青龙刀出杀  --
 			if string.find(gamerun_status, "青龙") then
 			    if table.getn2(card_selected) ~= 0 then
 			        card = char_juese[char_current_i].shoupai[card_highlighted][1]
-					if string.find(card, "杀") then
+					if card_judge_if_sha(char_current_i, card_highlighted) then
 			            funcptr_queue = {}
 						_sha_exe_2(char_current_i, gamerun_target_selected, card_highlighted)
 			            consent_func_queue(0.6)
@@ -1056,9 +1109,27 @@ function on.escapeKey()
 					consent_func_queue(0.6)
 				end
 				
-				if string.find(gamerun_status, "火攻") then
+				if string.find(gamerun_status, "火攻A") then
 				    funcptr_queue = {}
 				    _huogong_exe_3(char_current_i)
+					consent_func_queue(0.6)
+				end
+
+				if string.find(gamerun_status, "南蛮") then
+				    funcptr_queue = {}
+				    _nanman_zhudong_fangqi(wuxie_va)
+					consent_func_queue(0.6)
+				end
+
+				if string.find(gamerun_status, "万箭") then
+				    funcptr_queue = {}
+				    _wanjian_zhudong_fangqi(wuxie_va)
+					consent_func_queue(0.6)
+				end
+
+				if string.find(gamerun_status, "借刀") then
+				    funcptr_queue = {}
+				    _jiedao_beidong_fangqi(wuxie_va)
 					consent_func_queue(0.6)
 				end
 

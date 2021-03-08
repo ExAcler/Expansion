@@ -220,6 +220,7 @@ char_hejiu = false  -- 已经喝酒
 char_wushi = false  -- 无视防具标志 (古锭刀)
 char_rende_given = 0  -- 使用仁德技能已给出牌数
 char_luoyi = false  -- 许褚使用了裸衣技能
+char_xiangying_2 = false	-- 吕布无双、董卓肉林，需要己方使用两张手牌抵消的
 skill_used = false  -- 已经发动过技能
 end
 
