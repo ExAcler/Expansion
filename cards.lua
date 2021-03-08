@@ -348,12 +348,30 @@ function card_mopai()
 		return
 	end
 	
+	local draw_number = 2
+	
 	if char_juese[char_current_i].skill["英姿"] == "available" then
-		card_fenfa({char_current_i, 3, true})
-	elseif char_luoyi == true then
-		card_fenfa({char_current_i, 1, true})
-	else
-		card_fenfa({char_current_i, 2, true})
+		draw_number = draw_number + 1
+	end
+	if char_luoyi == true then
+		draw_number = draw_number - 1
+	end
+	if type(char_jiangchi) == "number" then
+		draw_number = draw_number + char_jiangchi
+		if char_jiangchi > 0 then
+			char_sha_able = false
+		elseif char_jiangchi < 0 then
+			char_sha_time = char_sha_time + 1
+			char_distance_infinity = true
+		end
+		char_jiangchi = nil
+	end
+	if char_tuxi then
+		draw_number = 0
+		char_tuxi = nil
+	end
+	if draw_number > 0 then
+		card_fenfa({char_current_i, draw_number, true})
 	end
 end
 
@@ -661,16 +679,16 @@ function card_if_d_limit(card, ID_s, ID_d)
 
 	if type(card) == "table" then
 		if #char_juese[ID_s].wuqi ~= 0 then
-		    if char_yisha then
+		    if char_sha_time <= 0 or char_sha_able == false then
 	            return false
 	        end
 		
-	        if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
+	        if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] and char_distance_infinity == false then
 	            return false
 	        end
 	    else
-		    if char_yisha then return false end
-	        if char_calc_distance(ID_s, ID_d) > 1 then
+		    if char_sha_time <= 0 or char_sha_able == false then return false end
+	        if char_calc_distance(ID_s, ID_d) > 1 and char_distance_infinity == false then
 	            return false
 	        end
 	    end
@@ -739,11 +757,11 @@ function card_if_d_limit(card, ID_s, ID_d)
 				arm_zhuge = true
 			end
 			
-		    if char_yisha and not arm_zhuge then
+		    if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then
 	            return false
 	        end
 		
-	        if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
+	        if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] and char_distance_infinity == false then
 	            return false
 	        end
 	    else
@@ -753,8 +771,8 @@ function card_if_d_limit(card, ID_s, ID_d)
 				arm_zhuge = true
 			end
 		
-		    if char_yisha and not arm_zhuge then return false end
-	        if char_calc_distance(ID_s, ID_d) > 1 then
+		    if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then return false end
+	        if char_calc_distance(ID_s, ID_d) > 1 and char_distance_infinity == false then
 	            return false
 	        end
 	    end
@@ -2146,7 +2164,9 @@ function card_wanjian(ID_shoupai, ID_s)
 	jiaohu_text = ""
 	
 	if type(ID_shoupai) == "table" then
-		add_funcptr(push_message, char_juese[ID_s].name, "发动了武将技能 '乱击'")
+		msg = table.concat({char_juese[ID_s].name,"发动了武将技能 '乱击'"})
+		print(msg)
+		add_funcptr(push_message, msg)
 	end
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, nil})
 	
@@ -2756,11 +2776,11 @@ function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
 		end
 		
 		if iscur then
-			if char_yisha and not arm_zhuge then
+			if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then
 				return false
 			end
 		end
-	    if char_calc_distance(ID_s, ID_mubiao) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
+	    if char_calc_distance(ID_s, ID_mubiao) > card_wuqi_r[char_juese[ID_s].wuqi[1]] and char_distance_infinity == false then
 	        return false
 	    end
 	else
@@ -2770,8 +2790,8 @@ function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
 			arm_zhuge = true
 		end
 	
-	    if char_yisha and not arm_zhuge then return false end
-	    if char_calc_distance(ID_s, ID_mubiao) > 1 then
+	    if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then return false end
+	    if char_calc_distance(ID_s, ID_mubiao) > 1 and char_distance_infinity == false then
 	        return false
 	    end
 	end
@@ -3354,6 +3374,7 @@ function _sha_sub1(va_list)
 end
 function _sha_sub2()
     char_yisha = true
+	char_sha_time = char_sha_time - 1
 	char_hejiu = false
 	char_wushi = false
 	gamerun_OK = false

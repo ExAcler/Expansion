@@ -58,7 +58,8 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["蔡文姬"] = {3, "群", false, {"悲歌", "断肠"}, "女", {"","锁定"}}, 
     ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}}, 		
 	["神曹操"] = {3,"神",false,{"归心","飞影"},"男", {"","锁定"}},
-	["孙笑川"] = {4,"神",false,{"苦肉","绝情","伤逝","乱击","制衡","结姻","强袭","英姿","涅槃"},"男", {"","锁定","","","","","","","限定"}},
+	["曹彰"] = {4,"魏",false,{"将驰"},"男",{""}},
+	["孙笑川"] = {4,"神",false,{"苦肉","伤逝","乱击","制衡","结姻","强袭","英姿","将驰","化身","新生"},"男", {"","","","","","","","","禁止","禁止"}},
 }
 
 -- 武器攻击范围 --
@@ -73,7 +74,7 @@ card_wuqi_r =
 
 function init_character()
 -- 各角色武将牌 --
-char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "关索","司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张颌","张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张宏", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈","神曹操","孙笑川"}
+char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "孙笑川", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "关索","司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张颌","张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张宏", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈","神曹操","曹彰"}
 char_wujiang_zhugong = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓","孙笑川"}  -- 主公武将牌
 char_wujiang_f = {}  -- 洗后的武将牌
 
@@ -216,6 +217,9 @@ for i = 1,5 do
 end
 char_current_i = 1  -- 当前受控制的武将
 char_yisha = false  -- 已经出过杀
+char_sha_time = 1  -- 回合内允许的出杀次数
+char_sha_able = true  -- 回合内是否允许出杀
+char_distance_infinity = false  --回合内是否攻击范围无限
 char_hejiu = false  -- 已经喝酒
 char_wushi = false  -- 无视防具标志 (古锭刀)
 char_rende_given = 0  -- 使用仁德技能已给出牌数
@@ -302,10 +306,10 @@ function _wujiang_sub2(va_list)
 		end
 		char_juese[i].name = char_wujiang_f[t]
 		char_juese[i].tili_max = char_juese_jineng[char_wujiang_f[t]][1]
-		table.remove(char_wujiang_f, t)
 		char_juese[i].shili = char_juese_jineng[char_wujiang_f[t]][2]
 		char_juese[i].xingbie = char_juese_jineng[char_wujiang_f[t]][5]
 		char_juese[i].tili = char_juese[i].tili_max
+		table.remove(char_wujiang_f, t)
 		--char_juese[i].tili = 1
 		for j = 1,#char_juese_jineng[char_juese[i].name][4] do
 			if char_juese_jineng[char_juese[i].name][4][j] == "激将" or char_juese_jineng[char_juese[i].name][4][j] == "护驾" or char_juese_jineng[char_juese[i].name][4][j] == "救援" or char_juese_jineng[char_juese[i].name][4][j] == "黄天" or char_juese_jineng[char_juese[i].name][4][j] == "血裔" or char_juese_jineng[char_juese[i].name][4][j] == "颂威" or char_juese_jineng[char_juese[i].name][4][j] == "暴虐" or char_juese_jineng[char_juese[i].name][4][j] == "若愚" or char_juese_jineng[char_juese[i].name][4][j] == "制霸" then
@@ -549,6 +553,12 @@ function char_skills_sellblood(va_list)
 		return
 	end
 	
+	--  左慈发动新生  --
+	if char_juese[id].skill["新生"] == "available" and cansellblood == true then
+		for i = 1,_deduct_count(va_list) do
+			skills_xinsheng(id,false)
+		end
+	end
 
 	-- 张春华在手牌不足时摸牌 --
 	if char_juese[id].skill["伤逝"] == "available" and table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max-char_juese[id].tili then

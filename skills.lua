@@ -1340,7 +1340,7 @@ end
 
 --  许褚：裸衣  --
 function skills_luoyi_enter(ID)
-    gamerun_status = "确认操作"
+    --[[gamerun_status = "确认操作"
 	gamerun_huihe = "摸牌"
 	jiaohu_text = "是否发动 '裸衣'?"
 	gamerun_OK = false
@@ -1359,9 +1359,199 @@ function skills_luoyi_enter(ID)
 		add_funcptr(card_mopai, nil)
 		add_funcptr(_start_sub1, nil)
 		consent_func_queue(0.2)
+	end]]
+	
+	gamerun_status = "选项选择"
+	choose_name = "裸衣"
+	jiaohu_text = "是否发动 '裸衣'?"
+	choose_option = {"是","否"}
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	gamerun_item = function(i)
+		funcptr_queue = {}
+		txt_messages:setVisible(true)
+		if i == 1 then
+			add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '裸衣'")
+	        char_luoyi = true
+	    else
+			char_luoyi = false
+		end
+		
+		gamerun_status = ""
+		add_funcptr(card_mopai, nil)
+		add_funcptr(_start_sub1, nil)
+		consent_func_queue(0.2)
 	end
 	
 	platform.window:invalidate()
+end
+
+--  曹彰：将驰 --
+function skills_jiangchi_enter(ID)
+	gamerun_status = "选项选择"
+	choose_name = "将驰"
+	jiaohu_text = "是否使用 '将驰'多摸或少摸牌?"
+	choose_option = {"多摸一张","少摸一张","不发动"}
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	gamerun_item = function(i)
+		funcptr_queue = {}
+		txt_messages:setVisible(true)
+		if i == 1 then
+			add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '将驰'多摸了一张牌")
+	        char_jiangchi = 1
+	    elseif i == 2 then
+			add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '将驰'少摸了一张牌")
+	        char_jiangchi = -1
+		else
+			char_jiangchi = 0
+		end
+		
+		gamerun_status = ""
+		add_funcptr(card_mopai, nil)
+		add_funcptr(_start_sub1, nil)
+		consent_func_queue(0.2)
+	end
+	
+	platform.window:invalidate()
+end
+
+--  左慈：化身 --
+function skills_huashen(ID,jieduan)
+	gamerun_status = "选项选择"
+	choose_name = "化身"
+	if huashen_wujiang ~= nil and huashen_skill ~= nil then
+		jiaohu_text = "当前化身武将"..huashen_wujiang.."并拥有技能"..huashen_skill
+		choose_option = {"不替换"}
+	else
+		jiaohu_text = "请选择化身武将"
+		choose_option = {}
+	end
+	for i = 1,#huashen_paidui do
+		table.insert(choose_option,huashen_paidui[i][4].." "..huashen_paidui[i][1].." "..huashen_paidui[i][2].." "..huashen_paidui[i][3])
+	end	
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	gamerun_item = function(i)
+		funcptr_queue = {}
+		txt_messages:setVisible(true)
+		if i == 1 and huashen_wujiang ~= nil and huashen_skill ~= nil then
+			gamerun_status = ""
+			if jieduan == "游戏开始" then
+				gamerun_huihe_set("开始")
+				set_hints("请按'确定'继续")
+			elseif jieduan == "回合开始" then
+				set_hints("")
+				card_highlighted = 1
+				gamerun_huihe_start()    -- 下一玩家回合开始
+				consent_func_queue(0.2)
+			elseif jieduan == "回合结束" then
+				msg = {char_juese[char_current_i].name, "回合结束"}
+				add_funcptr(push_message, table.concat(msg))
+				add_funcptr(_jieshu_sub1, nil)
+				consent_func_queue(0.2)
+				msg = nil; collectgarbage()
+			end
+		else
+			local delta = 0
+			if huashen_wujiang ~= nil and huashen_skill ~= nil then
+				delta = -1
+				if skill_double then
+					skill_double = nil
+				else
+					char_juese[ID].skill[huashen_skill] = nil
+					for j = 1, #char_juese[ID].skillname do
+						if char_juese[ID].skillname[j] == huashen_skill then
+							table.remove(char_juese[ID].skillname,j)
+						end
+					end
+				end
+			end
+			add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '化身'变成了"..huashen_paidui[i+delta][4])
+			huashen_wujiang = huashen_paidui[i+delta][4]
+			char_juese[ID].shili = huashen_paidui[i+delta][1]
+			char_juese[ID].xingbie = huashen_paidui[i+delta][2]
+			char_skill_item = huashen_paidui[i+delta][5]
+			skills_huashen_1(ID,jieduan)
+		end
+	end
+	platform.window:invalidate()
+end
+
+function skills_huashen_1(ID,jieduan)
+	gamerun_status = "选项选择"
+	choose_name = "化身"
+	jiaohu_text = "当前化身武将"..huashen_wujiang.."，请选择技能"
+	choose_option = {}
+	for j = 1,#char_skill_item do
+		table.insert(choose_option,char_skill_item[j])
+	end
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	gamerun_item = function(i)
+		funcptr_queue = {}
+		txt_messages:setVisible(true)
+		huashen_skill = choose_option[i]
+		if char_juese[ID].skill[huashen_skill] == nil then
+			if huashen_skill == "挑衅" or huashen_skill == "反间" or huashen_skill == "驱虎" or huashen_skill == "制衡" or huashen_skill == "结姻" or huashen_skill == "天义"  or huashen_skill == "涅槃" or huashen_skill == "缔盟" or huashen_skill == "离间" or huashen_skill == "青囊" then
+				char_juese[ID].skill[huashen_skill] = 1
+			else
+				char_juese[ID].skill[huashen_skill] = "available"
+			end
+			table.insert(char_juese[ID].skillname,huashen_skill)
+		else
+			skill_double = true
+		end
+		gamerun_status = ""
+		if jieduan == "游戏开始" then
+			gamerun_huihe_set("开始")
+			set_hints("请按'确定'继续")
+		elseif jieduan == "回合开始" then
+			set_hints("")
+			card_highlighted = 1
+			gamerun_huihe_start()    -- 下一玩家回合开始
+			consent_func_queue(0.2)
+		elseif jieduan == "回合结束" then
+			msg = {char_juese[char_current_i].name, "回合结束"}
+			add_funcptr(push_message, table.concat(msg))
+			add_funcptr(_jieshu_sub1, nil)
+			consent_func_queue(0.2)
+			msg = nil; collectgarbage()
+		end
+	end
+	platform.window:invalidate()
+end
+
+--  左慈：新生 --
+function skills_xinsheng(ID,is_beginning)
+	while #char_wujiang_f > 0 do
+		local t = math.random(#char_wujiang_f)
+		local skill_huashen = {}
+		for i = 1, #char_juese_jineng[char_wujiang_f[t]][4] do
+			if char_juese_jineng[char_wujiang_f[t]][6][i] ~= "限定" and char_juese_jineng[char_wujiang_f[t]][6][i] ~= "主公" and char_juese_jineng[char_wujiang_f[t]][6][i] ~= "禁止" and char_juese_jineng[char_wujiang_f[t]][6][i] ~= "觉醒" then
+				table.insert(skill_huashen,char_juese_jineng[char_wujiang_f[t]][4][i])
+			end
+		end
+		if #skill_huashen > 0 then
+			if is_beginning then
+				add_funcptr(push_message, char_juese[ID].name.."获得了一张武将牌")
+			else
+				add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '新生'获得了一张武将牌")
+			end
+			table.insert(huashen_paidui,{char_juese_jineng[char_wujiang_f[t]][2],char_juese_jineng[char_wujiang_f[t]][5],char_juese_jineng[char_wujiang_f[t]][1],char_wujiang_f[t],{}})
+			for i = 1,#skill_huashen do
+				table.insert(huashen_paidui[#huashen_paidui][5],skill_huashen[i])
+			end
+			table.remove(char_wujiang_f,t)
+			break
+		else
+			table.remove(char_wujiang_f,t)
+		end
+	end
 end
 
 --  张角：雷击判定  --

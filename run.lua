@@ -59,6 +59,7 @@ zhudong_queue_2 = {}
 zhudong_queue_2_i = 0
 
 skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
+item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的选项的个数
 end
 
 --  定义变量  --
@@ -202,6 +203,19 @@ function gamerun_init()
 	add_funcptr(_init_sub1, nil)
 end
 function _init_sub1()
+	if char_juese[char_current_i].skill["化身"] == "available" then
+		huashen_paidui = {}
+		skills_xinsheng(char_current_i,true)
+		skills_xinsheng(char_current_i,true)
+		skills_xinsheng(char_current_i,true)
+		skills_xinsheng(char_current_i,true)
+		skills_xinsheng(char_current_i,true)
+		skills_xinsheng(char_current_i,true)
+		skills_xinsheng(char_current_i,true)
+		skills_xinsheng(char_current_i,true)
+		skills_huashen(char_current_i,"游戏开始")
+		return
+	end
     gamerun_huihe_set("开始")
 	set_hints("请按'确定'继续")
 end
@@ -215,6 +229,9 @@ function gamerun_huihe_start()
 	game_skip_mopai = false
 	game_skip_chupai = false
 	char_yisha = false
+	char_sha_time = 1
+	char_distance_infinity = false
+	char_sha_able = true
 	char_hejiu = false
 	
 	--  回合开始阶段  --
@@ -227,15 +244,19 @@ function gamerun_huihe_start()
 	
 	--  摸牌阶段  --
 	--  周瑜英姿，多摸一张牌  --
-	if char_juese[char_current_i].name == "周瑜" then
+	if char_juese[char_current_i].skill["英姿"] == "available" then
 		add_funcptr(skills_yingzi,char_current_i)
 	end
-	if char_juese[char_current_i].name == "许褚" then
+	if char_juese[char_current_i].skill["裸衣"] == "available" then
 		add_funcptr(skills_luoyi_enter,char_current_i)
 		return
 	end
+	if char_juese[char_current_i].skill["将驰"] == "available" then
+		add_funcptr(skills_jiangchi_enter,char_current_i)
+		return
+	end
 	if game_skip_mopai == false then
-		if char_juese[char_current_i].name == "张辽" then
+		if char_juese[char_current_i].skill["突袭"] == "available" then
 			add_funcptr(skills_tuxi_enter,char_current_i)
 			return
 		end
@@ -471,8 +492,14 @@ function gamerun_huihe_jieshu(qipai)
 			end
 		end
 	end
+	if char_juese[char_current_i].skill["化身"] == "available" then
+		skills_huashen(char_current_i,"回合结束")
+		return
+	end
+	
 	msg = {char_juese[char_current_i].name, "回合结束"}
     add_funcptr(push_message, table.concat(msg))
+	
 	
 	add_funcptr(_jieshu_sub1, nil)
 	
@@ -735,6 +762,11 @@ function on.enterKey()
 	
 	--card_into_hand(char_current_i)
 
+	if gamerun_status == "选项选择" then
+		gamerun_item(item_disrow + gamerun_guankan_selected)
+		return 
+	end
+
 	if gamerun_huihe == "判定" then
 		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		    gamerun_OK = true
@@ -742,7 +774,7 @@ function on.enterKey()
 		end
 		return
 	end
-
+	
 	if string.find(gamerun_status, "无懈") then
 		if table.getn2(card_selected) ~= 0 then
 			card = char_juese[char_current_i].shoupai[card_highlighted]
@@ -1055,6 +1087,10 @@ function on.enterKey()
 					end
 				end
 			end
+			if char_juese[char_current_i].skill["化身"] == "available" then
+				skills_huashen(char_current_i,"回合开始")
+				return
+			end
 			set_hints("")
 			card_highlighted = 1
 			gamerun_huihe_start()    -- 下一玩家回合开始
@@ -1260,9 +1296,8 @@ end
 --  左/右键 (移动高亮的牌/选择卡牌使用目标)  --
 function on.arrowKey(key)
 	--if card_highlighted <= 0 then return end
-	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then return end
-    if gamerun_huihe == "结束" or gamerun_status == "手牌生效中" or string.find(gamerun_status, "确认操作") then return end
-
+	if (gamerun_huihe == "" or gamerun_huihe == "游戏结束") and gamerun_status ~= "选项选择" then return end
+    if ((gamerun_huihe == "结束" or gamerun_status == "手牌生效中" or string.find(gamerun_status, "确认操作")) and gamerun_status ~= "选项选择") then return end
     if key == "left" then
 	    if string.find(gamerun_status, "选择目标") or gamerun_status == "技能选择-目标" or gamerun_status == "技能选择-目标B" then
 		    --  选择卡牌使用目标状态  --
@@ -1327,6 +1362,10 @@ function on.arrowKey(key)
 		if string.find(gamerun_status, "选项选择") then
 		    if gamerun_guankan_selected > 1 then
 				gamerun_guankan_selected = gamerun_guankan_selected - 1
+			else
+				if item_disrow > 0 then
+					item_disrow = item_disrow - 1
+				end
 			end
 		elseif #char_juese[char_current_i].skillname > 4 and skill_disrow > 0 then
 			skill_disrow = skill_disrow - 1
@@ -1334,8 +1373,12 @@ function on.arrowKey(key)
 	end
 	if key == "down" then
 		if string.find(gamerun_status, "选项选择") then
-		    if gamerun_guankan_selected < #choose_option then
-				gamerun_guankan_selected = gamerun_guankan_selected - 1
+		    if gamerun_guankan_selected < 3 and gamerun_guankan_selected + item_disrow < #choose_option then
+				gamerun_guankan_selected = gamerun_guankan_selected + 1
+			else
+				if item_disrow < #choose_option - 3 then
+					item_disrow = item_disrow + 1
+				end
 			end
 		elseif #char_juese[char_current_i].skillname > 4 and math.ceil(#char_juese[char_current_i].skillname / 2) - 2 > skill_disrow then
 			skill_disrow = skill_disrow + 1
