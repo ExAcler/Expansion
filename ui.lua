@@ -562,16 +562,18 @@ function draw_others(gc)
 	    gc:drawRect(83 + 18 * gamerun_guankan_selected, 117 - 10 - 27, 41, 57)
 	elseif string.find(gamerun_status, "选项选择") then
 		gc:setColorRGB(255, 255, 255)
-		gc:fillRect(50, 15, 220, 190)
+		gc:fillRect(20, 15, 280, 190)
         gc:setColorRGB(0, 0, 0)
-        gc:drawRect(50, 15, 220, 190)
-		gc:drawString(choose_name, 130, 45)
-		for i = 1,#choose_option do
-	        gc:drawString(i.."."..choose_option[i], 87 , 139 - 10 - 27 + 30 * (i - 1))
+        gc:drawRect(20, 15, 280, 190)
+		
+		gc:drawString(choose_name, 159 - 1/2*gc:getStringWidth(choose_name), 45)
+		gc:drawString(jiaohu_text, 159 - 1/2*gc:getStringWidth(jiaohu_text), 65)
+		for i = 1,math.min(#choose_option - item_disrow,3) do
+	        gc:drawString((i + item_disrow).."."..choose_option[(i + item_disrow)], 87 , 139 - 10 - 27 + 30 * (i - 1))
 		end
 		gc:setPen("medium")
 	    gc:setColorRGB(255, 0, 0)
-	    gc:drawRect(87, 137 - 10 - 27 + 30 * (i - 1), gc:getStringWidth(gamerun_guankan_selected.."."..choose_option[i])+4, gc:getStringHeight(gamerun_guankan_selected.."."..choose_option[i])+4)
+	    gc:drawRect(87, 137 - 10 - 47 + 30 * (gamerun_guankan_selected - 1), gc:getStringWidth((gamerun_guankan_selected + item_disrow).."."..choose_option[gamerun_guankan_selected + item_disrow])+4, gc:getStringHeight((gamerun_guankan_selected + item_disrow).."."..choose_option[gamerun_guankan_selected + item_disrow])+4)
 	end
 end
 
