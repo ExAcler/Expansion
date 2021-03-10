@@ -30,6 +30,89 @@ function skills_jizhi(ID_s)
 	card_fenfa( {ID_s, 1, true})
 end
 
+--  孙策：魂姿  --
+function skills_hunzi()
+	push_message(char_juese[char_current_i].name.."触发了武将技能 '魂姿'")
+	char_juese[char_current_i].tili_max = char_juese[char_current_i].tili_max - 1
+	if char_juese[char_current_i].skill["英魂"] ~= nil then
+		skill_double = true
+	else
+		char_juese[char_current_i].skill["英魂"] = "available"
+	end
+	table.insert(char_juese[char_current_i].skillname,"英魂")
+	if char_juese[char_current_i].skill["英姿"] ~= nil then
+		skill_double = true
+	else
+		char_juese[char_current_i].skill["英姿"] = "available"
+	end
+	table.insert(char_juese[char_current_i].skillname,"英姿")
+	char_juese[char_current_i].skill["魂姿"] = "locked_whole_game"
+end
+
+--  孙坚：英魂  --
+function skills_yinghun_enter()
+	skill_yinghun = coroutine.create(
+		function ()
+			timer.stop()
+			yinghun_queue_xiangying = table.copy(funcptr_queue)
+			yinghun_queue_xiangying_i = funcptr_i
+			funcptr_queue = {}
+			gamerun_status = "选项选择"
+			choose_name = "英魂"
+			jiaohu_text = "是否使用 '英魂'令其他角色摸牌弃牌?"
+			choose_option = {"摸1弃"..(char_juese[char_current_i].tili_max-char_juese[char_current_i].tili),"摸"..(char_juese[char_current_i].tili_max-char_juese[char_current_i].tili).."弃1","不发动"}
+			txt_messages:setVisible(false)
+			gamerun_guankan_selected = 1
+			item_disrow = 0
+			gamerun_item = function(i)
+				funcptr_queue = {}
+				txt_messages:setVisible(true)
+				if i == 1 then
+					add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '英魂'选择摸1弃"..(char_juese[char_current_i].tili_max-char_juese[char_current_i].tili))
+					is_drawx = false
+				elseif i == 2 then
+					add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '将驰'选择摸"..(char_juese[char_current_i].tili_max-char_juese[char_current_i].tili).."弃1")
+					is_drawx = true
+				else
+					set_hints("")
+					gamerun_status = ""
+					funcptr_queue = yinghun_queue_xiangying
+					funcptr_i = yinghun_queue_xiangying_i + 1
+					timer.start(0.6)
+				end
+				
+				if is_drawx ~= nil then
+					gamerun_status = "选择目标-英魂"
+					set_hints("请选择目标")
+					gamerun_select_target("init")
+					platform.window:invalidate()
+				end
+			end
+		end)
+	coroutine.resume(skill_yinghun)
+	platform.window:invalidate()
+end
+
+function _yinghun_exe(is_drawx)
+	funcptr_queue = {}
+	push_message(char_juese[char_current_i].name.."发动了武将技能 '英魂'")
+	
+	if is_drawx then
+		card_fenfa({gamerun_target_selected,char_juese[char_current_i].tili_max-char_juese[char_current_i].tili,true})
+		ai_judge_withdraw(gamerun_target_selected,1)
+	else
+		card_fenfa({gamerun_target_selected,1,true})
+		ai_judge_withdraw(gamerun_target_selected,char_juese[char_current_i].tili_max-char_juese[char_current_i].tili)
+	end
+	is_drawx = nil
+	set_hints("")
+	gamerun_status = ""
+	funcptr_queue = yinghun_queue_xiangying
+	funcptr_i = yinghun_queue_xiangying_i + 1
+	timer.start(0.6)
+end
+
+
 --  魏延：狂骨  --
 function skills_kuanggu(ID_s)
 	add_funcptr(char_juese[ID_s].name..push_message, "发动了武将技能 '狂骨'")

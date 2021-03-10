@@ -122,7 +122,7 @@ function ai_judge_cardinfo(ID,cards)
 			yanse = "红色"
 		end
 	elseif #cards > 1 then
-		dianshu == 0
+		dianshu = 0
 		local huase_included = {0,0,0,0}
 		for i=1,#cards do
 			if cards[i][2] == "黑桃" and char_juese[ID].skill["红颜"] == "available" then
@@ -546,10 +546,10 @@ function ai_card_stat(ID)
 end
 --  AI主动弃置牌 --
 function ai_judge_withdraw(ID,required)
-	if card < required then
+	if ai_card_stat(ID) < required then
 		for i = 1, table.maxn(char_juese[ID].shoupai) do
 			if char_juese[ID].shoupai[1] ~= nil then
-				_qipai_sub2(ID, 1)
+				_qipai_sub2({ID, 1})
 			end
 		end
 		if #char_juese[ID].wuqi ~= 0 then
@@ -570,7 +570,7 @@ function ai_judge_withdraw(ID,required)
 		while withdraw_needed >= 0 do
 			local withdrawed = ai_card_search(ID,"非无懈锦囊",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -578,7 +578,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"装备",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -586,7 +586,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"普通杀",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -594,7 +594,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"雷杀",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -602,7 +602,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"火杀",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -610,7 +610,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"酒",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -618,7 +618,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"无懈可击",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -626,7 +626,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"闪",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -634,7 +634,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"桃",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -642,7 +642,7 @@ function ai_judge_withdraw(ID,required)
 			end
 			local withdrawed = ai_card_search(ID,"随便",withdraw_needed)
 			for i = 1,#withdrawed do
-				_qipai_sub2(ID, withdrawed[i])
+				_qipai_sub2({ID, withdrawed[i]})
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
@@ -680,6 +680,80 @@ function ai_judge_withdraw(ID,required)
 			end
 		end
 		return true
+	end
+end
+
+--  AI弃置其他角色牌 --
+function ai_judge_withdraw_other(ID,is_zhuangbei_included,is_panding_included,is_enemy,is_visible)
+	if is_enemy then
+		if is_zhuangbei_included == true and (#char_juese[ID].gongma ~= 0 or #char_juese[ID].wuqi ~= 0 or #char_juese[ID].fangma ~= 0 or #char_juese[ID].fangju ~= 0) then
+			if #char_juese[ID].fangju ~= 0 then
+				return "装备","防具"
+			end
+			if #char_juese[ID].fangma ~= 0 then
+				return "装备","+1马"
+			end
+			if #char_juese[ID].wuqi ~= 0 then
+				return "装备","武器"
+			end
+			if #char_juese[ID].gongma ~= 0 then
+				return "装备","-1马"
+			end
+		else
+			if #char_juese[ID].shoupai ~= 0 then
+				return "手牌",math.random(#char_juese[ID].shoupai)
+			else
+				if is_panding_included == true and #char_juese[ID].panding ~= 0 then
+					for i = 1,#char_juese[ID].panding do
+						if char_juese[ID].panding[i][1] == "闪电" then
+							return "判定",i
+						end
+					end
+					for i = 1,#char_juese[ID].panding do
+						if char_juese[ID].panding[i][1] == "兵粮寸断" then
+							return "判定",i
+						end
+					end
+					return "判定",1
+				else
+					return "没牌"
+				end
+			end
+		end
+	else
+		if is_panding_included == true and #char_juese[ID].panding ~= 0 then
+			for i = 1,#char_juese[ID].panding do
+				if char_juese[ID].panding[i][1] == "乐不思蜀" then
+					return "判定",i
+				end
+			end
+			for i = 1,#char_juese[ID].panding do
+				if char_juese[ID].panding[i][1] == "兵粮寸断" then
+					return "判定",i
+				end
+			end
+			return "判定",1
+		else
+			if #char_juese[ID].shoupai ~= 0 then
+				return "手牌",math.random(#char_juese[ID].shoupai)
+			elseif is_zhuangbei_included == true then
+				if #char_juese[ID].gongma ~= 0 then
+					return "装备","-1马"
+				end
+				if #char_juese[ID].wuqi ~= 0 then
+					return "装备","武器"
+				end
+				if #char_juese[ID].fangma ~= 0 then
+					return "装备","+1马"
+				end
+				if #char_juese[ID].fangju ~= 0 then
+					return "装备","防具"
+				end
+				return "没牌"
+			else
+				return "没牌"
+			end
+		end
 	end
 end
 
@@ -826,6 +900,17 @@ function ai_judge_shenfen()
 		end
 	end
 end
+
+
+
+
+
+--  以下不是我写的
+
+
+
+
+
 --  AI 回合内出牌处理  --
 function auto_chupai(ID)
 	local shoupai_c, tili, tili_max, name, shenfen, shili
