@@ -239,6 +239,15 @@ function gamerun_huihe_start()
 	--  回合开始阶段  --
 	msg = {char_juese[char_current_i].name, "回合开始"}
     add_funcptr(push_message, table.concat(msg))
+	gamerun_huihe = "开始"
+	
+	if char_juese[char_current_i].skill["魂姿"] == "available" and char_juese[char_current_i].tili == 1 then
+		skills_hunzi()
+	end
+	
+	if char_juese[char_current_i].skill["英魂"] == "available" and char_juese[char_current_i].tili < char_juese[char_current_i].tili_max then
+		add_funcptr(skills_yinghun_enter)
+	end
 	msg = nil; collectgarbage()
 	
 	--  判定阶段  --
@@ -769,6 +778,14 @@ function on.enterKey()
 		return 
 	end
 
+	--if gamerun_huihe == "开始" then
+		--  孙坚英魂  --
+		if gamerun_status == "选择目标-英魂" then
+			_yinghun_exe(is_drawx)
+			return
+		end
+	--end
+
 	if gamerun_huihe == "判定" then
 		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		    gamerun_OK = true
@@ -789,7 +806,7 @@ function on.enterKey()
 		end
 		return
 	end
-
+	
 	if gamerun_huihe == "摸牌" then
 		--  张辽突袭  --
 		if gamerun_status == "选择目标" then
