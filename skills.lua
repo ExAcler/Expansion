@@ -298,7 +298,7 @@ end
 
 --  司马懿：反馈  --
 function skills_fankui(ID, laiyuan)
-	add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '反馈'")
+	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '反馈'")
 	
 	--  简易AI  --
 	--  拿走诸葛连弩  --
@@ -371,7 +371,7 @@ end
 function skills_qixi()
 	if skills_judge_black() then
 		if card_chai(card_highlighted, char_current_i, gamerun_target_selected) then
-			gamerun_wuqi_out_hand(char_current_i)
+			--gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()
 		    consent_func_queue(0.2)
 		end
@@ -723,7 +723,7 @@ function skills_judge_liegong(ID_s, ID_mubiao)    --  判断烈弓发动条件�
 	
 	return false
 end
-function skills_liegong_enter()
+function skills_liegong_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
     gamerun_status = "确认操作"
 	jiaohu_text = "可按'确定'发动烈弓"
 	gamerun_OK = false
@@ -732,56 +732,30 @@ function skills_liegong_enter()
 	    gamerun_status = ""; set_hints("")
 		if gamerun_OK then
 	        funcptr_queue = {}
-			add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '烈弓'")
-	        add_funcptr(_liegong_sha_sub1, {card_highlighted, char_current_i, gamerun_target_selected})
-			
-			local fangju = char_juese[gamerun_target_selected].fangju
-			local card_shoupai = char_juese[char_current_i].shoupai[card_highlighted]
-			if #fangju ~= 0 then
-				if not char_wushi then
-					if fangju[1] == "藤甲" and hint_1 == "杀" then
-						add_funcptr(_nanman_send_msg, {char_juese[gamerun_target_selected].name, "装备藤甲，不用出闪"})
-						add_funcptr(_sha_sub2)
-						consent_func_queue(0.6)
-						return
-					end
-					if fangju[1] == "仁王盾" and (card_shoupai[2] == "黑桃" or card_shoupai[2] == "草花") then
-						add_funcptr(_nanman_send_msg, {char_juese[gamerun_target_selected].name, "装备仁王盾，抵御黑杀"})
-						add_funcptr(_sha_sub2)
-						consent_func_queue(0.6)
-						return
-					end
-				end
-			end
-			
-			_sha_tili_deduct(char_juese[char_current_i].shoupai[card_highlighted], char_current_i, gamerun_target_selected, true)
+			skills_liegong(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
 		    consent_func_queue(0.6)
 	    else
 			funcptr_queue = {}
-			add_funcptr(_sha_sub1, {card_highlighted, char_current_i, gamerun_target_selected})
-			_sha_exe_1(char_juese[char_current_i].shoupai[card_highlighted], char_current_i, gamerun_target_selected, true)
+			_liegong_sha(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
 			consent_func_queue(0.6)
 		end
 	end
 	
 	platform.window:invalidate()
 end
-function _liegong_sha_sub1(va_list)
-    local msg, jineng, card
-	local ID_s, ID_shoupai, ID_mubiao
-	ID_shoupai = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]
-
-	card_selected = {}
-	card_highlighted = 1
-	platform.window:invalidate()
-	
-	card = char_juese[ID_s].shoupai[ID_shoupai]
-	
-	msg = {char_juese[ID_s].name, "'杀'", char_juese[ID_mubiao].name, " (", card[2], card[3], "的", card[1], ")"}
-	push_message(table.concat(msg))
-	msg = nil; collectgarbage()
-	
-	card_shanchu({ID_s, ID_shoupai})
+function skills_liegong(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '烈弓'")
+	char_liegong = true
+	_liegong_sha(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+end
+function _liegong_sha(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+	if #char_juese[ID_s].wuqi ~= 0 then
+		if _sha_judge_zhuque_cixiong(ID_shoupai, card_shoupai, ID_s, ID_mubiao) == false then
+			_sha_go(ID_shoupai, card_shoupai, ID_s, ID_mubiao, iscur)
+		end
+	else
+		_sha_go(ID_shoupai, card_shoupai, ID_s, ID_mubiao, iscur)
+	end
 end
 
 --  袁绍：乱击  --
@@ -1613,65 +1587,102 @@ function skills_find_opponent(ID_mubiao)
 	return -1
 end
 
---  夏侯惇：刚烈判定  --
-function skills_ganglie(ID_s, ID_mubiao)
-    add_funcptr(push_message, table.concat({char_juese[ID_s].name.."发动了武将技能 '刚烈'"}))
+--  夏侯惇：刚烈  --
+function skills_ganglie(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	zhudong_queue = table.copy(funcptr_queue)
+	zhudong_queue_i = funcptr_i
+
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+    add_funcptr(push_message, table.concat({char_juese[ID_s].name .. "发动了武将技能 '刚烈'"}))
+	add_funcptr(_ganglie_fan_panding, ID_s)
+
+	if ID_mubiao == char_current_i then
+		if skills_judge_guicai_guidao(ID_mubiao) ~= "" then
+			add_funcptr(skills_guicai_guidao_zhudong_enter)
+		end
+	end
+
+	funcptr_add_tag = "翻判定牌"
+	add_funcptr(_ganglie_yanshi)
+	funcptr_add_tag = nil
 	
+	add_funcptr(_ganglie_jiesuan, {ID_s, ID_mubiao})
+
+	timer.start(0.6)
+end
+function skills_enter_ganglie(ID_s)
+	funcptr_queue = {}
+	push_message(char_juese[ID_s].name .. "的 '刚烈' 判定成功")
+	gamerun_status = "主动出牌-刚烈"
+	set_hints("'确定': 弃两张牌 '取消': 失去1体力")
+end
+function _ganglie_fan_panding(ID_s)		--  刚烈：翻开判定牌
 	--  翻开判定牌  --
 	if #card_yixi == 0 then
 	    card_xipai(true)
 	end
     card_panding_card = card_yixi[1]
 	table.remove(card_yixi, 1)
-	add_funcptr(push_message, table.concat({char_juese[ID_s].name.."的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
-	
+	push_message(table.concat({char_juese[ID_s].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
+end
+function _ganglie_yanshi()	--  刚烈：用于占空 (可能鬼才替换)
+
+end
+function _ganglie_jiesuan(va_list)		--  刚烈：结算判定牌
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
 	if card_panding_card[2] ~= "红桃" then
-		add_funcptr(skills_enter_ganglie,ID_s)
-		guankan_s = ID_s
-		guankan_d = ID_mubiao
+		if ID_mubiao == char_current_i then
+			skills_enter_ganglie(ID_s)
+			guankan_s = ID_s
+			guankan_d = ID_mubiao
+		else
+			_ganglie_exe_ai(ID_s, ID_mubiao)
+		end
 		card_add_qipai(card_panding_card)
 	else
-		add_funcptr(push_message, char_juese[ID_s].name.."的 ‘刚烈' 判定失败")
+		push_message(char_juese[ID_s].name .. "的 '刚烈' 判定失败")
 		card_add_qipai(card_panding_card)
-		
-		if lianhuan_va == nil then
-			add_funcptr(_ganglie_sub)
-		else
-			local id, shuxing, hengzhi
-			id = lianhuan_va[2]; shuxing = lianhuan_va[4]
-			hengzhi = char_juese[id].hengzhi
-					
-			if hengzhi then
-				if shuxing == "火" or shuxing == "雷" then
-					_deduct_lianhuan(lianhuan_va)
-				else
-					add_funcptr(_ganglie_sub)
-				end
-			else
-				add_funcptr(_ganglie_sub)
-			end
-		end
+		_ganglie_huifu()
 	end
 end
-function skills_enter_ganglie(ID_s)
-	funcptr_queue = {}
-	push_message(char_juese[ID_s].name.."的 '刚烈' 判定成功")
-	gamerun_status = "主动出牌-刚烈"
-	set_hints("'确定': 弃两张牌 '取消': 失去1体力")
+function _ganglie_huifu()	--  刚烈：恢复己方中断前函数队列
+	funcptr_queue = zhudong_queue
+	funcptr_i = zhudong_queue_i
+	timer.start(0.6)
 end
-function _ganglie_exe_1()    --  弃置两张牌
+function _ganglie_exe_ai(ID_s, ID_mubiao)	--  刚烈：AI做出决定
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	char_tili_deduct({1, ID_mubiao, ID_s, "普通"})
+	add_funcptr(_ganglie_huifu)
+
+	timer.start(0.6)
+end
+function _ganglie_exe_1()    --  刚烈：弃置两张牌
 	gamerun_status = "手牌生效中"
 	set_hints("")
-	funcptr_queue = {}; card_highlighted = 1
+	card_highlighted = 1
 	
 	card_qipai_go()
+	add_funcptr(_ganglie_huifu)
 end
-function _ganglie_exe_2()    --  失去1点体力
+function _ganglie_exe_2()    --  刚烈：失去1点体力
 	gamerun_status = "手牌生效中"
 	set_hints("")
-	funcptr_queue = {}; card_highlighted = 1
+	card_selected = {}; card_highlighted = 1
 	
 	char_tili_deduct({1, guankan_d, guankan_s, "普通"})
+	add_funcptr(_ganglie_huifu)
 end
 function _ganglie_sub()
 	funcptr_queue = {}
@@ -1990,4 +2001,10 @@ function _niepan_sub(id)
 	char_juese[id].fanmian = false
 	card_fenfa({id, 3, true})
 	char_juese[id].tili = 3
+end
+
+--  张春华：伤逝  --
+function skills_shangshi(id)
+	add_funcptr(push_message, char_juese[id].name .. "发动了武将技能 '伤逝'")
+	add_funcptr(card_fenfa, {id, char_juese[id].tili_max - char_juese[id].tili - table.maxn(#char_juese[id].shoupai), true})
 end

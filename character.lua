@@ -59,7 +59,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}}, 		
 	["神曹操"] = {3,"神",false,{"归心","飞影"},"男", {"","锁定"}},
 	["曹彰"] = {4,"魏",false,{"将驰"},"男",{""}},
-	["孙笑川"] = {4,"神",false,{"苦肉","伤逝","乱击","制衡","结姻","强袭","英姿","将驰","化身","新生"},"男", {"","","","","","","","","禁止","禁止"}},
+	["孙笑川"] = {4,"神",false,{"苦肉","伤逝","乱击","奇袭","刚烈","强袭","英姿","将驰","化身","新生"},"男", {"","","","","","","","","禁止","禁止"}},
 }
 
 -- 武器攻击范围 --
@@ -225,6 +225,8 @@ char_wushi = false  -- 无视防具标志 (古锭刀)
 char_rende_given = 0  -- 使用仁德技能已给出牌数
 char_luoyi = false  -- 许褚使用了裸衣技能
 char_xiangying_2 = false	-- 吕布无双、董卓肉林，需要己方使用两张手牌抵消的
+char_liegong = false	-- 黄忠发动烈弓标志
+char_zhuque = false		-- 发动朱雀羽扇标志
 skill_used = false  -- 已经发动过技能
 end
 
@@ -514,13 +516,6 @@ function char_skills_sellblood(va_list)
 	id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]; fp = va_list[6]; AOE = va_list[7]
 	tili = char_juese[id].tili - _deduct_count(va_list)
 
-	-- 张春华触发绝情 --
-	--[[if laiyuan~=nil then
-		if char_juese[laiyuan].skill["绝情"] == "available" then
-			add_funcptr(push_message,char_juese[laiyuan].name.."触发了武将技能 '绝情'")
-		end
-	end]]--
-
 	--  郭嘉发动遗计  --
 	if char_juese[id].skill["遗计"] == "available" and cansellblood == true then
 		skills_yiji(id, _deduct_count(va_list))
@@ -536,34 +531,26 @@ function char_skills_sellblood(va_list)
 		skills_fangzhu(id, laiyuan)
 	end
 	
-	
-	-- 神曹操发动归心 --
+	--  神曹操发动归心  --
 	if char_juese[id].skill["归心"] == "available" and cansellblood == true then
 		skills_guixin(id)
 	end
 	
 	--  夏侯惇发动刚烈  --
-	if char_juese[id].skill["刚烈"] == "available" and AOE ~= true and cansellblood == true then
-		if hengzhi == true then
-			lianhuan_va = va_list
-		else
-			lianhuan_va = nil
-		end
-		skills_ganglie(id, laiyuan)
-		return
+	if char_juese[id].skill["刚烈"] == "available" and cansellblood == true then
+		add_funcptr(skills_ganglie, {id, laiyuan})
 	end
 	
 	--  左慈发动新生  --
 	if char_juese[id].skill["新生"] == "available" and cansellblood == true then
 		for i = 1,_deduct_count(va_list) do
-			skills_xinsheng(id,false)
+			skills_xinsheng(id, false)
 		end
 	end
 
-	-- 张春华在手牌不足时摸牌 --
-	if char_juese[id].skill["伤逝"] == "available" and table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max-char_juese[id].tili then
-		push_message(char_juese[id].name.."发动了武将技能 '伤逝'")
-		card_fenfa({id, char_juese[id].tili_max-char_juese[id].tili-table.maxn(#char_juese[id].shoupai), true})
+	--  张春华发动伤逝，在手牌不足时摸牌  --
+	if char_juese[id].skill["伤逝"] == "available" and table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max - char_juese[id].tili then
+		skills_shangshi(id)
 	end
 end
 
@@ -579,15 +566,15 @@ function char_tili_deduct(va_list, is_insert)
 		--  插入函数队列末尾  --
 		add_funcptr(_char_tili_deduct, va_list)
 			
-		if shuxing~="流失" then
+		if shuxing ~= "流失" then
 			cansellblood = true
 		else
 			cansellblood = false
 		end
-		if laiyuan~=nil then
+		if laiyuan ~= nil then
 			if char_juese[laiyuan].skill["绝情"] == "available" and shuxing~="流失" then
-				add_funcptr(push_message,char_juese[laiyuan].name.."触发了武将技能 '绝情'")
-				cansellblood,shuxing = false,"流失"
+				add_funcptr(push_message, char_juese[laiyuan].name .. "触发了武将技能 '绝情'")
+				cansellblood, shuxing = false, "流失"
 			end
 		end
 		
@@ -637,7 +624,6 @@ function char_tili_deduct(va_list, is_insert)
 		if tili > 0 and fp ~= nil and shuxing ~= "流失" then
 			if #char_juese[laiyuan].wuqi ~= 0 then
 				if char_juese[laiyuan].wuqi[1] == "麒麟弓" then
-					lianhuan_va = va_list
 					fp(laiyuan, id)
 				end
 			end

@@ -23,7 +23,7 @@ gamerun_status = ""    --[[游戏状态
 						   手牌生效中：卡牌需要队列执行效果时
 						   观看手牌 ("-拆、-顺"、"-杀")：使用一些卡牌需要选择对方手牌时
 						   牌堆选择 ("-五谷")：使用一些卡牌、技能等需要翻开牌堆顶数张牌并选择时
-						   主动出牌 ("-决斗"、"-火攻"、"-青龙"、"-贯石"、"-刚烈"|"-杀"、"-南蛮"、"-万箭"、"-借刀")：使用一些卡牌需要己方进一步响应时
+						   主动出牌 ("-决斗"、"-火攻A"、"-青龙"、"-贯石"、"-刚烈"|"-杀"、"-南蛮"、"-万箭"、"-火攻B"、"-借刀"、"-雌雄")：使用一些卡牌需要己方进一步响应时
 						   技能选择 ("-单牌"：选取单张牌、"-多牌"：选取多张牌、"-目标"：选取目标状态)
 						   确认操作：技能等需要确认发动的
 					   --]]
@@ -207,12 +207,14 @@ function _init_sub1()
 		huashen_paidui = {}
 		skills_xinsheng(char_current_i,true)
 		skills_xinsheng(char_current_i,true)
+		--[[
 		skills_xinsheng(char_current_i,true)
 		skills_xinsheng(char_current_i,true)
 		skills_xinsheng(char_current_i,true)
 		skills_xinsheng(char_current_i,true)
 		skills_xinsheng(char_current_i,true)
 		skills_xinsheng(char_current_i,true)
+		]]
 		skills_huashen(char_current_i,"游戏开始")
 		return
 	end
@@ -835,8 +837,11 @@ function on.enterKey()
 					end
 				end
 			elseif string.find(gamerun_status, "杀") then
+				gamerun_status = "手牌生效中"
+				set_hints("")
+				
 				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-			    _sha_sub2()
+			    _sha_qilin_huifu()
 			elseif string.find(gamerun_status, "寒") then
 				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
 			    _sha_sub3()
@@ -844,10 +849,7 @@ function on.enterKey()
 			platform.window:invalidate()
 		elseif string.find(gamerun_status, "牌堆选择") then
 			if string.find(gamerun_status, "五谷") then
-				funcptr_queue = {}
 				_wugu_get_card_zhudong(char_current_i, gamerun_guankan_selected)
-				_wugu_others_get_card_exe(guankan_s, char_current_i)
-				consent_func_queue(0.6)
 			end
 		elseif string.find(gamerun_status, "主动出牌") then
 		    if string.find(gamerun_status, "决斗") then
@@ -919,6 +921,26 @@ function on.enterKey()
 				end
 				return
 			end
+
+			if string.find(gamerun_status, "-杀") then
+				if table.getn2(card_selected) ~= 0 then
+					if card_judge_if_shan(char_current_i, card_highlighted) then
+						funcptr_queue = {}
+						_sha_zhudong_chu(wuxie_va)
+						consent_func_queue(0.6)
+					end
+				end
+				return
+			end
+
+			if string.find(gamerun_status, "雌雄") then
+				if table.getn2(card_selected) ~= 0 then
+					funcptr_queue = {}
+					_sha_cixiong_zhudong_qipai(wuxie_va)
+					consent_func_queue(0.6)
+				end
+				return
+			end
 			
 			--  青龙刀出杀  --
 			if string.find(gamerun_status, "青龙") then
@@ -947,34 +969,13 @@ function on.enterKey()
 			--  夏侯惇刚烈  --
 			if string.find(gamerun_status, "刚烈") then
 		        if table.getn2(card_selected) == 2 then
+					funcptr_queue = {}
 					_ganglie_exe_1()
-					
-					if lianhuan_va == nil then
-						add_funcptr(_ganglie_sub)
-					end
-				
-					if lianhuan_va ~= nil then
-						gamerun_status = "手牌生效中"
-						set_hints("")
-					
-						local id, shuxing, hengzhi
-						id = lianhuan_va[2]; shuxing = lianhuan_va[4]
-						hengzhi = char_juese[id].hengzhi
-					
-						if hengzhi then
-							if shuxing == "火" or shuxing == "雷" then
-								_deduct_lianhuan(lianhuan_va)
-							else
-								add_funcptr(_ganglie_sub)
-							end
-						else
-							add_funcptr(_ganglie_sub)
-						end
-					end
 					consent_func_queue(0.6)
 				end
 				return
 		    end
+
 		elseif gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		    gamerun_OK = true
 			gamerun_OK_ptr()
@@ -1169,6 +1170,18 @@ function on.escapeKey()
 					consent_func_queue(0.6)
 				end
 
+				if string.find(gamerun_status, "-杀") then
+				    funcptr_queue = {}
+				    _sha_zhudong_fangqi(wuxie_va, true)
+					consent_func_queue(0.6)
+				end
+
+				if string.find(gamerun_status, "雌雄") then
+				    funcptr_queue = {}
+				    _sha_cixiong_zhudong_fangqi(wuxie_va)
+					consent_func_queue(0.6)
+				end
+
 				if string.find(gamerun_status, "无懈") then
 					_wuxie_zhudong_fangqi()
 				end
@@ -1179,33 +1192,12 @@ function on.escapeKey()
 				
 				--  夏侯惇刚烈  --
 				if string.find(gamerun_status, "刚烈") then
+					funcptr_queue = {}
 					_ganglie_exe_2()
-					
-					if lianhuan_va == nil then
-						add_funcptr(_ganglie_sub)
-					end
-				
-					if lianhuan_va ~= nil then
-						gamerun_status = "手牌生效中"
-						set_hints("")
-					
-						local id, shuxing, hengzhi
-						id = lianhuan_va[2]; shuxing = lianhuan_va[4]
-						hengzhi = char_juese[id].hengzhi
-					
-						if hengzhi then
-							if shuxing == "火" or shuxing == "雷" then
-								_deduct_lianhuan(lianhuan_va)
-							else
-								add_funcptr(_ganglie_sub)
-							end
-						else
-							add_funcptr(_ganglie_sub)
-						end
-					end
 					consent_func_queue(0.6)
 					return
 				end
+
 			elseif gamerun_status == "确认操作" then
 		        gamerun_OK = false
 			    gamerun_OK_ptr()
@@ -1597,6 +1589,30 @@ function on.charIn(char)
 	if char == 'd' then
 		gamerun_card_select_zhuangbei(-4)
 	end
+
+	if char == 'i' then
+		for i = 1, 5 do
+			if char_juese[i].shenfen == "主公" then
+				funcptr_queue = {}
+				card_sha(1, i, char_current_i, true)
+				consent_func_queue(0.6)
+				break
+			end
+		end
+	end
+
+	if char == 'j' then
+		funcptr_queue = {}
+		card_sha(1, 2, 3, true)
+		consent_func_queue(0.6)
+	end
+
+	if char == 'k' then
+		funcptr_queue = {}
+		card_wugu(1, 1)
+		consent_func_queue(0.6)
+	end
+
 	platform.window:invalidate()
 end
 
