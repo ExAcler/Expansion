@@ -139,8 +139,8 @@ function skills_xingshang(va_list)
 	local ID_s, ID_siwang, panding
 	ID_s = va_list[1]; ID_siwang = va_list[2]; panding = va_list[3]
 	
-	push_message(char_juese[ID_s].name.."发动了武将技能 '行殇'")
-	push_message(table.concat({char_juese[ID_s].name.."获得了", char_juese[ID_siwang].name, "的所有牌"}))
+	push_message(char_juese[ID_s].name .. "发动了武将技能 '行殇'")
+	push_message(table.concat({char_juese[ID_s].name, "获得了", char_juese[ID_siwang].name, "的所有牌"}))
 	
 	_xingshang_card_transfer(ID_s, ID_siwang, panding)
 end
@@ -313,41 +313,42 @@ end
 
 --  孙策：激昂  --
 function skills_jiang(ID)
-	add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '激昂'")
+	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '激昂'")
 	add_funcptr(card_fenfa, {ID, 1, true})
 end
 
 --  神曹操：归心 --
 function skills_guixin(ID)
-    add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '归心'")
-	for i = 1,5 do
+    add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '归心'")
+	add_funcptr(_guixin_exe, ID)
+	add_funcptr(push_message, char_juese[ID].name .. "将武将牌翻面")
+	add_funcptr(char_fanmian, ID)
+end
+function _guixin_exe(ID)
+	for i = 1, 5 do
 		if i ~= ID and char_juese[i].siwang == false then
 			--  简易AI  --
-			--  拿走诸葛连弩  --
-			if #char_juese[i].wuqi > 0 and char_juese[i].wuqi[1] == "诸葛连弩" then
-				add_funcptr(_guixin_exe_2, {ID, i})
+			if #char_juese[i].wuqi > 0 and char_juese[i].wuqi[1] == "诸葛弩" then
+				--  拿走诸葛连弩  --
+				_guixin_exe_3({ID, i})
+			elseif #char_juese[i].fangju > 0 then
 				--  拿走防具  --
-			else 
-				if #char_juese[i].fangju > 0 then
-					add_funcptr(_guixin_exe_2, {ID, i})
-				else
-					--  拿走手牌  --
-					if #char_juese[i].shoupai > 0 then
-						add_funcptr(_guixin_exe_1, {ID, i})
-					end
+				_guixin_exe_2({ID, i})
+			else
+				--  拿走手牌  --
+				if #char_juese[i].shoupai > 0 then
+					_guixin_exe_1({ID, i})
 				end
 			end
 		end
 	end
-	add_funcptr(push_message, char_juese[ID].name.."将武将牌翻面")
-	add_funcptr(char_fanmian, ID)
 end
 function _guixin_exe_1(va_list)    --  拿走手牌
 	local ID, i
 	ID = va_list[1]; i = va_list[2]
 
 	local t = math.random(#char_juese[i].shoupai)
-	push_message(table.concat({char_juese[ID].name.."获得", char_juese[i].name, "的一张手牌"}))
+	push_message(table.concat({char_juese[ID].name .. "获得", char_juese[i].name, "的一张手牌"}))
 	table.insert(char_juese[ID].shoupai, char_juese[i].shoupai[t])
 	card_remove({i, t})
 end
@@ -356,21 +357,21 @@ function _guixin_exe_2(va_list)    --  拿走防具
 	ID = va_list[1]; i = va_list[2]
 
 	local card = char_juese[i].fangju
-	push_message(table.concat({char_juese[ID].name.."获得", char_juese[i].name, "的防具 '", card[2], card[3], "的", card[1], "'"}))
+	push_message(table.concat({char_juese[ID].name .. "获得", char_juese[i].name, "的防具 '", card[2], card[3], "的", card[1], "'"}))
 	table.insert(char_juese[ID].shoupai, char_juese[i].fangju)
 	char_juese[i].fangju = {}
 end
-function _guixin_exe_2(va_list)    --  拿走武器
+function _guixin_exe_3(va_list)    --  拿走武器
 	local ID, i
 	ID = va_list[1]; i = va_list[2]
 
 	local card = char_juese[i].wuqi
-	push_message(table.concat({char_juese[ID].name.."获得", char_juese[i].name, "的武器 '", card[2], card[3], "的", card[1], "'"}))
+	push_message(table.concat({char_juese[ID].name .. "获得", char_juese[i].name, "的武器 '", card[2], card[3], "的", card[1], "'"}))
 	table.insert(char_juese[ID].shoupai, char_juese[i].wuqi)
 	char_juese[i].wuqi = {}
 end
 
---  曹丕：放逐 --
+--  曹丕：放逐  --
 -- 暂时默认放逐伤害来源
 function skills_fangzhu(ID, laiyuan)
 	add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '放逐'")
@@ -382,25 +383,30 @@ end
 --  司马懿：反馈  --
 function skills_fankui(ID, laiyuan)
 	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '反馈'")
-	
+	add_funcptr(fankui_exe, {ID, laiyuan})
+end
+function _fankui_exe(va_list)
+	local ID, laiyuan
+	ID = va_list[1]; laiyuan = va_list[2]
+
 	--  简易AI  --
 	--  拿走诸葛连弩  --
 	if #char_juese[laiyuan].wuqi > 0 then
-		if char_juese[laiyuan].wuqi[1] == "诸葛连弩" then
-			add_funcptr(_fankui_exe_2, {ID, laiyuan})
+		if char_juese[laiyuan].wuqi[1] == "诸葛弩" then
+			_fankui_exe_3(va_list)
 			return
 		end
 	end
 	
 	--  拿走防具  --
 	if #char_juese[laiyuan].fangju > 0 then
-		add_funcptr(_fankui_exe_2, {ID, laiyuan})
+		_fankui_exe_2(va_list)
 		return
 	end
 	
 	--  拿走手牌  --
 	if #char_juese[laiyuan].shoupai > 0 then
-		add_funcptr(_fankui_exe_1, {ID, laiyuan})
+		_fankui_exe_1(va_list)
 		return
 	end
 end
@@ -409,7 +415,7 @@ function _fankui_exe_1(va_list)    --  拿走手牌
 	ID = va_list[1]; laiyuan = va_list[2]
 
 	local t = math.random(#char_juese[laiyuan].shoupai)
-	push_message(table.concat({char_juese[ID].name.."获得", char_juese[laiyuan].name, "的一张手牌"}))
+	push_message(table.concat({char_juese[ID].name .. "获得", char_juese[laiyuan].name, "的一张手牌"}))
 	table.insert(char_juese[ID].shoupai, char_juese[laiyuan].shoupai[t])
 	card_remove({laiyuan, t})
 end
@@ -418,16 +424,16 @@ function _fankui_exe_2(va_list)    --  拿走防具
 	ID = va_list[1]; laiyuan = va_list[2]
 
 	local card = char_juese[laiyuan].fangju
-	push_message(table.concat({char_juese[ID].name.."获得", char_juese[laiyuan].name, "的防具 '", card[2], card[3], "的", card[1], "'"}))
+	push_message(table.concat({char_juese[ID].name .. "获得", char_juese[laiyuan].name, "的防具 '", card[2], card[3], "的", card[1], "'"}))
 	table.insert(char_juese[ID].shoupai, char_juese[laiyuan].fangju)
 	char_juese[laiyuan].fangju = {}
 end
-function _fankui_exe_2(va_list)    --  拿走武器
+function _fankui_exe_3(va_list)    --  拿走武器
 	local ID, laiyuan
 	ID = va_list[1]; laiyuan = va_list[2]
 
 	local card = char_juese[laiyuan].wuqi
-	push_message(table.concat({char_juese[ID].name.."获得", char_juese[laiyuan].name, "的武器 '", card[2], card[3], "的", card[1], "'"}))
+	push_message(table.concat({char_juese[ID].name .. "获得", char_juese[laiyuan].name, "的武器 '", card[2], card[3], "的", card[1], "'"}))
 	table.insert(char_juese[ID].shoupai, char_juese[laiyuan].wuqi)
 	char_juese[laiyuan].wuqi = {}
 end
@@ -603,7 +609,7 @@ end
 
 --  黄盖：苦肉  --
 function skills_kurou_enter()
-	if char_juese[char_current_i].tili == 1 then return false end
+	if char_juese[char_current_i].tili < 1 then return false end
 
 	skill_text_1 = "按'确定'发动苦肉"
 	
@@ -2075,19 +2081,57 @@ function _guicai_guidao_exe(va_list)
 end
 
 --  庞统：涅槃  --
-function _niepan_sub(id) 
+function skills_niepan(id)
+	if char_juese[char_current_i].siwang == true then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if char_juese[id].skill["涅槃"] ~= 1 then
+		--  不满足涅槃发动条件，执行原有濒死结算  --
+		if id == char_current_i then
+			add_funcptr(_binsi_ai, {id, id})
+		else
+			add_funcptr(_binsi_zhudong, id)
+		end
+		add_funcptr(_niepan_huifu)
+		timer.start(0.6)
+		return
+	end
+
+	add_funcptr(_niepan_lock, id)
+	card_qipai_all(id, true)
+	add_funcptr(_niepan_sub, id)
+	add_funcptr(_niepan_huifu)
+
+	timer.start(0.6)
+end
+function _niepan_lock(id)
 	msg = {char_juese[id].name, "发动了技能 '涅槃'"}
 	push_message(table.concat(msg))
 	char_juese[id].skill["涅槃"] = "locked_whole_game"
-	card_qipai_all(id)
+end
+function _niepan_sub(id) 
 	char_juese[id].hengzhi = false
 	char_juese[id].fanmian = false
 	card_fenfa({id, 3, true})
 	char_juese[id].tili = 3
 end
+function _niepan_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
 
 --  张春华：伤逝  --
 function skills_shangshi(id)
 	add_funcptr(push_message, char_juese[id].name .. "发动了武将技能 '伤逝'")
-	add_funcptr(card_fenfa, {id, char_juese[id].tili_max - char_juese[id].tili - table.maxn(#char_juese[id].shoupai), true})
+	add_funcptr(shangshi_sub, id)
+end
+function _shangshi_sub(id)
+	if table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max - char_juese[id].tili then
+		card_fenfa({id, char_juese[id].tili_max - char_juese[id].tili - table.maxn(#char_juese[id].shoupai), true})
+	end
 end

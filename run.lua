@@ -55,8 +55,8 @@ wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能�
 
 zhudong_queue = {}	-- 卡牌效果轮到己方被动响应时，记录原有的函数队列
 zhudong_queue_i = 0	-- 卡牌效果轮到己方被动响应时，原有函数队列的执行位置
-zhudong_queue_2 = {}
-zhudong_queue_2_i = 0
+zhudong_queue_stack = {}
+zhudong_queue_stack_i = {}
 
 skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的选项的个数
@@ -64,6 +64,26 @@ end
 
 --  定义变量  --
 init_run()
+
+--  往函数队列堆栈中添加队列  --
+function push_zhudong_queue(queue, i)
+	table.insert(zhudong_queue_stack, queue)
+	table.insert(zhudong_queue_stack_i, i)
+end
+
+--  从函数队列堆栈顶取出队列  --
+function pop_zhudong_queue()
+	if #zhudong_queue_stack <= 0 or #zhudong_queue_stack_i <= 0 or #zhudong_queue_stack ~= #zhudong_queue_stack_i then
+		return nil, nil
+	end
+
+	local queue = zhudong_queue_stack[#zhudong_queue_stack]
+	local i = zhudong_queue_stack_i[#zhudong_queue_stack_i]
+	table.remove(zhudong_queue_stack)
+	table.remove(zhudong_queue_stack_i)
+
+	return queue, i
+end
 
 --  table 库增补函数：获得 table 实际项数
 function table.getn2(t)
@@ -1225,6 +1245,11 @@ function on.escapeKey()
 					gamerun_OK = false
 					gamerun_OK_ptr()
 				end
+
+				if imp_card == "濒死" and gamerun_status == "技能选择-多牌" then
+					gamerun_OK = false
+					gamerun_OK_ptr()
+				end
 			else
 		        --  出牌结束，进入弃牌阶段  --
 	            gamerun_huihe_set("弃牌")
@@ -1281,6 +1306,11 @@ function on.escapeKey()
 		
 		if string.find(gamerun_status, "技能选择") then
 			if imp_card == "铁锁连环" then
+				gamerun_OK = false
+				gamerun_OK_ptr()
+			end
+
+			if imp_card == "濒死" and gamerun_status == "技能选择-多牌" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end

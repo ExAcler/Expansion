@@ -225,80 +225,6 @@ end
 --  定义变量  --
 init_cards()
 
---  临时 AI 函数 (ai.lua)  --
-function ai_chazhao_sha(ID, shoupai)
-	local c_pos = _sha_card_chazhao(shoupai, "杀")
-	if c_pos < 0 then
-		c_pos = _sha_card_chazhao(shoupai, "雷杀")
-	end
-	if c_pos < 0 then
-		c_pos = _sha_card_chazhao(shoupai, "火杀")
-	end
-	return c_pos
-end
-
-function ai_chazhao_shan(ID, shoupai)
-	local c_pos = _sha_card_chazhao(shoupai, "闪")
-	if c_pos == -1 then
-		--  甄姬倾国  --
-		if char_juese[ID].skill["倾国"] == "available" then
-			c_pos = _sha_chazhao_redblack(shoupai, false)
-		end
-			
-		--  赵云龙胆  --
-		if char_juese[ID].skill["龙胆"] == "available" then
-			c_pos = _sha_card_chazhao(shoupai, "杀")
-			if c_pos == -1 then
-				c_pos = _sha_card_chazhao(shoupai, "雷杀")
-			end
-			if c_pos == -1 then
-				c_pos = _sha_card_chazhao(shoupai, "火杀")
-			end
-		end
-	end
-	return c_pos
-end
-
-function ai_judge_cixiong()
-	return true
-end
-
-function ai_judge_liegong(ID_s)
-	if ID_s == char_current_i then
-		return true
-	end
-
-	return true
-end
-
-function ai_judge_guanshi(ID_s)
-	if #char_juese[ID_s].shoupai > 2 then
-		return true
-	end
-
-	return false
-end
-
-function ai_judge_hanbing(ID_mubiao)
-	if #char_juese[ID_mubiao].shoupai >= 2 then
-		return true
-	end
-
-	return false
-end
-
-function ai_judge_qinglong(ID_s)
-	if ai_chazhao_sha(ID_s, char_juese[ID_s].shoupai) > 0 then
-		return true
-	end
-
-	return false
-end
-
-function ai_judge_zhuque()
-	return true
-end
-
 --  将原始牌堆洗后放入分发牌堆  --
 function card_xipai(qipai)
     local t = 0
@@ -451,20 +377,16 @@ end
 
 --  当前玩家弃牌  --
 function card_qipai_go()
-    local i, v, j, max_select
+    local i, v
 	v = card_selected
-	card_selected = {}
-	collectgarbage()
 	
-	max_select = #char_juese[char_current_i].shoupai + 4
-	j = 0
-	
-	for i = -4, max_select do
+	for i = #char_juese[char_current_i].shoupai, -4, -1 do
 	    if v[i] ~= nil then
-	        add_funcptr(_qipai_sub1, i - j)
-		    if i > 0 then j = j + 1 end
+			add_funcptr(_qipai_sub1, i)
 		end
 	end
+
+	card_selected = {}
 end
 function _qipai_sub1(ID)
     local msg
@@ -3080,7 +3002,7 @@ function _sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur)	--  杀：己方响
 	card = table.copy(char_juese[ID_mubiao].fangju)
 
 	--  卧龙诸葛若未装备防具，视为装备八卦阵  --
-	if char_juese[ID_mubiao].skill["八阵"] == "available" then
+	if char_juese[ID_mubiao].skill["八阵"] == "available" and #card > 0 then
 		card[1] = "八卦阵"
 	end
 
@@ -3365,6 +3287,7 @@ function _sha_qilin_qipai_go(va_list)
 		card = char_juese[ID_mubiao].fangma
 		char_juese[ID_mubiao].fangma = {}
 	end
+	card_add_qipai(card)
 
 	_nanman_send_msg({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"})
 end
@@ -3391,7 +3314,7 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur)    --  杀：AI响应 
 	card = table.copy(char_juese[ID_mubiao].fangju)
 
 	--  卧龙诸葛若未装备防具，视为装备八卦阵  --
-	if char_juese[ID_mubiao].skill["八阵"] == "available" then
+	if char_juese[ID_mubiao].skill["八阵"] == "available" and #card > 0 then
 		card[1] = "八卦阵"
 	end
 

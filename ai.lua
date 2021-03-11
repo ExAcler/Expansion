@@ -15,6 +15,92 @@ function card_judge_arm(ID, card)
 	return card_id
 end
 
+--  AI从手牌中查找杀  --
+function ai_chazhao_sha(ID, shoupai)
+	local c_pos = _sha_card_chazhao(shoupai, "杀")
+	if c_pos < 0 then
+		c_pos = _sha_card_chazhao(shoupai, "雷杀")
+	end
+	if c_pos < 0 then
+		c_pos = _sha_card_chazhao(shoupai, "火杀")
+	end
+	return c_pos
+end
+
+--  AI从手牌中查找闪  --
+function ai_chazhao_shan(ID, shoupai)
+	local c_pos = _sha_card_chazhao(shoupai, "闪")
+	if c_pos == -1 then
+		--  甄姬倾国  --
+		if char_juese[ID].skill["倾国"] == "available" then
+			c_pos = _sha_chazhao_redblack(shoupai, false)
+		end
+			
+		--  赵云龙胆  --
+		if char_juese[ID].skill["龙胆"] == "available" then
+			c_pos = _sha_card_chazhao(shoupai, "杀")
+			if c_pos == -1 then
+				c_pos = _sha_card_chazhao(shoupai, "雷杀")
+			end
+			if c_pos == -1 then
+				c_pos = _sha_card_chazhao(shoupai, "火杀")
+			end
+		end
+	end
+	return c_pos
+end
+
+--  AI决定是否发动雌雄双股剑  --
+function ai_judge_cixiong()
+	return true
+end
+
+--  AI决定是否发动烈弓  --
+function ai_judge_liegong(ID_s)
+	if ID_s == char_current_i then
+		return true
+	end
+
+	return true
+end
+
+--  AI决定是否发动贯石斧  --
+function ai_judge_guanshi(ID_s)
+	if #char_juese[ID_s].shoupai > 2 then
+		return true
+	end
+
+	return false
+end
+
+--  AI决定是否发动寒冰剑  --
+function ai_judge_hanbing(ID_mubiao)
+	if #char_juese[ID_mubiao].shoupai >= 2 then
+		return true
+	end
+
+	return false
+end
+
+--  AI决定是否发动青龙刀  --
+function ai_judge_qinglong(ID_s)
+	if ai_chazhao_sha(ID_s, char_juese[ID_s].shoupai) > 0 then
+		return true
+	end
+
+	return false
+end
+
+--  AI决定是否发动朱雀羽扇  --
+function ai_judge_zhuque()
+	return true
+end
+
+--  AI决定是否出桃解救濒死角色  --
+function ai_judge_jiejiu(ID_s, ID_jiu)
+	return false
+end
+
 -- AI距离与攻击范围测算 --
 -- 第一个参数是否在指定距离内，第二个参数返回是否在攻击范围内
 function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)
@@ -911,6 +997,7 @@ end
 
 
 
+--[[
 --  AI 回合内出牌处理  --
 function auto_chupai(ID)
 	local shoupai_c, tili, tili_max, name, shenfen, shili
@@ -1688,3 +1775,4 @@ function calc_direct_fangyu(ID)
 		ans = ans + shoupai_c
 	end
 end
+--]]

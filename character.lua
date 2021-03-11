@@ -59,7 +59,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}}, 		
 	["神曹操"] = {3,"神",false,{"归心","飞影"},"男", {"","锁定"}},
 	["曹彰"] = {4,"魏",false,{"将驰"},"男",{""}},
-	["孙笑川"] = {4,"神",false,{"苦肉","伤逝","乱击","奇袭","刚烈","强袭","英姿","将驰","化身","新生","魂姿"},"男", {"","","","","","","","","禁止","禁止","觉醒"}},
+	["孙笑川"] = {4,"神",false,{"苦肉","涅槃","乱击","奇袭","刚烈","强袭","英姿","将驰","化身","新生","魂姿"},"男", {"","","","","","","","","禁止","禁止","觉醒"}},
 }
 
 -- 武器攻击范围 --
@@ -216,6 +216,7 @@ for i = 1,5 do
 	end
 end
 char_current_i = 1  -- 当前受控制的武将
+char_acting_i = 1	-- 当前正在进行其回合的武将
 char_yisha = false  -- 已经出过杀
 char_sha_time = 1  -- 回合内允许的出杀次数
 char_sha_able = true  -- 回合内是否允许出杀
@@ -331,6 +332,7 @@ function _wujiang_sub2(va_list)
 end
 
 --  身份初步判定 --
+--[[
 function ai_judge_shenfen()
 	for i = 1,5 do
 		if char_juese[i].shenfen == "主公" then
@@ -348,6 +350,7 @@ function ai_judge_shenfen()
 		end
 	end
 end
+]]
 
 --  计算玩家与其他玩家的距离  --
 function char_calc_distance(_ID_s, _ID_d)
@@ -424,27 +427,22 @@ function distance_remove(ID_s, ID_d)    -- 删除已死亡角色
 end
 
 --  游戏胜利条件判断  --
-function char_judge_shengli(siwang_id, laiyuan, p)
+function char_judge_shengli(siwang_id, laiyuan)
 	local i, count, alive, ended
 
 	--  内奸最后存活  --
-	count = 5
+	count = 0
 	for i = 1, 5 do
-		if char_juese[i].siwang == true or i == siwang_id then
-			count = count - 1
-		else
+		if char_juese[i].siwang == false then
+			count = count + 1
 			alive = i
 		end
 	end
 	if count == 1 and char_juese[alive].shenfen == "内奸" then
 		msg = {"所有其他角色阵亡，内奸胜利，游戏结束"}
-		if p == nil then
-			add_funcptr(push_message, table.concat(msg))
-			add_funcptr(_deduct_sub)
-		else
-			add_funcptr(push_message, table.concat(msg), p)
-			add_funcptr(_deduct_sub, nil, p + 1)
-		end
+		add_funcptr(push_message, table.concat(msg))
+		add_funcptr(_deduct_sub)
+
 		game_victory = true
 		return true
 	end
@@ -452,13 +450,9 @@ function char_judge_shengli(siwang_id, laiyuan, p)
 	--  主公阵亡  --
 	if char_juese[siwang_id].shenfen == "主公" then
 		msg = {"主公阵亡，反贼胜利，游戏结束"}
-		if p == nil then
-			add_funcptr(push_message, table.concat(msg))
-			add_funcptr(_deduct_sub)
-		else
-			add_funcptr(push_message, table.concat(msg), p)
-			add_funcptr(_deduct_sub, nil, p + 1)
-		end
+		add_funcptr(push_message, table.concat(msg))
+		add_funcptr(_deduct_sub)
+		
 		game_victory = true
 		return true
 	end
@@ -466,7 +460,7 @@ function char_judge_shengli(siwang_id, laiyuan, p)
 	--  主公与忠臣最后存活  --
 	ended = true
 	for i = 1, 5 do
-		if char_juese[i].siwang == false and i ~= siwang_id then
+		if char_juese[i].siwang == false then
 			if char_juese[i].shenfen == "反贼" or char_juese[i].shenfen == "内奸" then
 				ended = false
 			end
@@ -474,13 +468,9 @@ function char_judge_shengli(siwang_id, laiyuan, p)
 	end
 	if ended then
 		msg = {"反贼与内奸阵亡，主公与忠臣胜利，游戏结束"}
-		if p == nil then
-			add_funcptr(push_message, table.concat(msg))
-			add_funcptr(_deduct_sub)
-		else
-			add_funcptr(push_message, table.concat(msg), p)
-			add_funcptr(_deduct_sub, nil, p + 1)
-		end
+		add_funcptr(push_message, table.concat(msg))
+		add_funcptr(_deduct_sub)
+		
 		game_victory = true
 		return true
 	end
@@ -508,7 +498,6 @@ function char_fanmian(ID)
 end
 
 --  卖血技能结算  --
-
 function char_skills_sellblood(va_list)
 	local id, laiyuan, tili, shuxing, AOE
 	local hengzhi
@@ -516,41 +505,54 @@ function char_skills_sellblood(va_list)
 	id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]; fp = va_list[6]; AOE = va_list[7]
 	tili = char_juese[id].tili - _deduct_count(va_list)
 
+	local soldblood = false
+
 	--  郭嘉发动遗计  --
 	if char_juese[id].skill["遗计"] == "available" and cansellblood == true then
 		skills_yiji(id, _deduct_count(va_list))
+		soldblood = true
 	end
 
 	--  司马懿发动反馈  --
 	if char_juese[id].skill["反馈"] == "available" and cansellblood == true then
 		skills_fankui(id, laiyuan)
+		soldblood = true
 	end
 	
 	--  曹丕发动放逐  --
 	if char_juese[id].skill["放逐"] == "available" and cansellblood == true then
 		skills_fangzhu(id, laiyuan)
+		soldblood = true
 	end
 	
 	--  神曹操发动归心  --
 	if char_juese[id].skill["归心"] == "available" and cansellblood == true then
 		skills_guixin(id)
+		soldblood = true
 	end
 	
 	--  夏侯惇发动刚烈  --
 	if char_juese[id].skill["刚烈"] == "available" and cansellblood == true then
 		add_funcptr(skills_ganglie, {id, laiyuan})
+		soldblood = true
 	end
 	
 	--  左慈发动新生  --
 	if char_juese[id].skill["新生"] == "available" and cansellblood == true then
-		for i = 1,_deduct_count(va_list) do
+		for i = 1, _deduct_count(va_list) do
 			skills_xinsheng(id, false)
 		end
+		soldblood = true
 	end
 
 	--  张春华发动伤逝，在手牌不足时摸牌  --
 	if char_juese[id].skill["伤逝"] == "available" and table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max - char_juese[id].tili then
 		skills_shangshi(id)
+		soldblood = true
+	end
+
+	if soldblood == false and tili <= 0 then
+		add_funcptr(_sha_sub4)		--  占位，因为 "必须至少有一个函数" 是带卖血标志
 	end
 end
 
@@ -564,18 +566,18 @@ function char_tili_deduct(va_list, is_insert)
 	
 	if is_insert == nil then
 		--  插入函数队列末尾  --
+		if laiyuan ~= nil then
+			if char_juese[laiyuan].skill["绝情"] == "available" and shuxing ~= "流失" then
+				add_funcptr(push_message, char_juese[laiyuan].name .. "触发了武将技能 '绝情'")
+				cansellblood, shuxing = false, "流失"
+			end
+		end
+
 		add_funcptr(_char_tili_deduct, va_list)
-			
 		if shuxing ~= "流失" then
 			cansellblood = true
 		else
 			cansellblood = false
-		end
-		if laiyuan ~= nil then
-			if char_juese[laiyuan].skill["绝情"] == "available" and shuxing~="流失" then
-				add_funcptr(push_message, char_juese[laiyuan].name .. "触发了武将技能 '绝情'")
-				cansellblood, shuxing = false, "流失"
-			end
 		end
 		
 		if laiyuan ~= nil then
@@ -593,70 +595,46 @@ function char_tili_deduct(va_list, is_insert)
 		end
 		
 		if tili <= 0 then
-			if char_juese[id].skill["涅槃"] == 1 then
-				_niepan_sub(id)
-				tili = 3
-			else
-				--  进入濒死状态  --
-				tili = char_binsi(id, tili)
-			end
-			
-			--  若最终死亡，进行胜利条件判断  --
-			if tili <= 0 then
-				if shuxing=="流失" then
-					if char_judge_shengli(id, nil) then
-						return
-					end
-				else
-					if char_judge_shengli(id, laiyuan) then
-						return
-					end
-				end
-			else
-				char_skills_sellblood(va_list)
-			end
+			--  进入濒死状态  --
+			add_funcptr(char_binsi, {id, tili, laiyuan, shuxing, true})
+		end
+
+		--  设置函数队列卖血标志  --
+		old_add_tag = funcptr_add_tag
+		if funcptr_add_tag == nil then
+			funcptr_add_tag = "卖血"
 		else
+			funcptr_add_tag = funcptr_add_tag .. "/卖血"
+		end
+		if cansellblood then
 			char_skills_sellblood(va_list)
+		elseif tili <= 0 then
+			add_funcptr(_sha_sub4)	--  占位，因为 "必须至少有一个函数" 是带卖血标志
 		end
 		
 		--  在杀的状态下：造成伤害后，麒麟弓可将马弃置  --
-		--  连环状态，下一个受到传导伤害  --
-		if tili > 0 and fp ~= nil and shuxing ~= "流失" then
+		if fp ~= nil and shuxing ~= "流失" then
 			if #char_juese[laiyuan].wuqi ~= 0 then
 				if char_juese[laiyuan].wuqi[1] == "麒麟弓" then
 					fp(laiyuan, id)
 				end
 			end
-			if hengzhi == true then
-				if shuxing == "火" or shuxing == "雷" then
-					_deduct_lianhuan(va_list)
-				end
-			end
-		else
-			if hengzhi == true then
-				if shuxing == "火" or shuxing == "雷" then
-					_deduct_lianhuan(va_list)
-				end
+		end
+		funcptr_add_tag = old_add_tag
+			
+		--  连环状态，下一个受到传导伤害  --
+		if hengzhi == true then
+			if shuxing == "火" or shuxing == "雷" then
+				_deduct_lianhuan(va_list)
 			end
 		end
 	else
 		local ins_pos = _deduct_find_cutin_position()
 
-		--  插入函数队列中间（闪电伤害）  --
+		--  插入函数队列中间 (闪电伤害)  --
 		add_funcptr(_char_tili_deduct, va_list, ins_pos)
 		if tili <= 0 then
-			--  暂时禁用，这个有问题，以后修复
-			--if char_juese[id].skill["涅槃"] == 1 then
-			--	_niepan_sub(id)
-			--	tili = 3
-			--else
-				local p
-				tili, p = char_binsi(id, tili, ins_pos + 1)
-			--end
-			
-			if tili <= 0 then
-				char_judge_shengli(id, laiyuan, p)
-			end
+			add_funcptr(char_binsi, {id, tili, nil, "流失", false}, ins_pos + 1)
 		else
 			add_funcptr(_binsi_sub2, nil, ins_pos + 1)
 		end
@@ -719,8 +697,6 @@ function _char_tili_deduct(va_list)    --  体力扣减：队列执行函数
     local dianshu, id, laiyuan, shuxing, s_card
 	dianshu = va_list[1]; id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]
 	
-	--timer.start(0.6)
-	
 	--  青钢剑无视防具  --
 	if not char_wushi then
 		--  藤甲受火属性伤害，伤害+1  --
@@ -760,79 +736,52 @@ function _deduct_sub()    --  进入游戏重置状态
 end
 
 --  角色濒死结算  --
-function char_binsi(id, tili, p)
-	msg = {char_juese[id].name, "快死了，请求出桃救命"}
-	if p == nil then
-		add_funcptr(push_message, table.concat(msg))
-	else
-		add_funcptr(push_message, table.concat(msg), p) -- p + 1
+function char_binsi(va_list)
+	local id, tili, ID_shanghai, shanghai_shuxing, has_sellblood
+	id = va_list[1]; tili = va_list[2]; ID_shanghai = va_list[3]; shanghai_shuxing = va_list[4]; has_sellblood = va_list[5]
+
+	if char_juese[id].tili > 0 then
+		return
 	end
-	--  求桃救命  --
-	local i, cur, msg_i
-	local k = tili
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	msg = {char_juese[id].name, "快死了，求", 1 - tili, "个桃救命"}
+	add_funcptr(push_message, table.concat(msg))
 	
+	--  求桃救命  --
+	local i, cur
 	cur = id
 	
-	if p ~= nil then
-		msg_i = p
-	else
-		msg_i = 0
-	end
-	if char_juese[char_current_i].skill["完杀"]== "available" then
-		msg = {char_juese[char_current_i].name, "触发了技能'完杀'"}
+	if char_juese[char_acting_i].skill["完杀"] == "available" then
+		msg = {char_juese[char_acting_i].name, "触发了武将技能 '完杀'"}
 		add_funcptr(push_message, table.concat(msg))
 	end
-	for i = 1, 4 do
+
+	for i = 1, 5 do
 		if char_juese[cur].siwang == false then
-			msg_i = msg_i + 1
-			
-			if cur ~= id and char_juese[char_current_i].skill["完杀"]~= "available" then
-				--  他人则放弃 (临时)  --
-				msg = {char_juese[cur].name, "放弃"}
-				if p == nil then
-					add_funcptr(push_message, table.concat(msg))
+			local wansha = false
+
+			--  贾诩完杀，除贾诩和濒死对象外都不可出桃  --
+			if char_juese[char_acting_i].skill["完杀"] == "available" and cur ~= id and cur ~= char_acting_i then
+				wansha = true
+			end
+
+			if wansha == false then
+				--  庞统发动涅槃  --
+				if id == cur and char_juese[id].skill["涅槃"] == 1 then
+					add_funcptr(skills_niepan, id)
 				else
-					add_funcptr(push_message, table.concat(msg), msg_i)  -- p + 2
-				end
-			elseif cur == id then
-				--  自己则喝酒/吃桃  --
-				local j = true
-				local n
-				while k <= 0 and j do
-					j = false
-					n = card_chazhao(id, "桃")
-					
-					--  华佗可用红色手牌代替桃  --
-					if n < 0 and char_juese[id].skill["急救"] == "available" then
-						n = skills_jijiu_chazhao(id)
-					end
-					
-					if n > 0 then
-						msg_i = msg_i + 1
-						j = true
-						if p == nil then
-							card_tao(n, id, id, true)
-						else
-							msg_i = card_tao(n, id, id, true, msg_i)  -- p + 2
-						end
-						k = k + 1
-					end
-					
-					n = card_chazhao(id, "酒")
-					if n > 0 and k <= 0 then
-						msg_i = msg_i + 1
-						j = true
-						if p == nil then
-							card_jiu(n, id, true)
-						else
-							msg_i = card_jiu(n, id, true, msg_i)
-						end
-						k = k + 1
+					if cur ~= char_current_i then
+						add_funcptr(_binsi_ai, {id, cur})
+					else
+						add_funcptr(_binsi_zhudong, id)
 					end
 				end
-				msg_i = msg_i - 1
-				
-				if k > 0 then break end
 			end
 		end
 		
@@ -841,13 +790,220 @@ function char_binsi(id, tili, p)
 			cur = 1
 		end
 	end
-	if p == nil then
-		add_funcptr(_binsi_sub2, nil)
-	else
-		add_funcptr(_binsi_sub2, nil, msg_i + 1)
-	end
 	
-	--  如果有曹丕，发动行殇  --
+	--  死亡结算  --
+	add_funcptr(_binsi_siwang, {id, ID_shanghai, shanghai_shuxing, has_sellblood})
+	timer.start(0.6)
+end
+function _binsi_ai(va_list)		--  濒死结算：AI做出决定
+	local msg
+	local ID_s, ID_jiu
+	ID_s = va_list[1]; ID_jiu = va_list[2]
+
+	if char_juese[ID_jiu].siwang == false then
+		if char_juese[ID_s].tili > 0 then
+			msg = {char_juese[ID_s].name, "已被救活, ", char_juese[ID_jiu].name, "不使用桃"}
+			push_message(table.concat(msg))
+			return
+		end
+
+		if ID_s ~= ID_jiu and ai_judge_jiejiu(ID_s, ID_jiu) == false then
+			msg = {char_juese[ID_jiu].name, "不使用桃"}
+			push_message(table.concat(msg))
+			return
+		end
+
+		local n_tao = 0
+		local n_jiu = 0
+		local c_pos, card
+		while char_juese[ID_s].tili <= 0 do
+			c_pos = card_chazhao(ID_jiu, "桃")
+
+			if c_pos <= 0 then
+				--  华佗在他人的回合可以使用急救  --
+				if ID_s ~= ID_jiu and char_juese[ID_jiu].skill["急救"] == "available" then
+					c_pos = skills_jijiu_chazhao(ID_jiu)
+				end
+			end
+
+			if c_pos > 0 then
+				card = char_juese[ID_jiu].shoupai[c_pos]
+				card_add_qipai(card)
+				card_remove({ID_jiu, c_pos})
+
+				char_juese[ID_s].tili = char_juese[ID_s].tili + 1
+				n_tao = n_tao + 1
+			else
+				break
+			end
+		end
+
+		--  救自己才能用酒  --
+		if ID_s == ID_jiu then
+			while char_juese[ID_s].tili <= 0 do
+				c_pos = card_chazhao(ID_jiu, "酒")
+				if c_pos > 0 then
+					card = char_juese[ID_jiu].shoupai[c_pos]
+					card_add_qipai(card)
+					card_remove({ID_jiu, c_pos})
+
+					char_juese[ID_s].tili = char_juese[ID_s].tili + 1
+					n_jiu = n_jiu + 1
+				else
+					break
+				end
+			end
+		end
+
+		msg = _binsi_create_msg(n_tao, n_jiu, ID_jiu)
+		push_message(table.concat(msg))
+	end
+end
+function _binsi_create_msg(n_tao, n_jiu, ID_jiu)	--  濒死结算：返回显示信息
+	local msg
+	if n_tao == 0 and n_jiu == 0 then
+		msg = {char_juese[ID_jiu].name, "不使用桃"}
+	elseif n_tao > 0 and n_jiu == 0 then
+		msg = {char_juese[ID_jiu].name, "出", n_tao, "张桃"}
+	elseif n_tao == 0 and n_jiu > 0 then
+		msg = {char_juese[ID_jiu].name, "出", n_jiu, "张酒"}
+	else
+		msg = {char_juese[ID_jiu].name, "出", n_tao, "张桃, ", n_jiu, "张酒"}
+	end
+	return msg
+end
+function _binsi_judge_tao(ID_s, tao_needed)		--  濒死结算：判断选择的牌是否符合条件
+	local qualified_cards = {}
+	local shoupai = char_juese[char_current_i].shoupai
+
+	if table.getn2(card_selected) <= tao_needed then
+		for i = #shoupai, 1, -1 do
+			if card_selected[i] ~= nil then
+				local qualified = false
+				--  华佗在他人的回合可以使用急救，可使用红色牌  --
+				if ID_s ~= char_current_i and char_juese[char_current_i].skill["急救"] == "available" then
+					if shoupai[i][2] == "红桃" or shoupai[i][2] == "方块" then
+						qualified = true
+					end
+				end
+
+				if shoupai[i][1] == "桃" then
+					qualified = true
+				end
+
+				if ID_s == char_current_i and shoupai[i][1] == "酒" then
+					qualified = true
+				end
+
+				if qualified then
+					table.insert(qualified_cards, i)
+				else
+					return {}
+				end
+			end
+		end
+		return qualified_cards
+	else
+		return {}
+	end
+end
+function _binsi_zhudong(ID_s)	--  濒死结算：己方做出决定
+	if char_juese[char_current_i].siwang == true then
+		return
+	end
+
+	if char_juese[ID_s].tili > 0 then
+		msg = {char_juese[ID_s].name, "已被救活, ", char_juese[char_current_i].name, "不使用桃"}
+		push_message(table.concat(msg))
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local tao_needed = 1 - char_juese[ID_s].tili
+	local msg
+
+	if ID_s == char_current_i then
+		msg = {"您可出", tao_needed, "张桃或酒"}
+	else
+		msg = {"您可出", tao_needed, "张桃"}
+	end
+
+	skills_enter(table.concat(msg), "", "濒死", "技能选择-多牌")
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK then
+			local qualified_cards = _binsi_judge_tao(ID_s, tao_needed)
+			if #qualified_cards > 0 then
+				_binsi_zhudong_chu(ID_s, qualified_cards)
+				timer.start(0.6)
+			end
+		else
+			_binsi_zhudong_fangqi(ID_s)
+			timer.start(0.6)
+		end
+	end
+end
+function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解救
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	card_selected = {}
+	card_highlighted = 1
+
+	local n_tao = 0
+	local n_jiu = 0
+
+	for i = 1, #qualified_cards do
+		local card = char_juese[char_current_i].shoupai[i]
+
+		if card[1] == "酒" then
+			n_jiu = n_jiu + 1
+		else
+			n_tao = n_tao + 1
+		end
+
+		card_add_qipai(card)
+		card_remove({char_current_i, i})
+		char_juese[ID_s].tili = char_juese[ID_s].tili + 1
+	end
+
+	msg = _binsi_create_msg(n_tao, n_jiu, char_current_i)
+	add_funcptr(push_message, table.concat(msg))
+	add_funcptr(_binsi_zhudong_huifu)
+end
+function _binsi_zhudong_fangqi(ID_s)	--  濒死结算：己方放弃
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	card_selected = {}
+	card_highlighted = 1
+
+	msg = {char_juese[char_current_i].name, "不使用桃"}
+	add_funcptr(push_message, table.concat(msg))
+	add_funcptr(_binsi_zhudong_huifu)
+end
+function _binsi_zhudong_huifu()		--  濒死结算：(己方响应) 恢复原有函数队列
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
+	local id, ID_shanghai, shanghai_shuxing, has_sellblood
+	id = va_list[1]; ID_shanghai = va_list[2]; shanghai_shuxing = va_list[3]; has_sellblood = va_list[4]
+
+	--  如经过濒死结算后，角色最后被救活  --
+	if char_juese[id].tili > 0 then
+		_binsi_huifu()
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	--  曹丕发动行殇  --
 	local xingshang_id = 0
 	for i = 1, 5 do
 		if i ~= id and char_juese[i].skill["行殇"] == "available" and char_juese[i].siwang == false then
@@ -855,47 +1011,82 @@ function char_binsi(id, tili, p)
 			break
 		end
 	end
+
+	--  关索发动征南  --
+	--  暂留空
+
 	--  死亡丢弃所有手牌  --
-	if k <= 0 then
-		if p == nil then    --  被动死亡
-			if xingshang_id == 0 then
-				card_qipai_all(id, true)
+	if xingshang_id == 0 then
+		card_qipai_all(id, true)
+	else
+		add_funcptr(skills_xingshang, {xingshang_id, id, true})
+	end
+	add_funcptr(_binsi_sub1, id)
+
+	--  胜利条件判断  --
+	if shanghai_shuxing == "流失" then
+		char_judge_shengli(id, nil)
+	else
+		char_judge_shengli(id, ID_shanghai)
+	end
+
+	add_funcptr(_binsi_remove_sellblood, has_sellblood)
+	timer.start(0.6)
+end
+function _binsi_remove_sellblood(has_sellblood)	--  濒死结算：角色已死亡，从队列中删除所有卖血结算函数
+	local v_funcptr_queue, v_funcptr_i
+
+	--  弹出第一层：死亡结算，此时位于濒死结算的函数队列中  --
+	v_funcptr_queue, v_funcptr_i = pop_zhudong_queue()
+
+	--  弹出第二层：濒死结算，此时位于上一层char_tili_deduct所在的函数队列中  --
+	v_funcptr_queue, v_funcptr_i = pop_zhudong_queue()
+
+	--  没有卖血结算函数 (闪电)  --
+	if has_sellblood == false then
+		funcptr_queue = v_funcptr_queue
+		funcptr_i = v_funcptr_i
+		return
+	end
+
+	local items_to_remove = {}
+	local keep_after = false
+	for i = 1, #v_funcptr_queue do
+		local tag = v_funcptr_queue[i].tag
+
+		if tag ~= nil then
+			if string.find(tag, "卖血") and keep_after == false then
+				keep_after = true
+			end
+
+			if string.find(tag, "卖血") or keep_after == false then
+				table.insert(items_to_remove, i)
 			else
-				add_funcptr(skills_xingshang, {xingshang_id, id, true})
+				break
 			end
-			add_funcptr(_binsi_sub1, id)
-			if zhengnan_id == 0 then
+		else
+			if keep_after == false then
+				table.insert(items_to_remove, i)
 			else
-				add_funcptr(skills_zhengnan, {zhengnan_id, id, true})
+				break
 			end
-			--  当前玩家死亡，跳过其接下来所有阶段  --
-			if id == char_current_i then
-				add_funcptr(_binsi_sub3, id)
-			end
-		else    --  被闪电劈死
-			if xingshang_id == 0 then
-				msg_i = card_qipai_all(id, true, msg_i + 2)
-			else
-				msg_i = msg_i + 2
-				add_funcptr(skills_xingshang, {xingshang_id, id, false}, msg_i)
-				msg_i = msg_i + 1
-			end
-			add_funcptr(_binsi_sub1, id, msg_i)
-			if zhengnan_id == 0 then
-			else
-				add_funcptr(skills_zhengnan, {zhengnan_id, id, false},msg_i+1)
-				msg_i = msg_i + 1
-			end
-			--  当前玩家死亡，跳过其接下来所有阶段  --
-			add_funcptr(_binsi_sub3, id, msg_i + 1)
 		end
 	end
-	
-	if p == nil then
-		return k
-	else
-		return k, msg_i + 1
+
+	for i = #items_to_remove, 1, -1 do
+		table.remove(v_funcptr_queue, items_to_remove[i])
 	end
+
+	funcptr_queue = v_funcptr_queue
+	funcptr_i = 0
+
+	--  如果当前玩家死亡，则跳过其接下来所有阶段  --
+	if id == char_current_i then
+		add_funcptr(_binsi_sub3, id)
+	end
+end
+function _binsi_huifu()		--  濒死结算：角色未死亡，恢复濒死结算前的函数队列
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 function _binsi_sub1(id)
 	char_juese[id].siwang = true
