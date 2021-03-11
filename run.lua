@@ -48,8 +48,8 @@ sha_va = nil    -- 发动寒冰剑后，杀来源目标的va_list存储
 funcptr_add_tag = nil	-- 如果设置为一个字符串，则设置的字符串会被加入到之后的每一个funcptr_queue项的tag
 
 wuxie_queue_jinnang = {}	-- 无懈可击未执行时，原有的函数执行队列
-wuxie_queue_xiangying = {}	-- 无懈可击轮到己方响应时，记录原有的他方响应函数队列，以便己方不使用无懈时恢复原有轮询（兼鬼才、鬼道）
-wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数队列的执行位置（兼鬼才、鬼道）
+wuxie_queue_xiangying = {}	-- 无懈可击轮到己方响应时，记录原有的他方响应函数队列，以便己方不使用无懈时恢复原有轮询
+wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数队列的执行位置
 wuxie_va = nil		-- 无懈可击轮到己方响应时，原有锦囊来源目标的va_list存储
 wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能被其他无懈可击抵消导致失效）
 
@@ -320,7 +320,7 @@ end
 
 --  判定阶段  --
 function gamerun_huihe_panding()
-    local msg, p, q
+    local msg
 
     msg = {char_juese[char_current_i].name, "判定阶段"}
     add_funcptr(push_message, table.concat(msg))
@@ -333,14 +333,11 @@ function gamerun_huihe_panding()
 		funcptr_add_tag = "无懈无效结算"
 	    add_funcptr(_panding_sub1, char_current_i)
 
-		if skills_judge_guicai_guidao(char_current_i) ~= "" then
-			add_funcptr(skills_guicai_guidao_zhudong_enter)
-		end
+		--  如场上有司马懿或张角，询问其改判技能  --
+		skills_guicai_guidao_ask(char_current_i, nil, char_current_i, _panding_get_leixing(char_current_i, 1))
 
-		funcptr_add_tag = "无懈无效结算/翻判定牌"
-		p = add_funcptr(_panding_sub3, nil)    -- 记录位置，供判定阶段伤害结算插队
 		funcptr_add_tag = "无懈无效结算/伤害插队"
-		add_funcptr(_panding_sub2, {1, p})
+		add_funcptr(_panding_sub2, {1, nil})
 		funcptr_add_tag = nil
 
 		funcptr_add_tag = "无懈有效结算"
@@ -351,6 +348,14 @@ function gamerun_huihe_panding()
 	funcptr_add_tag = "无懈执行完毕"
 	add_funcptr(_panding_sub3)
 	funcptr_add_tag = nil
+end
+function _panding_get_leixing(id, panding_id)		--  判定阶段：获取判定牌的类型
+	local leixing = char_juese[id].panding[panding_id][1]
+	if leixing ~= "乐不思蜀" and leixing ~= "兵粮寸断" and leixing ~= "闪电" then
+		--  其他牌面的牌 (技能发动)  --
+		leixing = char_juese[id].panding[panding_id][4]
+	end
+	return leixing
 end
 function _panding_sub1(ID)    -- 子函数1：翻开判定牌
     local msg
@@ -371,11 +376,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	local id, p
 	id = va_list[1]; p = va_list[2]
 	
-	card = char_juese[char_current_i].panding[id][1]
-	if card ~= "乐不思蜀" and card ~= "兵粮寸断" and card ~= "闪电" then
-		--  其他牌面的牌 (技能发动)  --
-		card = char_juese[char_current_i].panding[id][4]
-	end
+	card = _panding_get_leixing(char_current_i, id)
     pass = false
 	
     if card == "乐不思蜀" then
@@ -407,13 +408,20 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	    if card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
 		    msg = {char_juese[char_current_i].name, "的'闪电'判定成功"}
 			push_message(table.concat(msg))
-			char_tili_deduct({3, char_current_i, nil, "雷", ID_mubiao}, true)
+
+			push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+			timer.stop()
+			funcptr_queue = {}
+			funcptr_i = 0
+
+			char_tili_deduct({3, char_current_i, nil, "雷", ID_mubiao})
+			add_funcptr(_panding_huifu)
+			timer.start(0.6)
 		else
 		    msg = {char_juese[char_current_i].name, "的'闪电'判定失败"}
 			push_message(table.concat(msg))
 			pass = true
 		end
-		--card_add_qipai(card_panding_card)
 	end
 	
 	if pass then
@@ -432,7 +440,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 		if char_juese[char_current_i].skill["天妒"] ~= "available" then
 			card_add_qipai(card_panding_card)
 		else
-			push_message(char_juese[char_current_i].name.."发动了武将技能 '天妒'")
+			push_message(char_juese[char_current_i].name .. "发动了武将技能 '天妒', 获得了判定牌")
 			skills_tiandu_add({char_current_i, card_panding_card})
 		end
 	end
@@ -441,6 +449,9 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 end
 function _panding_sub3()    -- 子函数3：用于延时
 
+end
+function _panding_huifu()	--  判定阶段：闪电伤害结算后恢复原有函数队列执行
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 function _panding_pass(id)    -- 将闪电传给下一个玩家
 	local p, j
@@ -788,10 +799,20 @@ end
 --  "确定" 键  --
 function on.enterKey()
     if gamerun_status == "手牌生效中" then return end
-
 	local card
 	
-	--card_into_hand(char_current_i)
+	if string.find(gamerun_status, "无懈") then
+		if table.getn2(card_selected) ~= 0 then
+			card = char_juese[char_current_i].shoupai[card_highlighted]
+			if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
+				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
+				card_selected = {}
+				set_hints("")
+				card_highlighted = 1
+			end
+		end
+		return
+	end
 
 	if gamerun_status == "选项选择" then
 		gamerun_item(item_disrow + gamerun_guankan_selected)
@@ -810,19 +831,6 @@ function on.enterKey()
 		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		    gamerun_OK = true
 			gamerun_OK_ptr()
-		end
-		return
-	end
-	
-	if string.find(gamerun_status, "无懈") then
-		if table.getn2(card_selected) ~= 0 then
-			card = char_juese[char_current_i].shoupai[card_highlighted]
-			if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
-				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
-				card_selected = {}
-				set_hints("")
-				card_highlighted = 1
-			end
 		end
 		return
 	end
@@ -1113,8 +1121,7 @@ function on.enterKey()
 					if char_juese[char_current_i].siwang == true then
 						char_current_i = char_current_i + 1
 						j = true
-					end
-					if char_juese[char_current_i].fanmian == true and char_juese[char_current_i].siwang == false then
+					elseif char_juese[char_current_i].fanmian == true and char_juese[char_current_i].siwang == false then
 						char_juese[char_current_i].fanmian = false
 						push_message(table.concat({char_juese[char_current_i].name,"将武将牌翻回正面"}))
 						char_current_i = char_current_i + 1

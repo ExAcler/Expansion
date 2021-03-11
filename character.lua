@@ -59,7 +59,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}}, 		
 	["神曹操"] = {3,"神",false,{"归心","飞影"},"男", {"","锁定"}},
 	["曹彰"] = {4,"魏",false,{"将驰"},"男",{""}},
-	["孙笑川"] = {4,"神",false,{"苦肉","涅槃","乱击","奇袭","刚烈","强袭","英姿","将驰","化身","新生","魂姿"},"男", {"","","","","","","","","禁止","禁止","觉醒"}},
+	["孙笑川"] = {4,"神",false,{"苦肉","雷击","鬼道","奇袭","刚烈","强袭","英姿","将驰","化身","新生","魂姿"},"男", {"","","","","","","","","禁止","禁止","觉醒"}},
 }
 
 -- 武器攻击范围 --
@@ -514,25 +514,25 @@ function char_skills_sellblood(va_list)
 	end
 
 	--  司马懿发动反馈  --
-	if char_juese[id].skill["反馈"] == "available" and cansellblood == true then
+	if char_juese[id].skill["反馈"] == "available" and cansellblood == true and laiyuan ~= nil then
 		skills_fankui(id, laiyuan)
 		soldblood = true
 	end
 	
 	--  曹丕发动放逐  --
-	if char_juese[id].skill["放逐"] == "available" and cansellblood == true then
+	if char_juese[id].skill["放逐"] == "available" and cansellblood == true and laiyuan ~= nil then
 		skills_fangzhu(id, laiyuan)
 		soldblood = true
 	end
 	
 	--  神曹操发动归心  --
-	if char_juese[id].skill["归心"] == "available" and cansellblood == true then
+	if char_juese[id].skill["归心"] == "available" and cansellblood == true and laiyuan ~= nil then
 		skills_guixin(id)
 		soldblood = true
 	end
 	
 	--  夏侯惇发动刚烈  --
-	if char_juese[id].skill["刚烈"] == "available" and cansellblood == true then
+	if char_juese[id].skill["刚烈"] == "available" and cansellblood == true and laiyuan ~= nil then
 		add_funcptr(skills_ganglie, {id, laiyuan})
 		soldblood = true
 	end
@@ -557,86 +557,73 @@ function char_skills_sellblood(va_list)
 end
 
 --  体力扣减结算  --
-function char_tili_deduct(va_list, is_insert)
+function char_tili_deduct(va_list)
 	local id, laiyuan, tili, shuxing, AOE
 	local hengzhi
 	local fp
 	id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]; fp = va_list[6]; AOE = va_list[7]
 	tili = char_juese[id].tili - _deduct_count(va_list)
 	
-	if is_insert == nil then
-		--  插入函数队列末尾  --
-		if laiyuan ~= nil then
-			if char_juese[laiyuan].skill["绝情"] == "available" and shuxing ~= "流失" then
-				add_funcptr(push_message, char_juese[laiyuan].name .. "触发了武将技能 '绝情'")
-				cansellblood, shuxing = false, "流失"
-			end
+	if laiyuan ~= nil then
+		if char_juese[laiyuan].skill["绝情"] == "available" and shuxing ~= "流失" then
+			add_funcptr(push_message, char_juese[laiyuan].name .. "触发了武将技能 '绝情'")
+			cansellblood, shuxing = false, "流失"
 		end
+	end
 
-		add_funcptr(_char_tili_deduct, va_list)
-		if shuxing ~= "流失" then
-			cansellblood = true
-		else
-			cansellblood = false
-		end
-		
-		if laiyuan ~= nil then
-			--  魏延对距离1以内的玩家造成伤害，回复1点体力  --
-			if char_juese[laiyuan].skill["狂骨"] == "available" and char_calc_distance(laiyuan, id) <= 1 and char_juese[laiyuan].tili < char_juese[laiyuan].tili_max then
-				skills_kuanggu(laiyuan)
-			end
-		end
-		
-		hengzhi = char_juese[id].hengzhi
-		if shuxing == "火" or shuxing == "雷" then
-			if hengzhi == true then
-				add_funcptr(_deduct_chongzhi, id)
-			end
-		end
-		
-		if tili <= 0 then
-			--  进入濒死状态  --
-			add_funcptr(char_binsi, {id, tili, laiyuan, shuxing, true})
-		end
-
-		--  设置函数队列卖血标志  --
-		old_add_tag = funcptr_add_tag
-		if funcptr_add_tag == nil then
-			funcptr_add_tag = "卖血"
-		else
-			funcptr_add_tag = funcptr_add_tag .. "/卖血"
-		end
-		if cansellblood then
-			char_skills_sellblood(va_list)
-		elseif tili <= 0 then
-			add_funcptr(_sha_sub4)	--  占位，因为 "必须至少有一个函数" 是带卖血标志
-		end
-		
-		--  在杀的状态下：造成伤害后，麒麟弓可将马弃置  --
-		if fp ~= nil and shuxing ~= "流失" then
-			if #char_juese[laiyuan].wuqi ~= 0 then
-				if char_juese[laiyuan].wuqi[1] == "麒麟弓" then
-					fp(laiyuan, id)
-				end
-			end
-		end
-		funcptr_add_tag = old_add_tag
-			
-		--  连环状态，下一个受到传导伤害  --
-		if hengzhi == true then
-			if shuxing == "火" or shuxing == "雷" then
-				_deduct_lianhuan(va_list)
-			end
-		end
+	add_funcptr(_char_tili_deduct, va_list)
+	if shuxing ~= "流失" then
+		cansellblood = true
 	else
-		local ins_pos = _deduct_find_cutin_position()
+		cansellblood = false
+	end
+	
+	if laiyuan ~= nil then
+		--  魏延对距离1以内的玩家造成伤害，回复1点体力  --
+		if char_juese[laiyuan].skill["狂骨"] == "available" and char_calc_distance(laiyuan, id) <= 1 and char_juese[laiyuan].tili < char_juese[laiyuan].tili_max then
+			skills_kuanggu(laiyuan)
+		end
+	end
+		
+	hengzhi = char_juese[id].hengzhi
+	if shuxing == "火" or shuxing == "雷" then
+		if hengzhi == true then
+			add_funcptr(_deduct_chongzhi, id)
+		end
+	end
+		
+	if tili <= 0 then
+		--  进入濒死状态  --
+		add_funcptr(char_binsi, {id, tili, laiyuan, shuxing, true})
+	end
 
-		--  插入函数队列中间 (闪电伤害)  --
-		add_funcptr(_char_tili_deduct, va_list, ins_pos)
-		if tili <= 0 then
-			add_funcptr(char_binsi, {id, tili, nil, "流失", false}, ins_pos + 1)
-		else
-			add_funcptr(_binsi_sub2, nil, ins_pos + 1)
+	--  设置函数队列卖血标志  --
+	old_add_tag = funcptr_add_tag
+	if funcptr_add_tag == nil then
+		funcptr_add_tag = "卖血"
+	else
+		funcptr_add_tag = funcptr_add_tag .. "/卖血"
+	end
+	if cansellblood then
+		char_skills_sellblood(va_list)
+	elseif tili <= 0 then
+		add_funcptr(_sha_sub4)	--  占位，因为 "必须至少有一个函数" 是带卖血标志
+	end
+		
+	--  在杀的状态下：造成伤害后，麒麟弓可将马弃置  --
+	if laiyuan ~= nil and fp ~= nil and shuxing ~= "流失" then
+		if #char_juese[laiyuan].wuqi ~= 0 then
+			if char_juese[laiyuan].wuqi[1] == "麒麟弓" then
+				fp(laiyuan, id)
+			end
+		end
+	end
+	funcptr_add_tag = old_add_tag
+			
+	--  连环状态，下一个受到传导伤害  --
+	if hengzhi == true then
+		if shuxing == "火" or shuxing == "雷" then
+			_deduct_lianhuan(va_list)
 		end
 	end
 end
@@ -1081,9 +1068,9 @@ function _binsi_remove_sellblood(has_sellblood)	--  濒死结算：角色已死�
 	funcptr_i = 0
 
 	--  如果当前玩家死亡，则跳过其接下来所有阶段  --
-	if id == char_current_i then
-		add_funcptr(_binsi_sub3, id)
-	end
+	--if id == char_current_i then
+	--	add_funcptr(_binsi_sub3, id)
+	--end
 end
 function _binsi_huifu()		--  濒死结算：角色未死亡，恢复濒死结算前的函数队列
 	funcptr_queue, funcptr_i = pop_zhudong_queue()

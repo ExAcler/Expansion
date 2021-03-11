@@ -3040,7 +3040,7 @@ function _sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur)	--  杀：己方响
 				if card_arm_bagua(ID_mubiao) then
 					--  张角雷击  --
 					if char_juese[ID_mubiao].skill["雷击"] == "available" then
-						skills_leiji(ID_mubiao, ID_s)
+						add_funcptr(skills_leiji, {ID_mubiao, ID_s})
 					end
 					
 					if char_xiangying_2 == false then
@@ -3085,7 +3085,7 @@ function _sha_zhudong_chu(va_list)	--  杀：己方出闪
 	add_funcptr(_sha_shan, {char_current_i, c_pos})
 	--  张角雷击  --
 	if char_juese[ID_mubiao].skill["雷击"] == "available" then
-		skills_leiji(ID_mubiao, ID_s)
+		add_funcptr(skills_leiji, {ID_mubiao, ID_s})
 	end
 
 	if char_xiangying_2 == false then
@@ -3352,7 +3352,7 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur)    --  杀：AI响应 
 					if card_arm_bagua(ID_mubiao) then
 						--  张角雷击  --
 						if char_juese[ID_mubiao].skill["雷击"] == "available" then
-							skills_leiji(ID_mubiao, ID_s)
+							add_funcptr(skills_leiji, {ID_mubiao, ID_s})
 						end
 					
 						if firstFlag == false then
@@ -3384,7 +3384,7 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur)    --  杀：AI响应 
 			
 			--  张角雷击  --
 			if char_juese[ID_mubiao].skill["雷击"] == "available" then
-				skills_leiji(ID_mubiao, ID_s)
+				add_funcptr(skills_leiji, {ID_mubiao, ID_s})
 			end
 			
 			if firstFlag == false then

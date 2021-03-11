@@ -101,6 +101,120 @@ function ai_judge_jiejiu(ID_s, ID_jiu)
 	return false
 end
 
+--  AI决定雷击的目标 (暂为明身份)  --
+function ai_judge_leiji_mubiao(ID_mubiao)
+	local i, v
+	
+	if char_juese[ID_mubiao].shenfen == "反贼" then
+		return ID_mubiao
+	end
+	
+	for i, v in ipairs(char_juese) do
+		if v.siwang == false then
+			if v.shenfen == "反贼" then
+				return i
+			end
+		end
+	end
+	
+	for i, v in ipairs(char_juese) do
+		if v.siwang == false then
+			if v.shenfen == "内奸" then
+				return i
+			end
+		end
+	end
+	
+	return -1
+end
+
+--  AI修改判定牌策略  --
+function ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
+	local skill_available = skills_judge_guicai_guidao(id)
+
+	if id == ID_mubiao then
+		--  延时类锦囊自救  --
+		if panding_leixing == "乐不思蜀" and card_panding_card[2] ~= "红桃" and skill_available ~= "鬼道" then
+			local card_id = card_chazhao_with_huase(id, "红桃")
+			if card_id < 0 then
+				return nil
+			else
+				return card_id
+			end
+		end
+
+		if panding_leixing == "兵粮寸断" and card_panding_card[2] ~= "草花" then
+			local card_id = card_chazhao_with_huase(id, "草花")
+			if card_id < 0 then
+				return nil
+			else
+				return card_id
+			end
+		end
+
+		if panding_leixing == "闪电" and card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
+			local card_id = card_chazhao_with_huase(id, "草花")
+			if card_id < 0 and skill_available ~= "鬼道" then
+				card_id = card_chazhao_with_huase(id, "红桃")
+			end
+			if card_id < 0 and skill_available ~= "鬼道" then
+				card_id = card_chazhao_with_huase(id, "方块")
+			end
+
+			if card_id < 0 then
+				return nil
+			else
+				return card_id
+			end
+		end
+
+		--  张角发动雷击，改判使其一定生效  --
+		if panding_leixing == "雷击" and card_panding_card[2] ~= "黑桃" then
+			local card_id = card_chazhao_with_huase(id, "黑桃")
+			if card_id < 0 then
+				return nil
+			else
+				return card_id
+			end
+		end
+
+		return nil
+	end
+
+	if id == ID_laiyuan then
+		--  被夏侯惇刚烈，改判使其失效  --
+		if panding_leixing == "刚烈" and card_panding_card[2] ~= "红桃" and skill_available ~= "鬼道" then
+			local card_id = card_chazhao_with_huase(id, "红桃")
+			if card_id < 0 then
+				return nil
+			else
+				return card_id
+			end
+		end
+
+		--  被张角雷击，改判使其失效  --
+		if panding_leixing == "雷击" and card_panding_card[2] == "黑桃" then
+			local card_id = card_chazhao_with_huase(id, "草花")
+			if card_id < 0 and skill_available ~= "鬼道" then
+				card_id = card_chazhao_with_huase(id, "红桃")
+			end
+			if card_id < 0 and skill_available ~= "鬼道" then
+				card_id = card_chazhao_with_huase(id, "方块")
+			end
+
+			if card_id < 0 then
+				return nil
+			else
+				return card_id
+			end
+		end
+		
+		return nil
+	end
+
+	return nil
+end
+
 -- AI距离与攻击范围测算 --
 -- 第一个参数是否在指定距离内，第二个参数返回是否在攻击范围内
 function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)

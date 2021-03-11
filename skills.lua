@@ -1317,7 +1317,7 @@ function skills_tiandu_add(va_list)
 	local ID, card_panding
 	ID = va_list[1]; card_panding = va_list[2]
 	
-	push_message(char_juese[ID].name.."获得了判定牌")
+	--push_message(char_juese[ID].name.."获得了判定牌")
 	table.insert(char_juese[ID].shoupai, card_panding)
 end
 
@@ -1617,63 +1617,66 @@ function skills_xinsheng(ID,is_beginning)
 	end
 end
 
---  张角：雷击判定  --
-function skills_leiji(ID_s, _ID_mubiao)
+--  张角：雷击  --
+function skills_leiji(va_list)
+	local ID_s, _ID_mubiao
+	ID_s = va_list[1]; _ID_mubiao = va_list[2]
 	local ID_mubiao
 
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
 	if char_juese[ID_s].shenfen == "主公" then
-		ID_mubiao = skills_find_opponent(_ID_mubiao)
+		ID_mubiao = ai_judge_leiji_mubiao(_ID_mubiao)
 		if ID_mubiao < 0 then return end
 	else
 		ID_mubiao = _ID_mubiao
 	end
 	
-    add_funcptr(push_message, table.concat({char_juese[ID_s].name.."发动了武将技能 '雷击' (对", char_juese[ID_mubiao].name, ")"}))
+    push_message(table.concat({char_juese[ID_s].name .. "发动了武将技能 '雷击' (对", char_juese[ID_mubiao].name, ")"}))
+	add_funcptr(_leiji_fan_panding, ID_s)
+
+	--  如场上有司马懿或张角，询问其改判技能  --
+	skills_guicai_guidao_ask(ID_s, ID_mubiao, ID_s, "雷击")
 	
+	add_funcptr(_leiji_jiesuan, {ID_s, ID_mubiao})
+	timer.start(0.6)
+end
+function _leiji_fan_panding(ID_s)
 	--  翻开判定牌  --
 	if #card_yixi == 0 then
 	    card_xipai(true)
 	end
     card_panding_card = card_yixi[1]
 	table.remove(card_yixi, 1)
-	add_funcptr(push_message, table.concat({char_juese[ID_s].name.."的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
-	
+	push_message(table.concat({char_juese[ID_s].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
+end
+function _leiji_jiesuan(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
 	if card_panding_card[2] == "黑桃" then
 	    --  判定成功  --
-		add_funcptr(push_message, char_juese[ID_s].name.."的 '雷击' 判定成功")
+		timer.stop()
+		funcptr_queue = {}
+		funcptr_i = 0
+
+		push_message(char_juese[ID_s].name .. "的 '雷击' 判定成功")
 		char_tili_deduct({2, ID_mubiao, ID_s, "雷"})
 		card_add_qipai(card_panding_card)
+
+		add_funcptr(_leiji_huifu)
+		timer.start(0.6)
 	else
-		add_funcptr(push_message, char_juese[ID_s].name.."的 ‘雷击' 判定失败")
+		push_message(char_juese[ID_s].name .. "的 '雷击' 判定失败")
 		card_add_qipai(card_panding_card)
+		_leiji_huifu()
 	end
 end
-
---  AI：找出第一个反贼或内奸  --
-function skills_find_opponent(ID_mubiao)
-	local i, v
-	
-	if char_juese[ID_mubiao].shenfen == "反贼" then
-		return ID_mubiao
-	end
-	
-	for i, v in ipairs(char_juese) do
-		if v.siwang == false then
-			if v.shenfen == "反贼" then
-				return i
-			end
-		end
-	end
-	
-	for i, v in ipairs(char_juese) do
-		if v.siwang == false then
-			if v.shenfen == "内奸" then
-				return i
-			end
-		end
-	end
-	
-	return -1
+function _leiji_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  夏侯惇：刚烈  --
@@ -1681,28 +1684,18 @@ function skills_ganglie(va_list)
 	local ID_s, ID_mubiao
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
-	zhudong_queue = table.copy(funcptr_queue)
-	zhudong_queue_i = funcptr_i
-
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
 	funcptr_queue = {}
 	funcptr_i = 0
 
-    add_funcptr(push_message, table.concat({char_juese[ID_s].name .. "发动了武将技能 '刚烈'"}))
+    push_message(table.concat({char_juese[ID_s].name .. "发动了武将技能 '刚烈'"}))
 	add_funcptr(_ganglie_fan_panding, ID_s)
 
-	if ID_mubiao == char_current_i then
-		if skills_judge_guicai_guidao(ID_mubiao) ~= "" then
-			add_funcptr(skills_guicai_guidao_zhudong_enter)
-		end
-	end
-
-	funcptr_add_tag = "翻判定牌"
-	add_funcptr(_ganglie_yanshi)
-	funcptr_add_tag = nil
+	--  如场上有司马懿或张角，询问其改判技能  --
+	skills_guicai_guidao_ask(ID_s, ID_mubiao, ID_s, "刚烈")
 	
 	add_funcptr(_ganglie_jiesuan, {ID_s, ID_mubiao})
-
 	timer.start(0.6)
 end
 function skills_enter_ganglie(ID_s)
@@ -1719,9 +1712,6 @@ function _ganglie_fan_panding(ID_s)		--  刚烈：翻开判定牌
     card_panding_card = card_yixi[1]
 	table.remove(card_yixi, 1)
 	push_message(table.concat({char_juese[ID_s].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
-end
-function _ganglie_yanshi()	--  刚烈：用于占空 (可能鬼才替换)
-
 end
 function _ganglie_jiesuan(va_list)		--  刚烈：结算判定牌
 	local ID_s, ID_mubiao
@@ -1743,8 +1733,7 @@ function _ganglie_jiesuan(va_list)		--  刚烈：结算判定牌
 	end
 end
 function _ganglie_huifu()	--  刚烈：恢复己方中断前函数队列
-	funcptr_queue = zhudong_queue
-	funcptr_i = zhudong_queue_i
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 	timer.start(0.6)
 end
 function _ganglie_exe_ai(ID_s, ID_mubiao)	--  刚烈：AI做出决定
@@ -1962,6 +1951,25 @@ function _dimeng_sub2()
 end
 
 --  司马懿：鬼才 / 张角：鬼道  --
+function skills_guicai_guidao_ask(id, ID_laiyuan, ID_mubiao, panding_leixing)		--  从当前角色开始，逆时针询问是否发动鬼才或鬼道
+	local cur = id
+	local i
+
+	for i = 1, 5 do
+		if skills_judge_guicai_guidao(cur) ~= "" then
+			if cur == char_current_i then
+				add_funcptr(skills_guicai_guidao_zhudong_enter)
+			else
+				add_funcptr(skills_guicai_guidao_ai, {cur, ID_laiyuan, ID_mubiao, panding_leixing})
+			end
+		end
+
+		cur = cur + 1
+		if cur > 5 then
+			cur = 1
+		end
+	end
+end
 function skills_judge_guicai_guidao(id)		--  判断角色是否拥有鬼才或鬼道技能
 	if char_juese[id].skill["鬼才"] == "available" then
 		return "鬼才"
@@ -1976,7 +1984,7 @@ function skills_judge_guicai_guidao_use()	--  判断替换判定牌是否合法�
 		return false
 	end
 
-	local card = card_selected[1]
+	local card = char_juese[char_current_i].shoupai[card_highlighted]
 	if skills_judge_guicai_guidao(char_current_i) == "鬼道" then
 		if card[2] == "草花" or card[2] == "黑桃" then
 			return true
@@ -1987,14 +1995,42 @@ function skills_judge_guicai_guidao_use()	--  判断替换判定牌是否合法�
 		return true
 	end
 end
-function skills_guicai_guidao_zhudong_enter()	--  询问是否发动鬼才或鬼道（主动）
+function skills_guicai_guidao_ai(va_list)	--  AI发动鬼才或鬼道
+	local id, ID_laiyuan, ID_mubiao, panding_leixing
+	id = va_list[1]; ID_laiyuan = va_list[2]; ID_mubiao = va_list[3]; panding_leixing = va_list[4]
+
+	local card_id = ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
+
+	if card_id == nil then
+		push_message(char_juese[id].name .. "放弃改判")
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	funcptr_queue = {}
+	funcptr_i = 0
 	timer.stop()
+
+	if skills_judge_guicai_guidao(id) == "鬼才" then
+		push_message(char_juese[id].name .. "发动了武将技能 '鬼才'")
+	else
+		push_message(char_juese[id].name .. "发动了武将技能 '鬼道'")
+	end
+
+	local card = char_juese[id].shoupai[card_id]
+	card_remove({id, card_id})
+
+	add_funcptr(_guicai_guidao_exe, {id, card})
+	add_funcptr(_guicai_guidao_huifu)
+	timer.start(0.6)
+end
+function skills_guicai_guidao_zhudong_enter()	--  询问己方是否发动鬼才或鬼道
 	id = char_current_i
 
-	wuxie_queue_xiangying = table.copy(funcptr_queue)
-	wuxie_queue_xiangying_i = funcptr_i
-
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	funcptr_queue = {}
+	funcptr_i = 0
+	timer.stop()
 
 	local old_gamerun_status = gamerun_status
 	gamerun_status = "确认操作"
@@ -2014,8 +2050,10 @@ function skills_guicai_guidao_zhudong_enter()	--  询问是否发动鬼才或鬼
 	    else
 			set_hints("")
 			gamerun_status = old_gamerun_status
-			funcptr_queue = wuxie_queue_xiangying
-			funcptr_i = wuxie_queue_xiangying_i + 1
+			push_message(char_juese[id].name .. "放弃改判")
+			
+			_guicai_guidao_huifu()
+			funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -2031,8 +2069,7 @@ function skills_guicai_guidao_zhudong_choose(old_gamerun_status)
 	gamerun_OK_ptr = function()
 		if skills_judge_guicai_guidao_use() and gamerun_OK == true then
 			local card = char_juese[id].shoupai[card_highlighted]
-			_guicai_guidao_replace_func(id, card)
-
+			
 			set_hints("")
 			gamerun_status = old_gamerun_status
 			if skills_judge_guicai_guidao(id) == "鬼才" then
@@ -2041,24 +2078,14 @@ function skills_guicai_guidao_zhudong_choose(old_gamerun_status)
 				push_message(char_juese[id].name .. "发动了武将技能 '鬼道'")
 			end
 
+			card_remove({id, card_highlighted})
 			card_selected = {}
-			table.remove(char_juese[id].shoupai, card_highlighted)
 			card_highlighted = 1
 			imp_card = ""
-			timer.start(0.6)
-		end
-	end
-end
-function _guicai_guidao_replace_func(id, card)	--  将原有占空的函数替换为鬼才的执行函数
-	funcptr_queue = wuxie_queue_xiangying
-	funcptr_i = wuxie_queue_xiangying_i + 1
 
-	for i = 1, #funcptr_queue do
-		if funcptr_queue[i].tag ~= nil then
-			if string.find(funcptr_queue[i].tag, "翻判定牌") then
-				change_funcptr(_guicai_guidao_exe, {id, card}, i)
-				break
-			end
+			add_funcptr(_guicai_guidao_exe, {id, card})
+			add_funcptr(_guicai_guidao_huifu)
+			timer.start(0.6)
 		end
 	end
 end
@@ -2078,6 +2105,9 @@ function _guicai_guidao_exe(va_list)
 	msg = {char_juese[id].name, "将判定牌替换为'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}
 	push_message(table.concat(msg))
 	msg = nil; collectgarbage()
+end
+function _guicai_guidao_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  庞统：涅槃  --
