@@ -477,69 +477,93 @@ function card_qipai_all(ID, panding, _p)
 end
 function _qipai_sub2(va_list)    --  丢弃手牌
     local msg
-	local cardID, ID
-	ID = va_list[1]; cardID = va_list[2]
+	local cardID, ID, is_passive
+	ID = va_list[1]; cardID = va_list[2]; is_passive = va_list[3]
 	
 	if char_juese[ID].shoupai[cardID] == nil then return end
 	
-	msg = {char_juese[ID].name, "丢弃'", char_juese[ID].shoupai[cardID][2], char_juese[ID].shoupai[cardID][3], "的", char_juese[ID].shoupai[cardID][1], "'"}
-    push_message(table.concat(msg))
+	if is_passive then
+		msg = {char_juese[ID].name, "的手牌'", char_juese[ID].shoupai[cardID][2], char_juese[ID].shoupai[cardID][3], "的", char_juese[ID].shoupai[cardID][1], "'被弃置"}
+	else
+		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].shoupai[cardID][2], char_juese[ID].shoupai[cardID][3], "的", char_juese[ID].shoupai[cardID][1], "'"}
+	end
+	push_message(table.concat(msg))
 	msg = nil; collectgarbage()
 	card_add_qipai(char_juese[ID].shoupai[cardID])
     table.remove(char_juese[ID].shoupai, cardID)
 end
 function _qipai_sub3(va_list)    --  丢弃判定区
     local msg
-	local cardID, ID
-	ID = va_list[1]; cardID = va_list[2]
+	local cardID, ID, is_passive
+	ID = va_list[1]; cardID = va_list[2]; is_passive = va_list[3]
 	
 	if char_juese[ID].panding[cardID] == nil then return end
 	
-	msg = {char_juese[ID].name, "丢弃'", char_juese[ID].panding[cardID][2], char_juese[ID].panding[cardID][3], "的", char_juese[ID].panding[cardID][1], "'"}
-    push_message(table.concat(msg))
+	if is_passive then
+		msg = {char_juese[ID].name, "判定区的'", char_juese[ID].panding[cardID][2], char_juese[ID].panding[cardID][3], "的", char_juese[ID].panding[cardID][1], "'被弃置"}
+	else
+		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].panding[cardID][2], char_juese[ID].panding[cardID][3], "的", char_juese[ID].panding[cardID][1], "'"}
+    end
+	push_message(table.concat(msg))
 	msg = nil; collectgarbage()
 	card_add_qipai(char_juese[ID].panding[cardID])
     table.remove(char_juese[ID].panding, cardID)
 end
-function _qipai_sub4(ID, hide_msg)    --  丢弃武器
+function _qipai_sub4(ID, hide_msg, is_passive)    --  丢弃武器
     local msg
 	
 	if hide_msg ~= true then
-		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].wuqi[2], char_juese[ID].wuqi[3], "的", char_juese[ID].wuqi[1], "'"}
-    	push_message(table.concat(msg))
+		if is_passive then
+			msg = {char_juese[ID].name, "的武器'", char_juese[ID].wuqi[2], char_juese[ID].wuqi[3], "的", char_juese[ID].wuqi[1], "'被弃置"}
+		else
+			msg = {char_juese[ID].name, "丢弃'", char_juese[ID].wuqi[2], char_juese[ID].wuqi[3], "的", char_juese[ID].wuqi[1], "'"}
+    	end
+		push_message(table.concat(msg))
 		msg = nil; collectgarbage()
 	end
 	card_add_qipai(char_juese[ID].wuqi)
     char_juese[ID].wuqi = {}
 end
-function _qipai_sub5(ID, hide_msg)    --  丢弃防具
+function _qipai_sub5(ID, hide_msg, is_passive)    --  丢弃防具
     local msg
 	
 	if hide_msg ~= true then
-		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].fangju[2], char_juese[ID].fangju[3], "的", char_juese[ID].fangju[1], "'"}
-    	push_message(table.concat(msg))
+		if is_passive then
+			msg = {char_juese[ID].name, "的防具'", char_juese[ID].fangju[2], char_juese[ID].fangju[3], "的", char_juese[ID].fangju[1], "'被弃置"}
+		else
+			msg = {char_juese[ID].name, "丢弃'", char_juese[ID].fangju[2], char_juese[ID].fangju[3], "的", char_juese[ID].fangju[1], "'"}
+    	end
+		push_message(table.concat(msg))
 		msg = nil; collectgarbage()
 	end
 	card_add_qipai(char_juese[ID].fangju)
     char_juese[ID].fangju = {}
 end
-function _qipai_sub6(ID, hide_msg)    --  丢弃-1马
+function _qipai_sub6(ID, hide_msg, is_passive)    --  丢弃-1马
     local msg
 	
 	if hide_msg ~= true then
-		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].gongma[2], char_juese[ID].gongma[3], "的", char_juese[ID].gongma[1], "'"}
-    	push_message(table.concat(msg))
+		if is_passive then
+			msg = {char_juese[ID].name, "的-1马'", char_juese[ID].gongma[2], char_juese[ID].gongma[3], "的", char_juese[ID].gongma[1], "'被弃置"}
+		else
+			msg = {char_juese[ID].name, "丢弃'", char_juese[ID].gongma[2], char_juese[ID].gongma[3], "的", char_juese[ID].gongma[1], "'"}
+    	end
+		push_message(table.concat(msg))
 		msg = nil; collectgarbage()
 	end
 	card_add_qipai(char_juese[ID].gongma)
     char_juese[ID].gongma = {}
 end
-function _qipai_sub7(ID, hide_msg)    --  丢弃+1马
+function _qipai_sub7(ID, hide_msg, is_passive)    --  丢弃+1马
     local msg
 	
 	if hide_msg ~= true then
-		msg = {char_juese[ID].name, "丢弃'", char_juese[ID].fangma[2], char_juese[ID].fangma[3], "的", char_juese[ID].fangma[1], "'"}
-    	push_message(table.concat(msg))
+		if is_passive then
+			msg = {char_juese[ID].name, "的+1马'", char_juese[ID].fangma[2], char_juese[ID].fangma[3], "的", char_juese[ID].fangma[1], "'被弃置"}
+		else
+			msg = {char_juese[ID].name, "丢弃'", char_juese[ID].fangma[2], char_juese[ID].fangma[3], "的", char_juese[ID].fangma[1], "'"}
+    	end
+		push_message(table.concat(msg))
 		msg = nil; collectgarbage()
 	end
 	card_add_qipai(char_juese[ID].fangma)
@@ -570,6 +594,96 @@ function card_chazhao_with_huase(ID, name)
 	end
 	
 	return -1
+end
+
+
+--  拼点结算  --
+function card_pindian(ID_s, ID_mubiao)
+	card_pindian_exe = coroutine.create(
+	function()
+		pindianing = {}
+		if ID_s == char_current_i or ID_mubiao == char_current_i then
+			skills_enter("请选择拼点的牌", "", "进行拼点", "技能选择-拼点")
+			gamerun_OK_pindian_ptr = function()
+				if ID_s == char_current_i then
+					set_hints("")
+					gamerun_status = ""
+					card_into_pindian(ID_s,card_highlighted)
+					card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+					win = card_pindian_judge(ID_s,ID_mubiao)
+				elseif ID_mubiao == char_current_i then
+					set_hints("")
+					gamerun_status = ""
+					card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+					card_into_pindian(ID_s,card_highlighted)
+					win = card_pindian_judge(ID_s,ID_mubiao)
+				end
+			end
+		else
+			card_into_pindian(ID_s,ai_pindian_judge(ID_s,true))
+			card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+			win = card_pindian_judge(ID_s,ID_mubiao)
+		end
+	end)
+	coroutine.resume(card_pindian_exe)
+end
+
+--  手牌进入拼点区  --
+function card_into_pindian(ID,ID_card)
+	table.insert(pindianing,{char_juese[ID].shoupai[ID_card][1],char_juese[ID].shoupai[ID_card][2],char_juese[ID].shoupai[ID_card][3]})
+	table.remove(char_juese[ID].shoupai,ID_card)
+	--  陆逊在失去最后手牌时摸一张牌  --
+	if char_juese[ID].skill["连营"] == "available" and #char_juese[ID].shoupai == 0 then
+		push_message(char_juese[ID].name.."发动了武将技能 '连营'")
+		card_fenfa({ID, 1, true})
+	end
+	-- 张春华在手牌不足时摸牌 --
+	if char_juese[ID].skill["伤逝"] == "available" and table.maxn(char_juese[ID].shoupai) < char_juese[ID].tili_max-char_juese[ID].tili then
+		push_message(char_juese[ID].name.."发动了武将技能 '伤逝'")
+		card_fenfa({ID, char_juese[ID].tili_max-char_juese[ID].tili-table.maxn(char_juese[ID].shoupai), true})
+	end
+end
+
+--  拼点结算  --
+function card_pindian_judge(ID_s,ID_mubiao)
+	local i,j
+	if pindianing[1][3] == "A" then
+		i = 1
+	elseif pindianing[1][3] == "J" then
+		i = 11
+	elseif pindianing[1][3] == "Q" then
+		i = 12
+	elseif pindianing[1][3] == "K" then
+		i = 13
+	else
+		i = tonumber(pindianing[1][3])
+	end
+	if pindianing[2][3] == "A" then
+		j = 1
+	elseif pindianing[2][3] == "J" then
+		j = 11
+	elseif pindianing[2][3] == "Q" then
+		j = 12
+	elseif pindianing[2][3] == "K" then
+		j = 13
+	else
+		j = tonumber(pindianing[2][3])
+	end
+	push_message(char_juese[ID_s].name.."的拼点牌是'"..pindianing[1][2]..pindianing[1][3].."的"..pindianing[1][1].."'")
+	push_message(char_juese[ID_mubiao].name.."的拼点牌是'"..pindianing[2][2]..pindianing[2][3].."的"..pindianing[2][1].."'")
+	card_add_qipai(pindianing[1])
+	card_add_qipai(pindianing[2])
+	pindianing = {}
+	if i > j then
+		push_message(char_juese[ID_s].name.."拼点获胜")
+		return true,false
+	elseif i < j then
+		push_message(char_juese[ID_mubiao].name.."拼点获胜")
+		return false,true
+	else
+		push_message(char_juese[ID_s].name.."与"..char_juese[ID_mubiao].name.."拼点均失败")
+		return false,false
+	end
 end
 
 --  在玩家装备区中查找装备  --
@@ -818,6 +932,19 @@ function card_if_d_limit(card, ID_s, ID_d)
 			end
 		end
 	end
+
+	--  荀彧驱虎  --
+	if card == "驱虎2" then
+		if #char_juese[ID_d].wuqi ~= 0 then
+			if char_calc_distance(ID_quhu, ID_d) > card_wuqi_r[char_juese[ID_quhu].wuqi[1]] then
+				return false
+			end
+		else
+			if char_calc_distance(ID_quhu, ID_d) > 1 then
+				return false
+			end
+		end
+	end
 	
 	--  典韦强袭  --
 	if card == "强袭" then
@@ -838,7 +965,13 @@ function card_if_d_limit(card, ID_s, ID_d)
 			return false
 		end
 	end
-	
+
+	--  太史慈天义  --
+	if card == "天义" and gamerun_status == "技能选择-目标" then
+		if #char_juese[ID_d].shoupai == 0 then
+			return false
+		end
+	end	
 	return true
 end
 

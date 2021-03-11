@@ -1021,6 +1021,10 @@ function on.enterKey()
 				return
 		    end
 
+		elseif string.find(gamerun_status, "拼点") then
+			gamerun_OK = true
+			gamerun_OK_pindian_ptr()
+			return
 		elseif gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		    gamerun_OK = true
 			gamerun_OK_ptr()

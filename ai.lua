@@ -250,7 +250,7 @@ function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)
 	if #char_juese[ID_s].wuqi ~= 0 and weapon_ignore == nil then
 		range = card_wuqi_r[char_juese[ID_s].wuqi]
 	end
-	distance = distance + delta
+	-- distance = distance + delta
 	if distance <= limdis then
 		indis = true
 	end
@@ -744,6 +744,7 @@ function ai_card_stat(ID)
 	card = card + table.maxn(char_juese[ID].shoupai)
 	return card
 end
+
 --  AI主动弃置牌 --
 function ai_judge_withdraw(ID,required)
 	if ai_card_stat(ID) < required then
@@ -888,25 +889,25 @@ function ai_judge_withdraw_other(ID,is_zhuangbei_included,is_panding_included,is
 	if is_enemy then
 		if is_zhuangbei_included == true and (#char_juese[ID].gongma ~= 0 or #char_juese[ID].wuqi ~= 0 or #char_juese[ID].fangma ~= 0 or #char_juese[ID].fangju ~= 0) then
 			if #char_juese[ID].fangju ~= 0 then
-				return "装备","防具"
+				_qipai_sub5(ID,nil,true)
 			end
 			if #char_juese[ID].fangma ~= 0 then
-				return "装备","+1马"
+				_qipai_sub7(ID,nil,true)
 			end
 			if #char_juese[ID].wuqi ~= 0 then
-				return "装备","武器"
+				_qipai_sub4(ID,nil,true)
 			end
 			if #char_juese[ID].gongma ~= 0 then
-				return "装备","-1马"
+				_qipai_sub6(ID,nil,true)
 			end
 		else
 			if #char_juese[ID].shoupai ~= 0 then
-				return "手牌",math.random(#char_juese[ID].shoupai)
+				_qipai_sub2({ID,math.random(#char_juese[ID].shoupai),true})
 			else
 				if is_panding_included == true and #char_juese[ID].panding ~= 0 then
 					for i = 1,#char_juese[ID].panding do
 						if char_juese[ID].panding[i][1] == "闪电" then
-							return "判定",i
+							_qipai_sub3({ID,i,true})
 						end
 					end
 					for i = 1,#char_juese[ID].panding do
@@ -914,9 +915,9 @@ function ai_judge_withdraw_other(ID,is_zhuangbei_included,is_panding_included,is
 							return "判定",i
 						end
 					end
-					return "判定",1
+					_qipai_sub3({ID,i,true})
 				else
-					return "没牌"
+					return
 				end
 			end
 		end
@@ -924,37 +925,74 @@ function ai_judge_withdraw_other(ID,is_zhuangbei_included,is_panding_included,is
 		if is_panding_included == true and #char_juese[ID].panding ~= 0 then
 			for i = 1,#char_juese[ID].panding do
 				if char_juese[ID].panding[i][1] == "乐不思蜀" then
-					return "判定",i
+					_qipai_sub3({ID,i,true})
 				end
 			end
 			for i = 1,#char_juese[ID].panding do
 				if char_juese[ID].panding[i][1] == "兵粮寸断" then
-					return "判定",i
+					_qipai_sub3({ID,i,true})
 				end
 			end
-			return "判定",1
+			return _qipai_sub3({ID,1,true})
 		else
 			if #char_juese[ID].shoupai ~= 0 then
-				return "手牌",math.random(#char_juese[ID].shoupai)
+				_qipai_sub2({ID,math.random(#char_juese[ID].shoupai),true})
 			elseif is_zhuangbei_included == true then
 				if #char_juese[ID].gongma ~= 0 then
-					return "装备","-1马"
+					_qipai_sub6(ID,nil,true)
 				end
 				if #char_juese[ID].wuqi ~= 0 then
-					return "装备","武器"
+					_qipai_sub4(ID,nil,true)
 				end
 				if #char_juese[ID].fangma ~= 0 then
-					return "装备","+1马"
+					_qipai_sub7(ID,nil,true)
 				end
 				if #char_juese[ID].fangju ~= 0 then
-					return "装备","防具"
+					_qipai_sub5(ID,nil,true)
 				end
-				return "没牌"
+				return
 			else
-				return "没牌"
+				return
 			end
 		end
 	end
+end
+
+--  AI与其他角色进行拼点 --
+function ai_pindian_judge(ID,is_enemy)
+	local card_pindian = 1
+	local card_pindian_dianshu = 0
+	if char_juese[ID].shoupai[1][3] == "A" then
+		card_pindian_dianshu = 1
+	elseif char_juese[ID].shoupai[1][3] == "J" then
+		card_pindian_dianshu = 11
+	elseif char_juese[ID].shoupai[1][3] == "Q" then
+	card_pindian_dianshu = 12
+	elseif char_juese[ID].shoupai[1][3] == "K" then
+		card_pindian_dianshu = 13
+	else
+		card_pindian_dianshu = tonumber(char_juese[ID].shoupai[1][3])
+	end
+	for i = 1, #char_juese[ID].shoupai do
+		local j = 0
+		if char_juese[ID].shoupai[i][3] == "A" then
+			j = 1
+		elseif char_juese[ID].shoupai[i][3] == "J" then
+			j = 11
+		elseif char_juese[ID].shoupai[i][3] == "Q" then
+				j = 12
+		elseif char_juese[ID].shoupai[i][3] == "K" then
+			j = 13
+		else
+			j = tonumber(char_juese[ID].shoupai[i][3])
+		end
+		if card_pindian_dianshu < j and is_enemy then
+			card_pindian, card_pindian_dianshu = i, j
+		elseif card_pindian_dianshu > j then
+			card_pindian, card_pindian_dianshu = i, j
+		end
+	end
+	return card_pindian, card_pindian_dianshu
 end
 
 --  AI回合内使用牌 --

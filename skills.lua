@@ -22,6 +22,8 @@ skills_func =
 	["强袭"] = function() return skills_qiangxi_enter() end, 
 	["连环"] = function() return skills_lianhuan_enter() end, 
 	["缔盟"] = function() return skills_dimeng_enter() end, 
+	["天义"] = function() return skills_tianyi_enter() end, 
+	["驱虎"] = function() return skills_quhu_enter() end, 
 }
 
 --  黄月英：集智  --
@@ -47,6 +49,73 @@ function skills_hunzi()
 	end
 	table.insert(char_juese[char_current_i].skillname,"英姿")
 	char_juese[char_current_i].skill["魂姿"] = "locked_whole_game"
+end
+
+--  太史慈：天义  --
+--  暂时不能增加出杀目标 --
+function skills_tianyi_enter()
+	if #char_juese[char_current_i].shoupai == 0 then return false end
+	timer.stop()
+	funcptr_queue = {}
+	skills_enter("请选择目标", "", "天义", "技能选择-目标")
+	gamerun_select_target("init")
+	gamerun_OK_ptr = function()
+		if #char_juese[gamerun_target_selected].shoupai == 0 then return false end
+		card_pindian(char_current_i, gamerun_target_selected)
+		if win then
+			char_juese[char_current_i].skill["天义"] = "locked"
+			char_sha_time = char_sha_time + 1
+			char_distance_infinity = true
+			skills_cs_2()
+			consent_func_queue(0.6)
+		else
+			char_juese[char_current_i].skill["天义"] = "locked"
+			char_sha_able = false
+			skills_cs_2()
+			consent_func_queue(0.6)
+		end
+	end
+	return true
+end
+
+--  荀彧：驱虎  --
+function skills_quhu_enter()
+	if #char_juese[char_current_i].shoupai == 0 then return false end
+	timer.stop()
+	funcptr_queue = {}
+	skills_enter("请选择目标", "", "驱虎", "技能选择-目标")
+	gamerun_select_target("init")
+	gamerun_OK_ptr = function()
+		if #char_juese[gamerun_target_selected].shoupai == 0 then return false end
+		card_pindian(char_current_i, gamerun_target_selected)
+		if win then
+			char_juese[char_current_i].skill["驱虎"] = "locked"
+			if #ai_judge_in_range(gamerun_target_selected) > 0 then
+				ID_quhu = gamerun_target_selected
+				skills_quhu_sub1()
+			else
+				skills_cs()
+				consent_func_queue(0.6)
+			end
+		else
+			char_juese[char_current_i].skill["驱虎"] = "locked"
+			char_tili_deduct({1, char_current_i, gamerun_target_selected, "普通", char_current_i, nil, true})
+			skills_cs()
+			consent_func_queue(0.6)
+		end
+	end
+	return true
+end
+
+function skills_quhu_sub1()
+	skills_enter("请选择伤害的目标", "", "驱虎2", "技能选择-目标B")
+	gamerun_select_target("init")
+	
+	gamerun_OK_ptr = function()
+		char_tili_deduct({1, gamerun_target_selected, ID_quhu, "普通", char_current_i, nil, true})
+		skills_cs()
+		consent_func_queue(0.6)
+	end
 end
 
 --  孙坚：英魂  --
@@ -209,7 +278,7 @@ function skills_judge_xueyi(ID)
 	end
 	
 	for i = 1, 5 do
-		if char_juese[i].siwang == false and char_juese_jineng[char_juese[i].name][2] == "群" then
+		if char_juese[i].siwang == false and char_juese[ID].shili == "群" then
 			extra = extra + 2
 		end
 	end
@@ -271,7 +340,7 @@ function skills_benghuai_enter()    --  进入崩坏状态
 			set_hints("")
 			funcptr_queue = {}
 			add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '崩坏'")
-			char_tili_deduct({1, char_current_i, nil, "普通", char_current_i})
+			char_tili_deduct({1, char_current_i, nil, "流失", char_current_i})
 			_skills_huihe_end()
 			consent_func_queue(0.6)
 		end
@@ -609,7 +678,7 @@ end
 
 --  黄盖：苦肉  --
 function skills_kurou_enter()
-	if char_juese[char_current_i].tili < 1 then return false end
+	--if char_juese[char_current_i].tili < 1 then return false end
 
 	skill_text_1 = "按'确定'发动苦肉"
 	
