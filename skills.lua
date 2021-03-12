@@ -61,19 +61,26 @@ function skills_tianyi_enter()
 	gamerun_select_target("init")
 	gamerun_OK_ptr = function()
 		if #char_juese[gamerun_target_selected].shoupai == 0 then return false end
-		card_pindian(char_current_i, gamerun_target_selected)
-		if win then
-			char_juese[char_current_i].skill["天义"] = "locked"
-			char_sha_time = char_sha_time + 1
-			char_distance_infinity = true
-			skills_cs_2()
-			consent_func_queue(0.6)
-		else
-			char_juese[char_current_i].skill["天义"] = "locked"
-			char_sha_able = false
-			skills_cs_2()
-			consent_func_queue(0.6)
+
+		local win_fp = function(win)
+			if win then
+				char_juese[char_current_i].skill["天义"] = "locked"
+				char_sha_time = char_sha_time + 1
+				char_distance_infinity = true
+				
+				consent_func_queue(0.6)
+			else
+				char_juese[char_current_i].skill["天义"] = "locked"
+				char_sha_able = false
+				skills_cs_()
+				consent_func_queue(0.6)
+			end
+
+			skills_cs_()
+			_quhu_sub2()
 		end
+
+		card_pindian(char_current_i, gamerun_target_selected, win_fp)
 	end
 	return true
 end
@@ -87,35 +94,51 @@ function skills_quhu_enter()
 	gamerun_select_target("init")
 	gamerun_OK_ptr = function()
 		if #char_juese[gamerun_target_selected].shoupai == 0 then return false end
-		card_pindian(char_current_i, gamerun_target_selected)
-		if win then
-			char_juese[char_current_i].skill["驱虎"] = "locked"
-			if #ai_judge_in_range(gamerun_target_selected) > 0 then
-				ID_quhu = gamerun_target_selected
-				skills_quhu_sub1()
+
+		local win_fp = function(win)
+			if win then
+				char_juese[char_current_i].skill["驱虎"] = "locked"
+				if #ai_judge_in_range(gamerun_target_selected) > 0 then
+					guankan_s = gamerun_target_selected
+					_quhu_sub1()
+				else
+					skills_cs()
+					_quhu_sub2()
+				end
 			else
 				skills_cs()
+				char_juese[char_current_i].skill["驱虎"] = "locked"
+				char_tili_deduct({1, char_current_i, gamerun_target_selected, "普通", char_current_i, nil, true})
+				add_funcptr(_quhu_sub2)
 				consent_func_queue(0.6)
 			end
-		else
-			char_juese[char_current_i].skill["驱虎"] = "locked"
-			char_tili_deduct({1, char_current_i, gamerun_target_selected, "普通", char_current_i, nil, true})
-			skills_cs()
-			consent_func_queue(0.6)
 		end
+
+		card_pindian(char_current_i, gamerun_target_selected, win_fp)
 	end
 	return true
 end
-
-function skills_quhu_sub1()
+function _quhu_sub1()
 	skills_enter("请选择伤害的目标", "", "驱虎2", "技能选择-目标B")
 	gamerun_select_target("init")
 	
 	gamerun_OK_ptr = function()
-		char_tili_deduct({1, gamerun_target_selected, ID_quhu, "普通", char_current_i, nil, true})
-		skills_cs()
-		consent_func_queue(0.6)
+		if card_if_d_limit("驱虎2", guankan_s, gamerun_target_selected) then
+			set_hints("")
+			gamerun_status = "手牌生效中"
+
+			skills_cs()
+			char_tili_deduct({1, gamerun_target_selected, guankan_s, "普通", char_current_i, nil, true})
+			add_funcptr(_quhu_sub2)
+			consent_func_queue(0.6)
+		end
 	end
+end
+function _quhu_sub2()
+	gamerun_OK = false
+	gamerun_status = ""
+	jiaohu_text = "请您出牌"
+	platform.window:invalidate()
 end
 
 --  孙坚：英魂  --
@@ -1809,6 +1832,8 @@ function _ganglie_exe_ai(ID_s, ID_mubiao)	--  刚烈：AI做出决定
 	timer.stop()
 	funcptr_queue = {}
 	funcptr_i = 0
+
+	push_message(char_juese[ID_s].name .. "的 '刚烈' 判定成功")
 
 	char_tili_deduct({1, ID_mubiao, ID_s, "普通"})
 	add_funcptr(_ganglie_huifu)

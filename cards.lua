@@ -598,34 +598,36 @@ end
 
 
 --  拼点结算  --
-function card_pindian(ID_s, ID_mubiao)
-	card_pindian_exe = coroutine.create(
-	function()
-		pindianing = {}
-		if ID_s == char_current_i or ID_mubiao == char_current_i then
-			skills_enter("请选择拼点的牌", "", "进行拼点", "技能选择-拼点")
-			gamerun_OK_pindian_ptr = function()
-				if ID_s == char_current_i then
-					set_hints("")
-					gamerun_status = ""
-					card_into_pindian(ID_s,card_highlighted)
-					card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
-					win = card_pindian_judge(ID_s,ID_mubiao)
-				elseif ID_mubiao == char_current_i then
-					set_hints("")
-					gamerun_status = ""
-					card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
-					card_into_pindian(ID_s,card_highlighted)
-					win = card_pindian_judge(ID_s,ID_mubiao)
-				end
+function card_pindian(ID_s, ID_mubiao, win_fp)
+	pindianing = {}
+	if ID_s == char_current_i or ID_mubiao == char_current_i then
+		skills_enter("请选择拼点的牌", "", "进行拼点", "技能选择-拼点")
+		gamerun_OK_pindian_ptr = function()
+			if ID_s == char_current_i then
+				set_hints("")
+				gamerun_status = "手牌生效中"
+				card_into_pindian(ID_s,card_highlighted)
+				card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+				local win = card_pindian_judge(ID_s,ID_mubiao)
+
+				win_fp(win)
+			--[[
+			elseif ID_mubiao == char_current_i then
+				set_hints("")
+				gamerun_status = ""
+				card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+				card_into_pindian(ID_s,card_highlighted)
+				win = card_pindian_judge(ID_s,ID_mubiao)
+			]]
 			end
-		else
-			card_into_pindian(ID_s,ai_pindian_judge(ID_s,true))
-			card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
-			win = card_pindian_judge(ID_s,ID_mubiao)
 		end
-	end)
-	coroutine.resume(card_pindian_exe)
+	--[[
+	else
+		card_into_pindian(ID_s,ai_pindian_judge(ID_s,true))
+		card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+		win = card_pindian_judge(ID_s,ID_mubiao)
+	]]
+	end
 end
 
 --  手牌进入拼点区  --
@@ -935,12 +937,12 @@ function card_if_d_limit(card, ID_s, ID_d)
 
 	--  荀彧驱虎  --
 	if card == "驱虎2" then
-		if #char_juese[ID_d].wuqi ~= 0 then
-			if char_calc_distance(ID_quhu, ID_d) > card_wuqi_r[char_juese[ID_quhu].wuqi[1]] then
+		if #char_juese[ID_s].wuqi ~= 0 then
+			if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
 				return false
 			end
 		else
-			if char_calc_distance(ID_quhu, ID_d) > 1 then
+			if char_calc_distance(ID_s, ID_d) > 1 then
 				return false
 			end
 		end
