@@ -72,11 +72,11 @@ function skills_tianyi_enter()
 			else
 				char_juese[char_current_i].skill["天义"] = "locked"
 				char_sha_able = false
-				skills_cs_()
+				skills_cs()
 				consent_func_queue(0.6)
 			end
 
-			skills_cs_()
+			skills_cs()
 			_quhu_sub2()
 		end
 
