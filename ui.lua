@@ -245,7 +245,7 @@ function draw_opponent(gc)
 						wuqi = ""
 					end
 			
-					if gamerun_status == "选择目标-B" or (card == "驱虎2" and gamerun_status == "技能选择-目标B") then
+					if gamerun_status == "选择目标-B" or ((card == "驱虎2" or card == "节命") and gamerun_status == "技能选择-目标B") then
 						fun = function(card) return card_if_d_limit(card, guankan_s, gamerun_target_selected) end
 					elseif wuqi == "丈八矛" then
 						card = {}
@@ -433,12 +433,16 @@ function draw_self(gc)
 	end
 	
 	--  被选择目标 (借刀杀人第二阶段)
-	if card_highlighted ~= nil then
-		if gamerun_status == "选择目标-B" and char_current_i == gamerun_target_selected then
+	if (gamerun_status == "选择目标-B" or ((imp_card == "驱虎2" or imp_card == "节命") and gamerun_status == "技能选择-目标B")) and char_current_i == gamerun_target_selected then
+		if card_highlighted ~= nil or gamerun_status ~= "选择目标-B" then
 			--  显示焦点  --
 			local card
-			card = char_juese[char_current_i].shoupai[card_highlighted][1]
-			
+			if gamerun_status == "选择目标-B" then
+				card = char_juese[char_current_i].shoupai[card_highlighted][1]
+			else
+				card = imp_card
+			end
+
 			if card_if_d_limit(card, guankan_s, gamerun_target_selected) then
 				--  选择的角色可作为目标  --
 				gc:setColorRGB(255, 0, 0)

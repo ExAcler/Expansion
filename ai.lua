@@ -215,6 +215,24 @@ function ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
 	return nil
 end
 
+--  AI决定节命的补牌目标  --
+function ai_judge_jieming_mubiao(ID_s)
+	local ID = ID_s
+
+	local tili_max = char_juese[ID].tili_max
+	local n_shoupai = #char_juese[ID].shoupai
+	if tili_max > 5 then
+		tili_max = 5
+	end
+
+	--  优先选择给自己补牌  --
+	if tili_max - n_shoupai > 0 then
+		return ID
+	end
+
+	return nil
+end
+
 -- AI距离与攻击范围测算 --
 -- 第一个参数是否在指定距离内，第二个参数返回是否在攻击范围内
 function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)

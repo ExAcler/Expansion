@@ -220,24 +220,26 @@ function gamerun_init()
 	char_fenpei_id()    -- 分配身份
 	char_fenpei_wujiang()    -- 分配武将
 	add_funcptr(card_fenfa_init, nil)  -- 初始发牌
+	add_funcptr(_init_huashen)
 	add_funcptr(_init_sub1, nil)
 end
-function _init_sub1()
+function _init_huashen()
 	if char_juese[char_current_i].skill["化身"] == "available" then
+		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+		funcptr_queue = {}
+		funcptr_i = 0
+
 		huashen_paidui = {}
-		skills_xinsheng(char_current_i,true)
-		skills_xinsheng(char_current_i,true)
-		--[[
-		skills_xinsheng(char_current_i,true)
-		skills_xinsheng(char_current_i,true)
-		skills_xinsheng(char_current_i,true)
-		skills_xinsheng(char_current_i,true)
-		skills_xinsheng(char_current_i,true)
-		skills_xinsheng(char_current_i,true)
-		]]
-		skills_huashen(char_current_i,"游戏开始")
-		return
+		add_funcptr(skills_xinsheng, {char_current_i, true})
+		add_funcptr(skills_xinsheng, {char_current_i, true})
+		add_funcptr(skills_huashen, {char_current_i, "游戏开始"})
+		add_funcptr(_init_huifu)
 	end
+end
+function _init_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+function _init_sub1()
     gamerun_huihe_set("开始")
 	set_hints("请按'确定'继续")
 end
@@ -260,32 +262,44 @@ function gamerun_huihe_start()
 	msg = {char_juese[char_current_i].name, "回合开始"}
     add_funcptr(push_message, table.concat(msg))
 	gamerun_huihe = "开始"
+	msg = nil; collectgarbage()
+
+	--  回合开始阶段技能  --
+	if char_juese[char_current_i].skill["化身"] == "available" then
+		add_funcptr(skills_huashen, {char_current_i, "回合开始"})
+	end
 	
 	if char_juese[char_current_i].skill["魂姿"] == "available" and char_juese[char_current_i].tili == 1 then
-		skills_hunzi()
+		add_funcptr(skills_hunzi)
 	end
 	
 	if char_juese[char_current_i].skill["英魂"] == "available" and char_juese[char_current_i].tili < char_juese[char_current_i].tili_max then
 		add_funcptr(skills_yinghun_enter)
 	end
-	msg = nil; collectgarbage()
+
+	if char_juese[char_current_i].skill["洛神"] == "available" then
+		add_funcptr(skills_luoshen, char_current_i)
+	end
 	
 	--  判定阶段  --
 	gamerun_huihe_panding()
 	
 	--  摸牌阶段  --
-	--  周瑜英姿，多摸一张牌  --
+	--  摸牌阶段技能  --
 	if char_juese[char_current_i].skill["英姿"] == "available" then
 		add_funcptr(skills_yingzi,char_current_i)
 	end
+
 	if char_juese[char_current_i].skill["裸衣"] == "available" then
 		add_funcptr(skills_luoyi_enter,char_current_i)
 		return
 	end
+
 	if char_juese[char_current_i].skill["将驰"] == "available" then
 		add_funcptr(skills_jiangchi_enter,char_current_i)
 		return
 	end
+
 	if game_skip_mopai == false then
 		if char_juese[char_current_i].skill["突袭"] == "available" then
 			add_funcptr(skills_tuxi_enter,char_current_i)
@@ -535,13 +549,11 @@ function gamerun_huihe_jieshu(qipai)
 		end
 	end
 	if char_juese[char_current_i].skill["化身"] == "available" then
-		skills_huashen(char_current_i,"回合结束")
-		return
+		add_funcptr(skills_huashen, {char_current_i, "回合结束"})
 	end
 	
 	msg = {char_juese[char_current_i].name, "回合结束"}
     add_funcptr(push_message, table.concat(msg))
-	
 	
 	add_funcptr(_jieshu_sub1, nil)
 	
@@ -827,6 +839,12 @@ function on.enterKey()
 		end
 	--end
 
+	if gamerun_huihe == "开始" and gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
+		gamerun_OK = true
+		gamerun_OK_ptr()
+		return
+	end
+
 	if gamerun_huihe == "判定" then
 		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		    gamerun_OK = true
@@ -890,6 +908,9 @@ function on.enterKey()
 			elseif string.find(gamerun_status, "寒") then
 				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
 			    _sha_sub3()
+			elseif string.find(gamerun_status, "寒2") then
+				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
+			    _sha_sub2()
 			end
 			platform.window:invalidate()
 		elseif string.find(gamerun_status, "牌堆选择") then
@@ -1136,10 +1157,7 @@ function on.enterKey()
 					end
 				end
 			end
-			if char_juese[char_current_i].skill["化身"] == "available" then
-				skills_huashen(char_current_i,"回合开始")
-				return
-			end
+			
 			set_hints("")
 			card_highlighted = 1
 			gamerun_huihe_start()    -- 下一玩家回合开始
@@ -1335,7 +1353,7 @@ function on.escapeKey()
 		end
 	end
 
-	if gamerun_huihe == "判定" then
+	if gamerun_huihe == "开始" or gamerun_huihe == "判定" then
 		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		    gamerun_OK = false
 			gamerun_OK_ptr()
@@ -1464,7 +1482,7 @@ function on.tabKey()
 			end
 		end
 		
-		if (gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or imp_card == "鬼才"))) and table.getn2(card_selected) == 0 then
+		if (gamerun_huihe == "开始" or gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or imp_card == "鬼才"))) and table.getn2(card_selected) == 0 then
 		    if string.find(gamerun_status, "选择目标") or gamerun_status == "" then
 			    set_hints("请您出牌")
 			    gamerun_status = ""
@@ -1508,7 +1526,7 @@ function on.tabKey()
 			end
 		end
 	else
-	    if gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or imp_card == "鬼才")) then
+	    if gamerun_huihe == "开始" or gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or imp_card == "鬼才")) then
 			if gamerun_status == "技能选择-单牌" or gamerun_status == "技能选择-多牌" then
 				card_selected[card_highlighted] = 0
 				if gamerun_tab_ptr ~= nil then
