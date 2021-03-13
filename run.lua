@@ -60,6 +60,7 @@ zhudong_queue_stack_i = {}
 
 skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的选项的个数
+gamerun_dangxian = false -- 廖化当先发动与否的存储
 end
 
 --  定义变量  --
@@ -257,6 +258,17 @@ function gamerun_huihe_start()
 	char_distance_infinity = false
 	char_sha_able = true
 	char_hejiu = false
+
+	--  廖化当先额外出牌阶段  --
+	if char_juese[char_current_i].skill["当先"] == "available" and gamerun_dangxian == false then
+		msg = {char_juese[char_current_i].name, "触发了技能'当先'"}
+		push_message(table.concat(msg))
+		add_funcptr(_start_sub1, nil)
+		gamerun_dangxian = true
+		return
+	elseif gamerun_dangxian == true then
+		gamerun_dangxian = false
+	end
 	
 	--  回合开始阶段  --
 	msg = {char_juese[char_current_i].name, "回合开始"}
@@ -839,7 +851,7 @@ function on.enterKey()
 		end
 	--end
 
-	if gamerun_huihe == "开始" and gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
+	if gamerun_huihe == "开始" and (gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择")) then
 		gamerun_OK = true
 		gamerun_OK_ptr()
 		return
@@ -1279,6 +1291,30 @@ function on.escapeKey()
 					gamerun_OK = false
 					gamerun_OK_ptr()
 				end
+			elseif gamerun_dangxian == true then
+				--  跳过死亡的玩家  --
+				local j = true
+				while j do
+					j = false
+					if char_juese[char_current_i].siwang == true then
+						char_current_i = char_current_i + 1
+						j = true
+					end
+					if char_current_i > 5 then
+						char_current_i = 1
+					end
+				end
+				for i = 1,5 do
+					for k,v in pairs(char_juese[i].skill) do
+						if v=="locked" then
+							char_juese[i].skill[k] = 1
+						end
+					end
+				end
+				set_hints("")
+				card_highlighted = 1
+				gamerun_huihe_start()    -- 正常回合开始
+				consent_func_queue(0.2)
 			else
 		        --  出牌结束，进入弃牌阶段  --
 	            gamerun_huihe_set("弃牌")
@@ -1594,7 +1630,7 @@ function on.charIn(char)
 		if gamerun_skill_selected == 1 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
-		else
+		elseif gamerun_status == "" then
 			if skills[1 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[1 + 2 * skill_disrow]]~="locked" then 
 				if skills_func[skills[1 + 2 * skill_disrow]] ~= nil then
 					if skills_func[skills[1 + 2 * skill_disrow]]() then
@@ -1609,7 +1645,7 @@ function on.charIn(char)
 		if gamerun_skill_selected == 2 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
-		else
+		elseif gamerun_status == "" then
 			if skills[2 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[2 + 2 * skill_disrow]]~="locked" then
 				if skills_func[skills[2 + 2 * skill_disrow]] ~= nil then
 					if skills_func[skills[2 + 2 * skill_disrow]]() then
@@ -1624,7 +1660,7 @@ function on.charIn(char)
 		if gamerun_skill_selected == 3 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
-		else
+		elseif gamerun_status == "" then
 			if skills[3 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[3 + 2 * skill_disrow]]~="locked" then
 				if skills_func[skills[3 + 2 * skill_disrow]] ~= nil then
 					if skills_func[skills[3 + 2 * skill_disrow]]() then
@@ -1639,7 +1675,7 @@ function on.charIn(char)
 		if gamerun_skill_selected == 4 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
 			skills_rst()
-		else
+		elseif gamerun_status == "" then
 			if skills[4 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[4 + 2 * skill_disrow]]~="locked" then
 				if skills_func[skills[4 + 2 * skill_disrow]] ~= nil then
 					if skills_func[skills[4 + 2 * skill_disrow]]() then

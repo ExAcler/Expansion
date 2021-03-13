@@ -233,6 +233,18 @@ function ai_judge_jieming_mubiao(ID_s)
 	return nil
 end
 
+--  AI决定放逐的翻面目标  --
+function ai_judge_fangzhu_mubiao(ID_s,ID_mubiao)
+	if ID_mubiao ~= nil then
+		local fanmian = char_juese[ID_mubiao].fanmian
+		--  翻面武将牌正面朝上的伤害来源  --
+		if not fanmian then
+			return ID_mubiao
+		end
+	end
+	return nil
+end
+
 -- AI距离与攻击范围测算 --
 -- 第一个参数是否在指定距离内，第二个参数返回是否在攻击范围内
 function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)
