@@ -279,10 +279,14 @@ function draw_self(gc)
     local i, img_width, j, base_y
 	
     -- 玩家信息框架	--
-	if char_juese[char_current_i].fanmian == true then
-		gc:setColorRGB(114, 97, 73)
+	if char_juese[char_current_i].siwang == false then
+		if char_juese[char_current_i].fanmian == true then
+			gc:setColorRGB(114, 97, 73)
+		else
+			gc:setColorRGB(229, 195, 147)
+		end
 	else
-		gc:setColorRGB(229, 195, 147)
+		gc:setColorRGB(153, 153, 153)
 	end    -- 信息区域填色
 	gc:fillRect(224, 151, 88, 57)
 	if char_juese[char_current_i].shili == "蜀" then
@@ -301,7 +305,11 @@ function draw_self(gc)
 		gc:setColorRGB(153, 153, 153)
 	end    -- 体力显示区域填色
 	gc:fillRect(224 + 76, 152, 12, 56)
-	gc:setColorRGB(0, 0, 0)
+	if char_juese[char_current_i].siwang == false then
+		gc:setColorRGB(0, 0, 0)
+    else
+		gc:setColorRGB(192, 192, 192)
+	end
 	gc:drawRect(224, 151, 88, 57)    -- 信息区域
 	gc:drawRect(224 + 76, 151, 12, 57)    -- 体力显示区域
 	gc:drawLine(224, 151 + 19, 224 + 75, 151 + 19)    -- 框架线
@@ -464,6 +472,27 @@ function draw_messages(gc)
 	gc:setColorRGB(255, 0, 0)
 	gc:setFont("sansserif", "b", 9)
 	gc:drawString(#card_yixi, 292, 150) 
+	gc:setColorRGB(0, 255, 0)
+	local card_stat = #card_yixi + #card_qipai
+	for i = 1, 5 do
+		card_stat = card_stat + #char_juese[i].panding + #char_juese[i].shoupai
+		if #char_juese[i].wuqi ~= 0 then
+			card_stat = card_stat + 1
+		end
+		if #char_juese[i].fangju ~= 0 then
+			card_stat = card_stat + 1
+		end
+		if #char_juese[i].gongma ~= 0 then
+			card_stat = card_stat + 1
+		end
+		if #char_juese[i].fangma ~= 0 then
+			card_stat = card_stat + 1
+		end
+	end
+	if wugucards ~= nil then
+		card_stat = card_stat + #wugucards
+	end
+	gc:drawString(card_stat, 252, 150)
 	gc:setColorRGB(0, 0, 0)
 	gc:setFont("sansserif", "r", 11)
 	
@@ -486,7 +515,7 @@ function draw_others(gc)
 		
 		msg = {"手牌(", #char_juese[guankan_d].shoupai, ")"}
 		gc:drawString(table.concat(msg), 60, 60)
-		msg = nil; collectgarbage()
+		msg = nil; --collectgarbage()
 		
 		gc:drawString("马", 160, 60)
 		gc:drawString("武器", 60, 117)

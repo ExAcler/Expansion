@@ -678,7 +678,7 @@ end
 function skills_qingnang()
 	if table.getn2(card_selected) ~= 0 then
 		funcptr_queue = {}
-		if card_tao(card_highlighted, char_current_i, char_current_i, false) then
+		if card_tao({card_highlighted, char_current_i, char_current_i, false}) then
 			skills_cs()
 		    consent_func_queue(0.2)
 		end
@@ -706,7 +706,7 @@ end
 function skills_huoji()
 	if skills_judge_red() then
 		funcptr_queue = {}
-		if card_huogong(card_highlighted, char_current_i, gamerun_target_selected) then
+		if card_huogong({card_highlighted, char_current_i, gamerun_target_selected}) then
 			skills_cs()
 		    consent_func_queue(0.6)
 		end
@@ -766,7 +766,7 @@ end
 function skills_jiuchi()
 	if skills_judge_black() then
 		funcptr_queue = {}
-		if card_jiu(card_highlighted, char_current_i, false) then
+		if card_jiu({card_highlighted, char_current_i, false}) then
 			skills_cs()
 			skills_rst()
 		end
@@ -851,7 +851,7 @@ end
 function skills_guose()
 	if skills_judge_huase("方块") then
 		funcptr_queue = {}
-		if card_le(card_highlighted, char_current_i, gamerun_target_selected) then
+		if card_le({card_highlighted, char_current_i, gamerun_target_selected}) then
 			gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()
 			skills_rst()
@@ -892,7 +892,7 @@ end
 function skills_duanliang()
 	if skills_judge_duanliang() then
 		funcptr_queue = {}
-		if card_bingliang(card_highlighted, char_current_i, gamerun_target_selected) then
+		if card_bingliang({card_highlighted, char_current_i, gamerun_target_selected}) then
 			gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()
 			skills_rst()
@@ -1385,7 +1385,7 @@ function skills_rende_exe(va_list)
 	
 	local i, v, j, max_select
 	v = card_selected
-	collectgarbage()
+	--collectgarbage()
 	
 	max_select = #char_juese[ID_s].shoupai
 	j = 0
@@ -2001,7 +2001,7 @@ function skills_lianhuan_enter()
 				platform.window:invalidate()
 			else
 				--  重铸  --
-				card_lian_chongzhu(card_highlighted, char_current_i)
+				card_lian_chongzhu({card_highlighted, char_current_i})
 				card_selected = {}
 				card_highlighted = 1
 				skills_cs()
@@ -2097,11 +2097,11 @@ function _dimeng_sub1(va_list)
 	
 	push_message(table.concat({char_juese[char_current_i].name.."交换了", char_juese[ID_first].name, "和", char_juese[ID_second].name, "的手牌"}))
 	temp = table.copy(char_juese[ID_first].shoupai)
-	char_juese[ID_first].shoupai = {}; collectgarbage()
+	char_juese[ID_first].shoupai = {}; --collectgarbage()
 	char_juese[ID_first].shoupai = table.copy(char_juese[ID_second].shoupai)
-	char_juese[ID_second].shoupai = {}; collectgarbage()
+	char_juese[ID_second].shoupai = {}; --collectgarbage()
 	char_juese[ID_second].shoupai = table.copy(temp)
-	temp = {}; collectgarbage()
+	temp = {}; --collectgarbage()
 end
 function _dimeng_sub2()
 	card_selected = {}
@@ -2264,7 +2264,7 @@ function _guicai_guidao_exe(va_list)
 	card_panding_card = card
 	msg = {char_juese[id].name, "将判定牌替换为'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}
 	push_message(table.concat(msg))
-	msg = nil; collectgarbage()
+	msg = nil; --collectgarbage()
 end
 function _guicai_guidao_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()

@@ -300,7 +300,7 @@ function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)
 		distance = distance+1
 	end
 	if #char_juese[ID_s].wuqi ~= 0 and weapon_ignore == nil then
-		range = card_wuqi_r[char_juese[ID_s].wuqi]
+		range = card_wuqi_r[char_juese[ID_s].wuqi[1]]
 	end
 	-- distance = distance + delta
 	if distance <= limdis then
@@ -532,7 +532,9 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 	elseif card_treated == "兵粮寸断" then
 		--剔除距离不够的目标
 		for i=#possible_target,1,-1 do
-			if ai_judge_distance(ID,possible_target[i],1) == false and char_juese[ID].skill["奇才"] ~= "available" then
+			if ai_judge_distance(ID,possible_target[i],2) == true and char_juese[ID].skill["断粮"] ~= "available" then
+				
+			elseif ai_judge_distance(ID,possible_target[i],1) == false and char_juese[ID].skill["奇才"] ~= "available" then
 				table.remove(possible_target,i)
 			end
 		end
@@ -562,13 +564,20 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 	elseif card_treated == "铁锁连环" then
 		--剔除已经横置的对手
 		for i=#possible_target,1,-1 do
-			if #char_juese[possible_target[i]].hengzhi == true and (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[possible_target[i]].isantigovernment ~= false then
+			if char_juese[possible_target[i]].hengzhi == true and (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[possible_target[i]].isantigovernment ~= false then
 				table.remove(possible_target,i)
-			elseif #char_juese[possible_target[i]].hengzhi == true and char_juese[ID].shenfen == "反贼" and char_juese[possible_target[i]].isantigovernment ~= true then
+			elseif char_juese[possible_target[i]].hengzhi == true and char_juese[ID].shenfen == "反贼" and char_juese[possible_target[i]].isantigovernment ~= true then
 				table.remove(possible_target,i)
 			end
 		end
-	elseif string.find(card_treated,"杀") then
+	elseif string.find(card_treated,"杀") ~= nil then
+		--剔除距离不够的目标
+		for i=#possible_target,1,-1 do
+			local _,inrange = ai_judge_distance(ID,possible_target[i],1)
+			if inrange == false then
+				table.remove(possible_target,i)
+			end
+		end
 		--剔除空城
 		for i=#possible_target,1,-1 do
 			if char_juese[possible_target[i]].skill["空城"] == "available" and #char_juese[possible_target[i]].shoupai == 0 then
@@ -1032,38 +1041,81 @@ function ai_withdraw(ID, qipai_id, qi_zhuangbei_id, in_queue)
 	end
 end
 
---  AI弃置其他角色牌 --
-function ai_judge_withdraw_other(ID,is_zhuangbei_included,is_panding_included,is_enemy,is_visible)
+--  AI弃置/获得其他角色牌 --
+function ai_judge_withdraw_other(ID,ID_s,is_zhuangbei_included,is_panding_included,is_gain,is_visible)
+	local is_enemy = true
+	if char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" then
+		if char_juese[ID].shenfen == "主公" or char_juese[ID].isantigovernment == false then 
+			is_enemy = false
+		end
+	elseif char_juese[ID_s].shenfen == "反贼" then
+		if char_juese[ID].isantigovernment == true then 
+			is_enemy = false
+		end
+	end
 	if is_enemy then
 		if is_zhuangbei_included == true and (#char_juese[ID].gongma ~= 0 or #char_juese[ID].wuqi ~= 0 or #char_juese[ID].fangma ~= 0 or #char_juese[ID].fangju ~= 0) then
 			if #char_juese[ID].fangju ~= 0 then
-				_qipai_sub5(ID,nil,true)
-			end
-			if #char_juese[ID].fangma ~= 0 then
-				_qipai_sub7(ID,nil,true)
-			end
-			if #char_juese[ID].wuqi ~= 0 then
-				_qipai_sub4(ID,nil,true)
-			end
-			if #char_juese[ID].gongma ~= 0 then
-				_qipai_sub6(ID,nil,true)
+				if is_gain then
+					_napai_sub5(ID,ID_s,nil,true)
+				else
+					_qipai_sub5(ID,nil,true)
+				end
+			elseif #char_juese[ID].fangma ~= 0 then
+				if is_gain then
+					_napai_sub7(ID,ID_s,nil,true)
+				else
+					_qipai_sub7(ID,nil,true)
+				end
+			elseif #char_juese[ID].wuqi ~= 0 then
+				if is_gain then
+					_napai_sub4(ID,ID_s,nil,true)
+				else
+					_qipai_sub4(ID,nil,true)
+				end
+			elseif #char_juese[ID].gongma ~= 0 then
+				if is_gain then
+					_napai_sub6(ID,ID_s,nil,true)
+				else
+					_qipai_sub6(ID,nil,true)
+				end
 			end
 		else
 			if #char_juese[ID].shoupai ~= 0 then
-				_qipai_sub2({ID,math.random(#char_juese[ID].shoupai),true})
+				if is_gain then
+					_napai_sub2({ID,ID_s,math.random(#char_juese[ID].shoupai),true})
+				else
+					_qipai_sub2({ID,math.random(#char_juese[ID].shoupai),true})
+				end
 			else
 				if is_panding_included == true and #char_juese[ID].panding ~= 0 then
 					for i = 1,#char_juese[ID].panding do
 						if char_juese[ID].panding[i][1] == "闪电" then
-							_qipai_sub3({ID,i,true})
+							if is_gain then
+								_napai_sub3({ID,ID_s,i,true})
+								return
+							else
+								_qipai_sub3({ID,i,true})
+								return
+							end
 						end
 					end
 					for i = 1,#char_juese[ID].panding do
 						if char_juese[ID].panding[i][1] == "兵粮寸断" then
-							return "判定",i
+							if is_gain then
+								_napai_sub3({ID,ID_s,i,true})
+								return
+							else
+								_qipai_sub3({ID,i,true})
+								return
+							end
 						end
 					end
-					_qipai_sub3({ID,i,true})
+					if is_gain then
+						_napai_sub3({ID,ID_s,1,true})
+					else
+						_qipai_sub3({ID,1,true})
+					end
 				else
 					return
 				end
@@ -1073,32 +1125,60 @@ function ai_judge_withdraw_other(ID,is_zhuangbei_included,is_panding_included,is
 		if is_panding_included == true and #char_juese[ID].panding ~= 0 then
 			for i = 1,#char_juese[ID].panding do
 				if char_juese[ID].panding[i][1] == "乐不思蜀" then
-					_qipai_sub3({ID,i,true})
+					if is_gain then
+						_napai_sub3({ID,ID_s,i,true})
+					else
+						_qipai_sub3({ID,i,true})
+					end
 				end
 			end
 			for i = 1,#char_juese[ID].panding do
 				if char_juese[ID].panding[i][1] == "兵粮寸断" then
-					_qipai_sub3({ID,i,true})
+					if is_gain then
+						_napai_sub3({ID,ID_s,i,true})
+					else
+						_qipai_sub3({ID,i,true})
+					end
 				end
 			end
-			return _qipai_sub3({ID,1,true})
+			if is_gain then
+				_napai_sub3({ID,ID_s,1,true})
+			else
+				_qipai_sub3({ID,1,true})
+			end
 		else
 			if #char_juese[ID].shoupai ~= 0 then
-				_qipai_sub2({ID,math.random(#char_juese[ID].shoupai),true})
+				if is_gain then
+					_napai_sub2({ID,ID_s,math.random(#char_juese[ID].shoupai),true})
+				else
+					_qipai_sub2({ID,math.random(#char_juese[ID].shoupai),true})
+				end
 			elseif is_zhuangbei_included == true then
 				if #char_juese[ID].gongma ~= 0 then
-					_qipai_sub6(ID,nil,true)
+					if is_gain then
+						_napai_sub6(ID,ID_s,nil,true)
+					else
+						_qipai_sub6(ID,nil,true)
+					end
+				elseif #char_juese[ID].wuqi ~= 0 then
+					if is_gain then
+						_napai_sub4(ID,ID_s,nil,true)
+					else
+						_qipai_sub4(ID,nil,true)
+					end
+				elseif #char_juese[ID].fangma ~= 0 then
+					if is_gain then
+						_napai_sub7(ID,ID_s,nil,true)
+					else
+						_qipai_sub7(ID,nil,true)
+					end
+				elseif #char_juese[ID].fangju ~= 0 then
+					if is_gain then
+						_napai_sub5(ID,ID_s,nil,true)
+					else
+						_qipai_sub5(ID,nil,true)
+					end
 				end
-				if #char_juese[ID].wuqi ~= 0 then
-					_qipai_sub4(ID,nil,true)
-				end
-				if #char_juese[ID].fangma ~= 0 then
-					_qipai_sub7(ID,nil,true)
-				end
-				if #char_juese[ID].fangju ~= 0 then
-					_qipai_sub5(ID,nil,true)
-				end
-				return
 			else
 				return
 			end
@@ -1205,7 +1285,7 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 
 		if #targets > 0 then
 			ID_mubiao = targets[1]
@@ -1221,7 +1301,7 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID1, ID2, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, card_use[1], {shoupai}, 2)
+		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 2)
 
 		if #targets == 2 then
 			ID1 = targets[1]
@@ -1242,7 +1322,7 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 
 		if #targets > 0 then
 			ID_mubiao = targets[1]
@@ -1275,7 +1355,7 @@ function ai_card_use(ID)
 		if #card_use ~= 0 then
 			local ID_mubiao, targets
 			local shoupai = char_juese[ID].shoupai[card_use[1]]
-			targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+			targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 	
 			if #targets > 0 then
 				ID_mubiao = targets[1]
@@ -1291,7 +1371,7 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID1, ID2, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, card_use[1], {shoupai}, 2)
+		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 2)
 
 		if #targets == 2 then
 			ID1 = targets[1]
@@ -1308,7 +1388,7 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 	
 		if #targets > 0 then
 			ID_mubiao = targets[1]
@@ -1338,7 +1418,7 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 
 		if #targets > 0 and char_hejiu == false then
 			local card_use_jiu = ai_card_search(ID, "酒", 1)
@@ -1364,7 +1444,7 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 	
 		if #targets > 0 then
 			ID_mubiao = targets[1]
@@ -1379,7 +1459,7 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 	
 		if #targets > 0 then
 			ID_mubiao = targets[1]
@@ -1411,28 +1491,55 @@ end
 function ai_stage_qipai(ID)
 	funcptr_queue = {}
 	funcptr_i = 0
-
-	gamerun_huihe_set("弃牌")
-    add_funcptr(push_message, table.concat({char_juese[ID].name, "弃牌阶段"}))
-
-	local extra = 0
-	extra = skills_judge_xueyi(char_current_i)
-	
-	if skills_judge_keji() == true and #char_juese[ID].shoupai > char_juese[ID].tili_max then
-		add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
-	end
-
-	if skills_judge_keji() == false and char_juese[ID].tili + extra < #char_juese[ID].shoupai then
-		local qipai_id, i
-		local required = math.max(#char_juese[ID].shoupai - char_juese[ID].tili - extra, 0)
-		qipai_id, _ = ai_judge_withdraw(ID, required, false)
-
-		for i = #qipai_id, 1, -1 do
-			add_funcptr(_qipai_sub1, qipai_id[i])
+	if gamerun_dangxian == true then
+		--  跳过死亡的玩家  --
+		local j = true
+		while j do
+			j = false
+			if char_juese[char_acting_i].siwang == true then
+				char_acting_i = char_acting_i + 1
+				j = true
+			end
+			if char_acting_i > 5 then
+				char_acting_i = 1
+			end
 		end
-	end
+		for i = 1,5 do
+			for k,v in pairs(char_juese[i].skill) do
+				if v=="locked" then
+					char_juese[i].skill[k] = 1
+				end
+			end
+		end
 
-	gamerun_huihe_jieshu(true)
+
+		--  注释此行即使用主动AI，不注释不使用  --
+		--char_current_i = char_acting_i
+
+		set_hints("")
+		gamerun_huihe_start()    -- 正常回合开始
+	else
+		gamerun_huihe_set("弃牌")
+		add_funcptr(push_message, table.concat({char_juese[ID].name, "弃牌阶段"}))
+
+		local extra = 0
+		extra = skills_judge_xueyi(char_current_i)
+		
+		if skills_judge_keji() == true and #char_juese[ID].shoupai > char_juese[ID].tili_max then
+			add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
+		end
+
+		if skills_judge_keji() == false and char_juese[ID].tili + extra < #char_juese[ID].shoupai then
+			local qipai_id, i
+			local required = math.max(#char_juese[ID].shoupai - char_juese[ID].tili - extra, 0)
+			qipai_id, _ = ai_judge_withdraw(ID, required, false)
+
+			for i = #qipai_id, 1, -1 do
+				add_funcptr(_qipai_sub1, qipai_id[i])
+			end
+		end
+		gamerun_huihe_jieshu(true)
+	end
 	timer.start(0.6)
 end
 
