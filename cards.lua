@@ -116,7 +116,7 @@ card_leixing = {    -- 类型，花色，点数
 	{"闪", "方块", "J"},
 	{"闪", "方块", "J"},
 	{"闪电", "黑桃", "A"},
-	{"闪电", "黑桃", "Q"},
+	{"闪电", "红桃", "Q"},
 	{"白银狮", "草花", "A"},
 	{"顺手牵羊", "黑桃", "3"},
 	{"顺手牵羊", "黑桃", "4"},
@@ -2899,7 +2899,9 @@ function card_juedou(ID_shoupai, ID_s, ID_mubiao)
 		else
 			--  AI之间互杀  --
 			emulated_shoupai_s = table.copy(char_juese[ID_s].shoupai)
+			table.remove(emulated_shoupai_s, ID_shoupai)
 			emulated_shoupai_mubiao = table.copy(char_juese[ID_mubiao].shoupai)
+
 			_juedou_exe(ID_s, ID_mubiao, true, emulated_shoupai_s, emulated_shoupai_mubiao)
 		end
 	else

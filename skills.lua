@@ -486,15 +486,6 @@ function _guixin_exe_3(va_list)    --  拿走武器
 	char_juese[i].wuqi = {}
 end
 
---  曹丕：放逐  --
--- 暂时默认放逐伤害来源
-function skills_fangzhu(ID, laiyuan)
-	add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '放逐'")
-	add_funcptr(card_fenfa, {laiyuan, char_juese[ID].tili_max-char_juese[ID].tili, true})
-	add_funcptr(push_message, char_juese[laiyuan].name.."将武将牌翻面")
-	add_funcptr(char_fanmian, laiyuan)
-end
-
 --  司马懿：反馈  --
 function skills_fankui(ID, laiyuan)
 	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '反馈'")
@@ -1631,7 +1622,7 @@ function skills_huashen(va_list)
 		choose_option = {}
 	end
 	for i = 1,#huashen_paidui do
-		table.insert(choose_option,huashen_paidui[i][4].." "..huashen_paidui[i][1].." "..huashen_paidui[i][2].." "..huashen_paidui[i][3])
+		table.insert(choose_option,huashen_paidui[i][4].." "..huashen_paidui[i][1].." "..huashen_paidui[i][2].." "..huashen_paidui[i][3][2].."/"..huashen_paidui[i][3][1])
 	end
 
 	txt_messages:setVisible(false)
@@ -1727,7 +1718,10 @@ function skills_xinsheng(va_list)
 			else
 				push_message(char_juese[ID].name.."发动了武将技能 '新生' 获得了一张武将牌")
 			end
-			table.insert(huashen_paidui,{char_juese_jineng[char_wujiang_f[t]][2],char_juese_jineng[char_wujiang_f[t]][5],char_juese_jineng[char_wujiang_f[t]][1],char_wujiang_f[t],{}})
+			table.insert(huashen_paidui,{char_juese_jineng[char_wujiang_f[t]][2],char_juese_jineng[char_wujiang_f[t]][5],{},char_wujiang_f[t],{}})
+			for i = 1,2 do
+				table.insert(huashen_paidui[#huashen_paidui][3],char_juese_jineng[char_wujiang_f[t]][1][i])
+			end
 			for i = 1,#skill_huashen do
 				table.insert(huashen_paidui[#huashen_paidui][5],skill_huashen[i])
 			end
@@ -2276,6 +2270,72 @@ function _guicai_guidao_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
+--  廖化：伏枥  --
+function skills_fuli(id)
+	if char_juese[char_current_i].siwang == true then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if char_juese[id].skill["伏枥"] ~= 1 then
+		--  不满足伏枥发动条件，执行原有濒死结算  --
+		if id == char_current_i then
+			add_funcptr(_binsi_ai, {id, id})
+		else
+			add_funcptr(_binsi_zhudong, id)
+		end
+		add_funcptr(_fuli_huifu)
+		timer.start(0.6)
+		return
+	end
+
+	add_funcptr(_fuli_lock, id)
+	add_funcptr(_fuli_sub, id)
+	add_funcptr(_fuli_huifu)
+
+	timer.start(0.6)
+end
+function _fuli_lock(id)
+	msg = {char_juese[id].name, "发动了技能 '伏枥'"}
+	push_message(table.concat(msg))
+	char_juese[id].skill["伏枥"] = "locked_whole_game"
+end
+function _fuli_sub(id) 
+	local shili = {0,0,0,0,0,0}
+	for i = 1,5 do
+		if char_juese[i].siwang == false then
+			if char_juese[i].shili == "蜀" then
+				shili[1] = shili[1] + 1
+			elseif char_juese[i].shili == "魏" then
+				shili[2] = shili[2] + 1
+			elseif char_juese[i].shili == "吴" then
+				shili[3] = shili[3] + 1
+			elseif char_juese[i].shili == "群" then
+				shili[4] = shili[4] + 1
+			elseif char_juese[i].shili == "晋" then
+				shili[5] = shili[5] + 1
+			elseif char_juese[i].shili == "神" then
+				shili[6] = shili[6] + 1
+			end
+		end
+	end
+	local tili = 0
+	for i = 1,6 do
+		if shili[i] > 0 then
+			tili = tili + 1
+		end
+	end
+	char_juese[id].tili = math.min(tili,char_juese[id].tili_max)
+	char_fanmian(id)
+end
+function _fuli_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
 --  庞统：涅槃  --
 function skills_niepan(id)
 	if char_juese[char_current_i].siwang == true then
@@ -2315,7 +2375,7 @@ function _niepan_sub(id)
 	char_juese[id].hengzhi = false
 	char_juese[id].fanmian = false
 	card_fenfa({id, 3, true})
-	char_juese[id].tili = 3
+	char_juese[id].tili = math.min(3,char_juese[id].tili_max)
 end
 function _niepan_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -2330,6 +2390,109 @@ function _shangshi_sub(id)
 	if table.maxn(char_juese[id].shoupai) < char_juese[id].tili_max - char_juese[id].tili then
 		card_fenfa({id, char_juese[id].tili_max - char_juese[id].tili - table.maxn(#char_juese[id].shoupai), true})
 	end
+end
+
+--  曹丕：放逐  --
+
+function skills_fangzhu(va_list)
+	local ID, laiyuan
+	ID = va_list[1]
+	laiyuan = va_list[2]
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID == char_current_i then
+		skills_fangzhu_enter()
+	else
+		skills_fangzhu_ai(ID,laiyuan)
+	end
+end
+
+function skills_fangzhu_enter()
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '放逐'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+	
+		if gamerun_OK then
+			skills_fangzhu_choose_mubiao(old_gamerun_status)
+	    else
+			set_hints("")
+			gamerun_status = old_gamerun_status
+			
+			_fangzhu_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function skills_fangzhu_choose_mubiao(old_gamerun_status)
+	funcptr_queue = {}
+	id = char_current_i
+	skills_enter("请选择翻面目标", "", "放逐", "技能选择-目标")
+	gamerun_OK = false
+	gamerun_target_selected = char_current_i + 1
+	if gamerun_target_selected > 5 then
+		gamerun_target_selected = 1
+	end
+	local j = true
+	while j do
+		j = false
+		if char_juese[gamerun_target_selected].siwang == true then
+			gamerun_target_selected = gamerun_target_selected + 1
+			j = true
+		end
+		if gamerun_target_selected > 5 then
+			gamerun_target_selected = 1
+		end
+	end
+	guankan_s = char_current_i
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			set_hints("")
+			gamerun_status = old_gamerun_status
+
+			push_message(char_juese[id].name .. "发动了武将技能 '放逐'")
+
+			_fangzhu_exe({id, gamerun_target_selected})
+			add_funcptr(_fangzhu_huifu)
+			timer.start(0.6)
+		end
+	end
+end
+function skills_fangzhu_ai(ID,ID_mubiao)
+	local fanmian_mubiao = ai_judge_fangzhu_mubiao(ID,ID_mubiao)
+
+	if fanmian_mubiao ~= nil then
+		add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '放逐'")
+		_fangzhu_exe({ID, fanmian_mubiao})
+	end
+	add_funcptr(_fangzhu_huifu)
+	timer.start(0.6)
+end
+function _fangzhu_exe(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	local tili_max = char_juese[ID_s].tili_max
+	local tili = char_juese[ID_s].tili
+	add_funcptr(push_message, table.concat({char_juese[ID_mubiao].name, "将武将牌翻面"}))
+	add_funcptr(char_fanmian, ID_mubiao)
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "令", char_juese[ID_mubiao].name, "摸", (tili_max - tili), "张牌"}))
+	add_funcptr(card_fenfa, {ID_mubiao, math.max(tili_max - tili, 0), true})
+end
+function _fangzhu_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  荀彧：节命  --

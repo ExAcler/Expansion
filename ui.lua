@@ -422,13 +422,13 @@ function draw_self(gc)
 	    gc:drawString(char_juese[char_current_i].fangju[1], 5, 171 + 19)
 	end
 	if #char_juese[char_current_i].gongma ~= 0 and #char_juese[char_current_i].fangma ~= 0 then
-	    gc:drawString("-1 / +1", 5, 190 + 19)
+	    gc:drawString("+1 / -1", 5, 190 + 19)
 	else
 	    if #char_juese[char_current_i].gongma ~= 0 then
-		    gc:drawString("-1", 5, 190 + 19)
+		    gc:drawString("-1", 40, 190 + 19)
 		end
 		if #char_juese[char_current_i].fangma ~= 0 then
-		    gc:drawString("+1", 40, 190 + 19)
+		    gc:drawString("+1", 5, 190 + 19)
 		end
 	end
 	
