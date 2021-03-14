@@ -342,7 +342,7 @@ function card_mopai()
 	gamerun_huihe_set("摸牌")
 	
     if game_skip_mopai == true then
-	    msg = {char_juese[char_current_i].name, "对'兵粮寸断'判定成功, 不能摸牌"}
+	    msg = {char_juese[char_acting_i].name, "对'兵粮寸断'判定成功, 不能摸牌"}
 		push_message(table.concat(msg))
 		msg = nil; collectgarbage()
 		return
@@ -350,7 +350,7 @@ function card_mopai()
 	
 	local draw_number = 2
 	
-	if char_juese[char_current_i].skill["英姿"] == "available" then
+	if char_juese[char_acting_i].skill["英姿"] == "available" then
 		draw_number = draw_number + 1
 	end
 	if char_luoyi == true then
@@ -371,7 +371,7 @@ function card_mopai()
 		char_tuxi = nil
 	end
 	if draw_number > 0 then
-		card_fenfa({char_current_i, draw_number, true})
+		card_fenfa({char_acting_i, draw_number, true})
 	end
 end
 
@@ -391,11 +391,11 @@ end
 function _qipai_sub1(ID)
     local msg
 	if ID > 0 then
-		msg = {char_juese[char_current_i].name, "丢弃'", char_juese[char_current_i].shoupai[ID][2], char_juese[char_current_i].shoupai[ID][3], "的", char_juese[char_current_i].shoupai[ID][1], "'"}
+		msg = {char_juese[char_acting_i].name, "丢弃'", char_juese[char_acting_i].shoupai[ID][2], char_juese[char_acting_i].shoupai[ID][3], "的", char_juese[char_acting_i].shoupai[ID][1], "'"}
 		push_message(table.concat(msg))
 		msg = nil; collectgarbage()
 	end
-	card_shanchu({char_current_i, ID})
+	card_shanchu({char_acting_i, ID})
 end
 
 --  角色死亡，弃置所有手牌  --
@@ -714,7 +714,7 @@ end
 
 --  判断卡牌类型  --
 function card_get_leixing(name)
-    if name == "杀" or name == "火杀" or name == "雷杀" or name == "闪" or name == "桃" then
+    if name == "杀" or name == "火杀" or name == "雷杀" or name == "闪" or name == "桃" or name == "酒" then
 	    return "基本牌"
 	end
 	
@@ -813,9 +813,17 @@ function card_if_d_limit(card, ID_s, ID_d)
 	end
 	
     if card_get_leixing(card) == "延时类锦囊" then
-	    for _, v in ipairs(char_juese[ID_d].panding) do
-	        if v[1] == card then return false end
-	    end
+		if card == "乐不思蜀" then
+			return card_judge_le(ID_d)
+		end
+
+		if card == "兵粮寸断" then
+			return card_judge_bingliang(ID_s, ID_d)
+		end
+
+		if card == "闪电" then
+			return card_judge_shandian(ID_s)
+		end
 	end
 
     if card == "兵粮寸断" or card == "顺手牵羊" then
@@ -1020,29 +1028,28 @@ function card_chupai(ID)
 		
     --  武器牌  --
 	if card_get_leixing(card) == "武器" or card_get_leixing(card) == "防具" or card_get_leixing(card) == "+1马" or card_get_leixing(card) == "-1马" then
-		card_arm(card_highlighted)
-		--card_into_hand(char_current_i)
+		card_arm({card_highlighted, char_current_i})
 		return true
     end
 		
 	--  乐不思蜀  --
 	if card == "乐不思蜀" then
-		return card_le(card_highlighted, char_current_i, gamerun_target_selected)
+		return card_le({card_highlighted, char_current_i, gamerun_target_selected})
     end
 	
 	--  兵粮寸断  --
 	if card == "兵粮寸断" then
-		return card_bingliang(card_highlighted, char_current_i, gamerun_target_selected)
+		return card_bingliang({card_highlighted, char_current_i, gamerun_target_selected})
     end
 	
 	--  闪电  --
 	if card == "闪电" then
-		return card_shandian(card_highlighted, char_current_i)
+		return card_shandian({card_highlighted, char_current_i})
     end
 	
 	--  桃  --
 	if card == "桃" then
-	    if card_tao(card_highlighted, char_current_i, char_current_i, false) then
+	    if card_tao(card_highlighted, char_current_i, char_current_i) then
 		    consent_func_queue(0.6)
 		end
 		return false
@@ -1116,7 +1123,7 @@ function card_chupai(ID)
 	
 	--  酒  --
 	if card == "酒" then
-		return card_jiu(card_highlighted, char_current_i, false)
+		return card_jiu({card_highlighted, char_current_i})
     end
 	
 	--  杀  --
@@ -1144,52 +1151,196 @@ function card_chupai(ID)
 	end
 end
 
+--  AI回合内出牌 (执行)  --
+--  返回值：出牌是否成功  --
+function card_chupai_ai(ID_shoupai, ID_s, ID_mubiao, ID_req, tag)
+    local card, wuqi
+    
+	if tag == "铁锁连环-连环" or tag == "借刀杀人" then
+		card = char_juese[ID_req].shoupai[ID_shoupai][1]
+	else
+		card = char_juese[ID_s].shoupai[ID_shoupai][1]
+	end
+	
+    --  武器牌  --
+	if card_get_leixing(card) == "武器" or card_get_leixing(card) == "防具" or card_get_leixing(card) == "+1马" or card_get_leixing(card) == "-1马" then
+		add_funcptr(card_arm, {ID_shoupai, ID_s})
+		return true
+    end
+		
+	--  乐不思蜀  --
+	if card == "乐不思蜀" then
+		if card_judge_le(ID_mubiao) == true then
+			add_funcptr(card_le, {ID_shoupai, ID_s, ID_mubiao})
+			return true
+		else
+			return false
+		end
+    end
+	
+	--  兵粮寸断  --
+	if card == "兵粮寸断" then
+		if card_judge_bingliang(ID_s, ID_mubiao) == true then
+			add_funcptr(card_bingliang, {ID_shoupai, ID_s, ID_mubiao})
+			return true
+		else
+			return false
+		end
+    end
+	
+	--  闪电  --
+	if card == "闪电" then
+		if card_judge_shandian(ID_s) == true then
+			add_funcptr(card_shandian, {ID_shoupai, ID_s})
+			return true
+		else
+			return false
+		end
+    end
+	
+	--  桃  --
+	if card == "桃" then
+		return card_tao(ID_shoupai, ID_s, ID_s)
+	end
+	
+	--  无中生有  --
+	if card == "无中生有" then
+	    card_wuzhong(ID_shoupai, ID_s)
+		return true
+	end
+	
+	--  桃园结义  --
+	if card == "桃园结义" then
+	    card_taoyuan(ID_shoupai, ID_s)
+		return true
+	end
+	
+	--  过河拆桥  --
+	if card == "过河拆桥" then
+		return card_chai(ID_shoupai, ID_s, ID_mubiao)
+    end
+	
+	--  顺手牵羊  --
+	if card == "顺手牵羊" then
+		return card_shun(ID_shoupai, ID_s, ID_mubiao)
+    end
+	
+	--  南蛮入侵  --
+	if card == "南蛮入侵" then
+		card_nanman(ID_shoupai, ID_s)
+		return true
+    end
+	
+	--  万箭齐发  --
+	if card == "万箭齐发" then
+		card_wanjian(ID_shoupai, ID_s)
+		return true
+    end
+	
+	--  五谷丰登  --
+	if card == "五谷丰登" then
+		card_wugu(ID_shoupai, ID_s)
+		return true
+    end
+	
+	--  决斗  --
+	if card == "决斗" then
+		card_juedou(ID_shoupai, ID_s, ID_mubiao)
+		return true
+    end
+
+	--  火攻  --
+	if card == "火攻" then
+		return card_huogong(ID_shoupai, ID_s, ID_mubiao)
+    end
+	
+	--  酒  --
+	if card == "酒" then
+		if char_hejiu == false then
+			add_funcptr(card_jiu, {ID_shoupai, ID_s})
+			return true
+		else
+			return false
+		end
+    end
+	
+	--  杀  --
+	if card == "杀" or card == "火杀" or card == "雷杀" then
+		return card_sha(ID_shoupai, ID_s, ID_mubiao, true)
+    end
+	
+	--  借刀杀人  --
+	if card == "借刀杀人" then
+		return card_jiedao(ID_shoupai, ID_req, ID_s, ID_mubiao)
+	end
+	
+	--  铁索连环 (连环效果)  --
+	if card == "铁锁连环" then
+		if tag == "铁锁连环-连环" then
+			return card_lian_lianhuan(ID_shoupai, ID_req, ID_s, ID_mubiao, ID_mubiao ~= nil)
+		else
+			add_funcptr(card_lian_chongzhu, {ID_shoupai, ID_s})
+			return true
+		end
+	end
+
+	return false
+end
+
 --  装备武器  --
-function card_arm(ID_shoupai)
+function card_arm(va_list)
+	local ID_shoupai, ID
+	ID_shoupai = va_list[1]; ID = va_list[2]
+
     local card, msg
-    card = char_juese[char_current_i].shoupai[ID_shoupai]
+    card = char_juese[ID].shoupai[ID_shoupai]
 	
 	--  删除手牌  --
-	card_remove({char_current_i, ID_shoupai})
+	card_remove({ID, ID_shoupai})
 	
 	if card_get_leixing(card[1]) == "武器" then
 	    --  如果已有装备，丢弃之  --
-		if #char_juese[char_current_i].wuqi ~= 0 then
-		    table.insert(card_qipai, char_juese[char_current_i].wuqi)
+		if #char_juese[ID].wuqi ~= 0 then
+		    table.insert(card_qipai, char_juese[ID].wuqi)
 		end
-        char_juese[char_current_i].wuqi = card
+        char_juese[ID].wuqi = card
 	end
 	if card_get_leixing(card[1]) == "防具" then
-	    if #char_juese[char_current_i].fangju ~= 0 then
+	    if #char_juese[ID].fangju ~= 0 then
 		    --  失去白银狮子，回复一点体力  --
-			if char_juese[char_current_i].fangju[1] == "白银狮" and char_juese[char_current_i].tili < char_juese[char_current_i].tili_max then
-			    push_message(table.concat({char_juese[char_current_i].name, "失去白银狮子，回复1点体力"}))
-				char_juese[char_current_i].tili = char_juese[char_current_i].tili + 1
+			if char_juese[ID].fangju[1] == "白银狮" and char_juese[ID].tili < char_juese[ID].tili_max then
+			    push_message(table.concat({char_juese[ID].name, "失去白银狮子，回复1点体力"}))
+				char_juese[ID].tili = char_juese[ID].tili + 1
 				platform.window:invalidate()
 			end
-		    table.insert(card_qipai, char_juese[char_current_i].fangju)
+		    table.insert(card_qipai, char_juese[ID].fangju)
 		end
-	    char_juese[char_current_i].fangju = card
+	    char_juese[ID].fangju = card
 	end
 	if card_get_leixing(card[1]) == "+1马" then
-	    if #char_juese[char_current_i].fangma ~= 0 then
-		    table.insert(card_qipai, char_juese[char_current_i].fangma)
+	    if #char_juese[ID].fangma ~= 0 then
+		    table.insert(card_qipai, char_juese[ID].fangma)
 		end
-	    char_juese[char_current_i].fangma = card
+	    char_juese[ID].fangma = card
 	end
 	if card_get_leixing(card[1]) == "-1马" then
-	    if #char_juese[char_current_i].gongma ~= 0 then
-		    table.insert(card_qipai, char_juese[char_current_i].gongma)
+	    if #char_juese[ID].gongma ~= 0 then
+		    table.insert(card_qipai, char_juese[ID].gongma)
 		end
-		char_juese[char_current_i].gongma = card
+		char_juese[ID].gongma = card
 	end
 	
-	msg = {char_juese[char_current_i].name, "装备'", card[2], card[3], "的", card[1], "'"}
+	msg = {char_juese[ID].name, "装备'", card[2], card[3], "的", card[1], "'"}
 	push_message(table.concat(msg))
 	msg = nil; collectgarbage()
 	
-	gamerun_status = ""
-	jiaohu_text = "请您出牌"
+	if char_acting_i == char_current_i then
+		gamerun_status = ""
+		jiaohu_text = "请您出牌"
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+	end
 end
 
 --  八卦阵效果  --
@@ -1233,12 +1384,22 @@ function _bagua_jiesuan(ID)
 end
 
 --  使用乐不思蜀  --
-function card_le(ID_shoupai, ID_s, ID_mubiao)
-    local msg, card, v
-
+function card_judge_le(ID_mubiao)
 	--  对方判定区内已有乐不思蜀则不可使用  --
 	for _, v in ipairs(char_juese[ID_mubiao].panding) do
 	    if v[1] == "乐不思蜀" then return false end
+	end
+
+	return true
+end
+function card_le(va_list)
+	local ID_shoupai, ID_s, ID_mubiao
+	ID_shoupai = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]
+
+    local msg, card, v
+
+	if card_judge_le(ID_mubiao) == false then
+		return false
 	end
 	
 	card = char_juese[ID_s].shoupai[ID_shoupai]
@@ -1254,6 +1415,7 @@ function card_le(ID_shoupai, ID_s, ID_mubiao)
 	if char_juese[ID_s].skill["集智"] == "available" then
 		skills_jizhi(ID_s)
 	end
+
 	if char_juese[ID_mubiao].isantigovernment ~= nil then
 		if char_juese[ID_mubiao].isantigovernment == false then
 			if char_juese[ID_mubiao].shenfen == "主公" then
@@ -1266,6 +1428,7 @@ function card_le(ID_shoupai, ID_s, ID_mubiao)
 		end
 	end
 	ai_judge_shenfen()
+
 	if card[1] == "乐不思蜀" then
 		msg = {char_juese[ID_s].name, "给", char_juese[ID_mubiao].name, "安装了'", card[2], card[3], "的", card[1], "'"}
 	else
@@ -1274,16 +1437,19 @@ function card_le(ID_shoupai, ID_s, ID_mubiao)
 	push_message(table.concat(msg))
 	msg = nil; collectgarbage()
 	
-	gamerun_status = ""
-	jiaohu_text = "请您出牌"
+	if char_acting_i == char_current_i then
+		gamerun_status = ""
+		jiaohu_text = "请您出牌"
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+	end
 	
 	return true
 end
 
 --  使用兵粮寸断  --
-function card_bingliang(ID_shoupai, ID_s, ID_mubiao)
-    local msg, card, v
-	
+function card_judge_bingliang(ID_s, ID_mubiao)
 	if char_juese[ID_s].skill["断粮"] == "available" then
 		--  徐晃：只能对距离 2 以内角色使用  --
 		if char_calc_distance(ID_s, ID_mubiao) > 2 then
@@ -1294,6 +1460,18 @@ function card_bingliang(ID_shoupai, ID_s, ID_mubiao)
 		if char_juese[ID_s].skill["奇才"] ~= "available" and char_calc_distance(ID_s, ID_mubiao) > 1 then
 			return false
 		end
+	end
+
+	return true
+end
+function card_bingliang(va_list)
+	local ID_shoupai, ID_s, ID_mubiao
+	ID_shoupai = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]
+
+    local msg, card, v
+	
+	if card_judge_bingliang(ID_s, ID_mubiao) == false then
+		return false
 	end
 	
     --  对方判定区内已有兵粮寸断则不可使用  --
@@ -1334,19 +1512,34 @@ function card_bingliang(ID_shoupai, ID_s, ID_mubiao)
 	push_message(table.concat(msg))
 	msg = nil; collectgarbage()
 	
-	gamerun_status = ""
-	jiaohu_text = "请您出牌"
+	if char_acting_i == char_current_i then
+		gamerun_status = ""
+		jiaohu_text = "请您出牌"
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+	end
 	
 	return true
 end
 
 --  使用闪电  --
-function card_shandian(ID_shoupai, ID_s)
-    local msg, card, v
-	
+function card_judge_shandian(ID_s)
 	--  己方判定区内已有闪电则不可使用  --
 	for _, v in ipairs(char_juese[ID_s].panding) do
 	    if v[1] == "闪电" then return false end
+	end
+
+	return true
+end
+function card_shandian(va_list)
+	local ID_shoupai, ID_s
+	ID_shoupai = va_list[1]; ID_s = va_list[2]
+
+    local msg, card, v
+	
+	if card_judge_shandian(ID_s) == false then
+		return false
 	end
 	
     card = char_juese[ID_s].shoupai[ID_shoupai]
@@ -1361,8 +1554,13 @@ function card_shandian(ID_shoupai, ID_s)
 	push_message(table.concat(msg))
 	msg = nil; collectgarbage()
 	
-	gamerun_status = ""
-	jiaohu_text = "请您出牌"
+	if char_acting_i == char_current_i then
+		gamerun_status = ""
+		jiaohu_text = "请您出牌"
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+	end
 	
 	return true
 end
@@ -1591,7 +1789,7 @@ function _wuxie_exe()
 			end
 		end
 
-		if wuxie_queue_jinnang[i].tag == "无懈执行完毕" or wuxie_queue_jinnang[i].tag == "无懈执行前" and current_query == false then
+		if wuxie_queue_jinnang[i].tag == "无懈执行完毕" or wuxie_queue_jinnang[i].tag == "下一次出牌" or wuxie_queue_jinnang[i].tag == "无懈执行前" and current_query == false then
 			break
 		end
 
@@ -1626,30 +1824,20 @@ function _wuxie_exe()
 end
 
 --  使用桃  --
-function card_tao(ID_shoupai, ID_s, ID_mubiao, binsi, p)
-	if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max and binsi == false then
+function card_tao(ID_shoupai, ID_s, ID_mubiao)
+	if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max then
 	    return false
-	end
-	if binsi == false then
-		gamerun_status = "手牌生效中"
 	end
 	
 	local card = char_juese[ID_s].shoupai[ID_shoupai]
 	
-	if p == nil then
-		add_funcptr(_tao_show, {ID_shoupai, ID_s, ID_mubiao})
-		add_funcptr(_tao_sub, {ID_mubiao, binsi})
-		return true
-	else
-		if card[1] ~= "桃" then
-			add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '青囊'")
-		end
-		add_funcptr(_tao_show, {ID_shoupai, ID_s, ID_mubiao}, p)
-		add_funcptr(_tao_sub, {ID_mubiao, binsi}, p + 1)
-		if binsi == false then return true end
-		return p + 1
+	if card[1] ~= "桃" then
+		add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '青囊'")
 	end
-	
+
+	add_funcptr(_tao_show, {ID_shoupai, ID_s, nil})
+	add_funcptr(_tao_sub, {ID_mubiao, false})
+	return true
 end
 function _tao_sub(va_list)
 	local ID_mubiao, binsi
@@ -1661,9 +1849,12 @@ function _tao_sub(va_list)
 	push_message(table.concat(msg))
 	msg = nil; collectgarbage()
 	
-	if binsi == false then
+	if char_acting_i == char_current_i then
 		gamerun_status = ""
 		set_hints("请您出牌")
+	else
+		gamerun_status = "AI出牌"
+		set_hints("")
 	end
 end
 function _tao_show(va_list)
@@ -1672,7 +1863,6 @@ function _tao_show(va_list)
 	ID_shoupai = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]
 	
 	--  恢复状态  --
-	--on.tabKey()
 	card_selected = {}
 	card_highlighted = 1
 	platform.window:invalidate()
@@ -1712,12 +1902,20 @@ function _wuzhong_sub1(ID_s)
 	card_fenfa({ID_s, 2, true})
 end
 function _wuzhong_sub2(ID_s)
-	gamerun_status = ""
-    set_hints("请您出牌")
+	if char_acting_i == char_current_i then
+		gamerun_status = ""
+    	set_hints("请您出牌")
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+	end
 end
 
 --  使用铁索连环 (重铸效果)  --
-function card_lian_chongzhu(ID_shoupai, ID_s)
+function card_lian_chongzhu(va_list)
+	local ID_shoupai, ID_s
+	ID_shoupai = va_list[1]; ID_s = va_list[2]
+
     local msg, card
 	card = char_juese[ID_s].shoupai[ID_shoupai]
 	
@@ -1736,8 +1934,13 @@ function card_lian_chongzhu(ID_shoupai, ID_s)
 	end
 	msg = nil; collectgarbage()
 	
-	set_hints("请您出牌")
-	gamerun_status = ""
+	if char_acting_i == char_current_i then
+		set_hints("请您出牌")
+		gamerun_status = ""
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+	end
 end
 --  使用铁索连环 (连环效果)  --
 function card_lian_lianhuan(ID_shoupai, ID_s, ID_first, ID_second, doubl)
@@ -1816,8 +2019,15 @@ function _lian_sub2(va_list)
 	char_juese[ID_mubiao].hengzhi = stat
 end
 function _lian_sub3()
-    gamerun_status = ""
-	set_hints("请您出牌")
+	if char_acting_i == char_current_i then
+    	gamerun_status = ""
+		set_hints("请您出牌")
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+
+		ai_card_use(char_acting_i)
+	end
 end
 
 --  使用桃园结义  --
@@ -1859,8 +2069,13 @@ function _taoyuan_sub1(ID_mubiao)
 	msg = nil; collectgarbage()
 end
 function _taoyuan_sub2()
-    gamerun_status = ""
-	set_hints("请您出牌")
+	if char_acting_i == char_current_i then
+    	gamerun_status = ""
+		set_hints("请您出牌")
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+	end
 end
 
 --  使用过河拆桥  --
@@ -1976,10 +2191,17 @@ function _chai_sub1(va_list)    --  过河拆桥/顺手牵羊初始化 (寒冰�
 	platform.window:invalidate()
 end
 function _chai_sub2()
-    txt_messages:setVisible(true)
-    gamerun_status = ""
-    set_hints("请您出牌")
-	lianhuan_va = nil
+	if char_acting_i == char_current_i then
+    	txt_messages:setVisible(true)
+    	gamerun_status = ""
+    	set_hints("请您出牌")
+		lianhuan_va = nil
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+
+		ai_card_use(char_acting_i)
+	end
 end
 
 --  使用顺手牵羊  --
@@ -2032,9 +2254,14 @@ function _shun_ai(va_list)		--  顺手牵羊：AI顺牌 (临时AI)
 	end
 end
 function _shun_sub2()
-    txt_messages:setVisible(true)
-    gamerun_status = ""
-	set_hints("请您出牌")
+	if char_acting_i == char_current_i then
+    	txt_messages:setVisible(true)
+    	gamerun_status = ""
+		set_hints("请您出牌")
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+	end
 end
 
 --  执行过河拆桥/顺手牵羊动作  --
@@ -2333,9 +2560,16 @@ function _nanman_sha(va_list)    --  南蛮入侵：实际出杀
 	msg = nil; collectgarbage()
 end
 function _nanman_sub1()
-    gamerun_status = ""
-	jiaohu_text = "请您出牌"
-	platform.window:invalidate()
+	if char_acting_i == char_current_i then
+    	gamerun_status = ""
+		jiaohu_text = "请您出牌"
+		platform.window:invalidate()
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+
+		ai_card_use(char_acting_i)
+	end
 end
 
 --  使用万箭齐发  --
@@ -2712,9 +2946,7 @@ function _juedou_exe(ID_s, ID_mubiao, between_ai, emulated_shoupai_s, emulated_s
 			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
 		
 			char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
-			if game_victory == false then
-				add_funcptr(_juedou_sub1, nil)
-			end
+			add_funcptr(_juedou_sub1, nil)
 			break
 		end
 	end
@@ -2727,9 +2959,9 @@ function _juedou_exe_ji(ID_s, ID_mubiao, c_pos)    --  决斗：己方响应
 	card_highlighted = 1
 	platform.window:invalidate()
 	
-	add_funcptr(_juedou_sha, {ID_s, ID_mubiao, c_pos})
+	add_funcptr(_juedou_sha, {ID_mubiao, ID_s, c_pos})
 	if char_xiangying_2 == false then
-		_juedou_exe(ID_s, ID_mubiao, false)
+		_juedou_exe(ID_mubiao, ID_s, false)
 	else
 		char_xiangying_2 = false
 		add_funcptr(_juedou_xiangying_enter, {ID_s, ID_mubiao})
@@ -2739,12 +2971,10 @@ function _juedou_exe_fangqi(ID_s, ID_mubiao)    --  决斗：己方放弃
     gamerun_status = "手牌生效中"
 	jiaohu_text = ""
 	
-	add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "放弃"})
+	add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
 	
-	char_tili_deduct({1, ID_s, ID_mubiao, "普通", ID_s})
-	if game_victory == false then
-		add_funcptr(_juedou_sub1, nil)
-	end
+	char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
+	add_funcptr(_juedou_sub1, nil)
 end
 function _juedou_xiangying(ID_s, ID_mubiao)
 	if char_juese[ID_s].skill["无双"] == "available" then
@@ -2775,9 +3005,16 @@ function _juedou_sha(va_list)    --  决斗：出杀
 	msg = nil; collectgarbage()
 end
 function _juedou_sub1()
-    gamerun_status = ""
-	jiaohu_text = "请您出牌"
-    platform.window:invalidate()
+	if char_acting_i == char_current_i then
+    	gamerun_status = ""
+		jiaohu_text = "请您出牌"
+    	platform.window:invalidate()
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+
+		ai_card_use(char_acting_i)
+	end
 end
 
 --  使用火攻  --
@@ -2858,9 +3095,7 @@ function _huogong_beidong_exe_2(ID_s, ID_mubiao, c_pos)		--  火攻 (己方被�
 	else
 		add_funcptr(_huogong_qipai, {ID_s, ID_mubiao, card_t_pos})
 		char_tili_deduct({1, ID_mubiao, ID_s, "火", ID_mubiao})
-		if game_victory == false then
-			add_funcptr(_huogong_sub1, nil)
-		end
+		add_funcptr(_huogong_sub1, nil)
 	end
 end
 function _huogong_exe_1(ID_s, ID_mubiao, between_ai)    --  火攻执行一：被攻方展示手牌 (临时AI)
@@ -2897,9 +3132,7 @@ function _huogong_exe_2(ID_s, ID_mubiao, c_pos)    --  火攻执行二：攻方�
 	add_funcptr(_huogong_qipai, {ID_s, ID_mubiao, c_pos})
 	
 	char_tili_deduct({1, ID_mubiao, ID_s, "火", ID_mubiao})
-	if game_victory == false then
-		add_funcptr(_huogong_sub1, nil)
-	end
+	add_funcptr(_huogong_sub1, nil)
 end
 function _huogong_qipai(va_list)    --  火攻：攻方出牌
     local ID_s, ID_mubiao, c_pos
@@ -2919,36 +3152,31 @@ function _huogong_exe_3(ID_s)    --  火攻执行三：己方放弃
 end
 function _huogong_sub1()
     guankan_s = 0
-    gamerun_status = ""
-	jiaohu_text = "请您出牌"
-    platform.window:invalidate()
+	
+	if char_acting_i == char_current_i then
+    	gamerun_status = ""
+		jiaohu_text = "请您出牌"
+    	platform.window:invalidate()
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+
+		ai_card_use(char_acting_i)
+	end
 end
 
 --  使用酒  --
-function card_jiu(ID_shoupai, ID_s, binsi, p)
+function card_jiu(va_list)
+	local ID_shoupai, ID_s
+	ID_shoupai = va_list[1]; ID_s = va_list[2]
+
     local card
-	if binsi == false then
-		if char_hejiu then return false end
-	end
+	if char_hejiu then return false end
 	
 	card = char_juese[ID_s].shoupai[ID_shoupai]
 	
-	if binsi == true then
-		if p == nil then
-			if card[1] ~= "酒" then
-				add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '酒池'")
-			end
-			add_funcptr(_jiu_sub1, {ID_s, ID_shoupai, card})
-			add_funcptr(_tao_sub, {ID_s, true})
-		else
-			add_funcptr(_jiu_sub1, {ID_s, ID_shoupai, card}, p)
-			add_funcptr(_tao_sub, {ID_s, true}, p + 1)
-			return p + 1
-		end
-	else
-		char_hejiu = true
-		_jiu_sub1({ID_s, ID_shoupai, card})
-	end
+	char_hejiu = true
+	_jiu_sub1({ID_s, ID_shoupai, card})
 	
 	return true
 end
@@ -3010,7 +3238,7 @@ function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
 	        return false
 	    end
 	end
-	
+
 	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
 	
@@ -3246,6 +3474,8 @@ function _sha_zhudong_xiangying(va_list)
 			end
 		end
 	end
+
+	char_xiangying_2 = wushuang_flag
 
 	add_funcptr(_sha_zhudong_enter, {card_shoupai, ID_s, ID_mubiao, iscur})
 	timer.start(0.6)
@@ -3997,10 +4227,18 @@ function _sha_sub2()
 	lianhuan_va = nil
 	sha_va = nil
 	txt_messages:setVisible(true)
-    gamerun_status = ""
 	guankan_s = 0
-	jiaohu_text = "请您出牌"
-    platform.window:invalidate()
+
+	if char_acting_i == char_current_i then
+		gamerun_status = ""
+		jiaohu_text = "请您出牌"
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+
+		ai_next_card(char_acting_i)
+	end
+	platform.window:invalidate()
 end
 function _sha_sub3()    --  杀：寒冰剑第二轮状态设置
 	local p
@@ -4034,9 +4272,7 @@ function card_jiedao(ID_shoupai, ID_req, ID_s, ID_d)
 	        return false
 	    end
 	else
-	    if char_calc_distance(ID_s, ID_d) > 1 then
-	        return false
-	    end
+	    return false
 	end
 	
 	if ID_req == char_current_i then
@@ -4127,8 +4363,16 @@ end
 function _jiedao_sub2()
 	char_wushi = false
 	gamerun_OK = false
-    gamerun_status = ""
 	guankan_s = 0
-	jiaohu_text = "请您出牌"
-    platform.window:invalidate()
+
+	if char_acting_i == char_current_i then
+    	gamerun_status = ""
+		jiaohu_text = "请您出牌"
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+
+		ai_card_use(char_acting_i)
+	end
+	platform.window:invalidate()
 end

@@ -25,7 +25,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["夏侯惇"] = {4, "魏", false, {"刚烈"}, "男", {""}}, 
     ["曹仁"] = {4, "魏", false, {"据守"}, "男", {""}},
     ["许褚"] = {4, "魏", false, {"裸衣"}, "男", {""}}, 
-    ["夏侯渊"] = {4, "魏", false, {"神速", "八阵"}, "男", {"",""}},  
+    ["夏侯渊"] = {4, "魏", false, {"神速"}, "男", {""}},  
     ["荀彧"] = {3, "魏", false, {"驱虎", "节命"}, "男", {"",""}}, 
     ["典韦"] = {4, "魏", false, {"强袭"}, "男", {""}}, 
     ["曹丕"] = {3, "魏", true, {"放逐", "行殇", "颂威"}, "男", {"","","主公"}},    
@@ -60,7 +60,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["左慈"] = {3, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}},
 	["贾诩"] = {3, "群", false, {"完杀", "乱武", "帷幕"}, {"锁定", "限定", "锁定"}},	
 	["神曹操"] = {3, "神", false, {"归心", "飞影"}, "男", {"","锁定"}},
-	["孙笑川"] = {4, "神", false, {"苦肉","驱虎","节命","乱击","鬼才","无双","英姿","将驰","化身","新生","魂姿","天义"}, "男", {"","","","","","","","","禁止","禁止","觉醒",""}},
+	["孙笑川"] = {4, "神", false, {"苦肉","驱虎","节命","乱击","鬼才","无双","英魂","将驰","化身","新生","魂姿","天义"}, "男", {"","","","","","","","","禁止","禁止","觉醒",""}},
 }
 
 -- 武器攻击范围 --
@@ -242,7 +242,7 @@ end
 function _id_sub1()
     local i, t = 0
 
-    char_juese_fid = char_juese_identity
+    char_juese_fid = table.copy(char_juese_identity)
 	math.randomseed(timer.getMilliSecCounter())
 	
 	for i = 1, 5 do
@@ -294,7 +294,10 @@ function _wujiang_sub1()
 		    msg = {"玩家", i, "(主公)选择", char_juese[i].name}
 	        push_message(table.concat(msg))
 			msg = nil; collectgarbage()
-			char_current_i = i
+			
+			--  无主动AI临时  --
+			--char_current_i = i
+			char_acting_i = char_current_i
 		end
 	end
 end
@@ -1018,6 +1021,7 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	add_funcptr(_binsi_sub1, id)
 
 	--  胜利条件判断  --
+	char_juese[id].siwang = true
 	if shanghai_shuxing == "流失" then
 		char_judge_shengli(id, nil)
 	else
@@ -1076,7 +1080,6 @@ function _binsi_huifu()		--  濒死结算：角色未死亡，恢复濒死结算
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 function _binsi_sub1(id)
-	char_juese[id].siwang = true
 	msg = {char_juese[id].name, "阵亡，身份为", char_juese[id].shenfen}
 	push_message(table.concat(msg))
 end

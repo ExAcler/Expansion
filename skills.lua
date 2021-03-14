@@ -142,7 +142,12 @@ function _quhu_sub2()
 end
 
 --  孙坚：英魂  --
-function skills_yinghun_enter()
+function skills_yinghun_enter(ID)
+	--  AI不做任何动作 (临时)  --
+	if ID ~= char_current_i then
+		return
+	end
+
 	skill_yinghun = coroutine.create(
 		function ()
 			timer.stop()
@@ -151,7 +156,7 @@ function skills_yinghun_enter()
 			funcptr_queue = {}
 			gamerun_status = "选项选择"
 			choose_name = "英魂"
-			jiaohu_text = "是否使用 '英魂'令其他角色摸牌弃牌?"
+			jiaohu_text = "是否使用 '英魂' 令其他角色摸牌弃牌?"
 			choose_option = {"摸1弃"..(char_juese[char_current_i].tili_max-char_juese[char_current_i].tili),"摸"..(char_juese[char_current_i].tili_max-char_juese[char_current_i].tili).."弃1","不发动"}
 			txt_messages:setVisible(false)
 			gamerun_guankan_selected = 1
@@ -171,6 +176,7 @@ function skills_yinghun_enter()
 					funcptr_queue = yinghun_queue_xiangying
 					funcptr_i = yinghun_queue_xiangying_i + 1
 					timer.start(0.6)
+					return
 				end
 				
 				if is_drawx ~= nil then
@@ -186,15 +192,18 @@ function skills_yinghun_enter()
 end
 function _yinghun_exe(is_drawx)
 	funcptr_queue = {}
-	push_message(char_juese[char_current_i].name.."发动了武将技能 '英魂'")
+	push_message(char_juese[char_current_i].name .. "发动了武将技能 '英魂'")
 	
+	local qipai_id, qi_zhuangbei_id
 	if is_drawx then
-		card_fenfa({gamerun_target_selected,char_juese[char_current_i].tili_max-char_juese[char_current_i].tili,true})
-		ai_judge_withdraw(gamerun_target_selected,1)
+		card_fenfa({gamerun_target_selected, char_juese[char_current_i].tili_max - char_juese[char_current_i].tili, true})
+		qipai_id, qi_zhuangbei_id = ai_judge_withdraw(gamerun_target_selected, 1, true)
 	else
 		card_fenfa({gamerun_target_selected,1,true})
-		ai_judge_withdraw(gamerun_target_selected,char_juese[char_current_i].tili_max-char_juese[char_current_i].tili)
+		qipai_id, qi_zhuangbei_id = ai_judge_withdraw(gamerun_target_selected, char_juese[char_current_i].tili_max - char_juese[char_current_i].tili, true)
 	end
+	ai_withdraw(gamerun_target_selected, qipai_id, qi_zhuangbei_id, false)
+
 	is_drawx = nil
 	set_hints("")
 	gamerun_status = ""
@@ -339,6 +348,29 @@ function skills_judge_benghuai(ID)    --  判断是否满足崩坏条件
 	
 	return false
 end
+function skills_benghuai()
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if char_acting_i == char_current_i then
+		skills_benghuai_enter()
+	else
+		skills_benghuai_ai()
+	end
+end
+function skills_benghuai_ai()
+	add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '崩坏'")
+	if ai_judge_benghuai(char_acting_i) == false then
+		add_funcptr(_benghuai_reduce_max, char_current_i)
+	else
+		char_tili_deduct({1, char_current_i, nil, "流失", char_current_i})
+	end
+
+	add_funcptr(_skills_benghuai_huifu)
+	timer.start(0.6)
+end
 function skills_benghuai_enter()    --  进入崩坏状态
 	gamerun_huihe = "结束"
     gamerun_status = "确认操作"
@@ -352,41 +384,33 @@ function skills_benghuai_enter()    --  进入崩坏状态
 		if gamerun_OK == true then
 			if char_juese[char_current_i].tili_max > 1 then
 				set_hints("")
-				funcptr_queue = {}
-				add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '崩坏'")
+				
+				add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '崩坏'")
 				add_funcptr(_benghuai_reduce_max, char_current_i)
-				_skills_huihe_end()
-				consent_func_queue(0.6)
+
+				add_funcptr(_skills_benghuai_huifu)
+				timer.start(0.6)
 			end
 		else
 			set_hints("")
-			funcptr_queue = {}
-			add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '崩坏'")
+			
+			add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '崩坏'")
 			char_tili_deduct({1, char_current_i, nil, "流失", char_current_i})
-			_skills_huihe_end()
-			consent_func_queue(0.6)
+
+			add_funcptr(_skills_benghuai_huifu)
+			timer.start(0.6)
 		end
 	end
 	
 	platform.window:invalidate()
 end
 function _benghuai_reduce_max(ID)    --  减少体力上限
-	push_message(char_juese[ID].name.."减少1点体力上限")
+	push_message(char_juese[ID].name .. "减少1点体力上限")
 	char_juese[ID].tili_max = char_juese[ID].tili_max - 1
-	if char_juese[ID].tili > char_juese[ID].tili_max then
-		char_juese[ID].tili = char_juese[ID].tili_max
-	end
+	char_juese[ID].tili = math.min(char_juese[ID].tili, char_juese[ID].tili_max)
 end
-function _skills_huihe_end()    --  进入回合结束阶段
-	local msg
-	
-	gamerun_OK = false
-	msg = {char_juese[char_current_i].name, "回合结束"}
-    add_funcptr(push_message, table.concat(msg))
-	
-	add_funcptr(_jieshu_sub1, nil)
-	
-	msg = nil; collectgarbage()
+function _skills_benghuai_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  吕蒙：克己  --
@@ -1493,28 +1517,18 @@ function _qiangxi_sub2()
 end
 
 --  许褚：裸衣  --
-function skills_luoyi_enter(ID)
-    --[[gamerun_status = "确认操作"
-	gamerun_huihe = "摸牌"
-	jiaohu_text = "是否发动 '裸衣'?"
-	gamerun_OK = false
-	
-	gamerun_OK_ptr = function()
+function skills_luoyi(ID)
+	if ID == char_current_i then
+		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+		timer.stop()
 		funcptr_queue = {}
-	
-		if gamerun_OK then
-			add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '裸衣'")
-	        char_luoyi = true
-	    else
-			char_luoyi = false
-		end
-		
-		gamerun_status = ""
-		add_funcptr(card_mopai, nil)
-		add_funcptr(_start_sub1, nil)
-		consent_func_queue(0.2)
-	end]]
-	
+		funcptr_i = 0
+		skills_luoyi_enter(ID)
+	else
+		skills_luoyi_set(ID, ai_judge_luoyi(ID))
+	end
+end
+function skills_luoyi_enter(ID)
 	gamerun_status = "选项选择"
 	choose_name = "裸衣"
 	jiaohu_text = "是否发动 '裸衣'?"
@@ -1523,25 +1537,42 @@ function skills_luoyi_enter(ID)
 	gamerun_guankan_selected = 1
 	item_disrow = 0
 	gamerun_item = function(i)
-		funcptr_queue = {}
 		txt_messages:setVisible(true)
-		if i == 1 then
-			add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '裸衣'")
-	        char_luoyi = true
-	    else
-			char_luoyi = false
-		end
+		skills_luoyi_set(char_current_i, i)
 		
 		gamerun_status = ""
-		add_funcptr(card_mopai, nil)
-		add_funcptr(_start_sub1, nil)
-		consent_func_queue(0.2)
+		funcptr_queue, funcptr_i = pop_zhudong_queue()
+		funcptr_i = funcptr_i + 1
+		timer.start(0.2)
 	end
-	
+
 	platform.window:invalidate()
+end
+function skills_luoyi_set(ID, option)
+	if option == 1 then
+		push_message(char_juese[ID].name .. "发动了武将技能 '裸衣'")
+		char_luoyi = true
+	else
+		char_luoyi = false
+	end
 end
 
 --  曹彰：将驰 --
+function skills_jiangchi(ID)
+	if game_skip_mopai == true then
+		return
+	end
+
+	if ID == char_current_i then
+		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+		timer.stop()
+		funcptr_queue = {}
+		funcptr_i = 0
+		skills_jiangchi_enter(ID)
+	else
+		skills_jiangchi_set(ID, ai_judge_jiangchi(ID))
+	end
+end
 function skills_jiangchi_enter(ID)
 	gamerun_status = "选项选择"
 	choose_name = "将驰"
@@ -1553,23 +1584,26 @@ function skills_jiangchi_enter(ID)
 	gamerun_item = function(i)
 		funcptr_queue = {}
 		txt_messages:setVisible(true)
-		if i == 1 then
-			add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '将驰' 多摸了一张牌")
-	        char_jiangchi = 1
-	    elseif i == 2 then
-			add_funcptr(push_message, char_juese[ID].name.."发动了武将技能 '将驰' 少摸了一张牌")
-	        char_jiangchi = -1
-		else
-			char_jiangchi = 0
-		end
+		skills_jiangchi_set(char_current_i, i)
 		
 		gamerun_status = ""
-		add_funcptr(card_mopai, nil)
-		add_funcptr(_start_sub1, nil)
-		consent_func_queue(0.2)
+		funcptr_queue, funcptr_i = pop_zhudong_queue()
+		funcptr_i = funcptr_i + 1
+		timer.start(0.2)
 	end
 	
 	platform.window:invalidate()
+end
+function skills_jiangchi_set(ID, option)
+	if option == 1 then
+		push_message(char_juese[ID].name .. "发动了武将技能 '将驰' 多摸了一张牌")
+		char_jiangchi = 1
+	elseif option == 2 then
+		push_message(char_juese[ID].name .. "发动了武将技能 '将驰' 少摸了一张牌")
+		char_jiangchi = -1
+	else
+		char_jiangchi = 0
+	end
 end
 
 --  左慈：化身 --
@@ -1578,6 +1612,11 @@ function skills_huashen(va_list)
 	ID = va_list[1]; jieduan = va_list[2]
 
 	local old_gamerun_status = gamerun_status
+
+	--  AI不做任何动作 (临时)  --
+	if ID ~= char_current_i then
+		return
+	end
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
@@ -1858,7 +1897,46 @@ function _ganglie_sub()
 end
 
 --  张辽：突袭  --
+function skills_tuxi(ID)
+	if game_skip_mopai == true then
+		return
+	end
+
+	if ID == char_current_i then
+		skills_tuxi_enter()
+	else
+		skills_tuxi_ai(ID)
+	end
+end
+function skills_tuxi_ai(ID)
+	local char_i = ai_judge_tuxi_mubiao(ID)
+
+	if #char_i > 0 then
+		_tuxi_exe_ai(ID, char_i)
+	end
+end
+function _tuxi_exe_ai(ID, char_i)
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_status = ""
+	push_message(char_juese[ID].name .. "发动了武将技能 '突袭'")
+	
+	for i = 1, char_i do
+		add_funcptr(_tuxi_sub1, {ID, char_i[i]})
+	end
+	
+	add_funcptr(_tuxi_huifu, nil)
+	timer.start(0.2)
+end
 function skills_tuxi_enter()
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
     gamerun_status = "确认操作"
 	gamerun_huihe = "摸牌"
 	jiaohu_text = "是否发动 '突袭'?"
@@ -1873,9 +1951,9 @@ function skills_tuxi_enter()
 			gamerun_select_target("init")
 	    else
 			gamerun_status = ""
-			add_funcptr(card_mopai, nil)
-			add_funcptr(_start_sub1, nil)
-			consent_func_queue(0.2)
+			_tuxi_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.2)
 		end
 		platform.window:invalidate()
 	end
@@ -1883,7 +1961,7 @@ function skills_tuxi_enter()
 	platform.window:invalidate()
 end
 function _tuxi_exe(double)
-	funcptr_queue = {}
+	gamerun_status = ""
 	push_message(char_juese[char_current_i].name.."发动了武将技能 '突袭'")
 	
 	if double then
@@ -1893,8 +1971,8 @@ function _tuxi_exe(double)
 		add_funcptr(_tuxi_sub1, {char_current_i, gamerun_target_selected})
 	end
 	
-	add_funcptr(_start_sub1, nil)
-	consent_func_queue(0.2)
+	add_funcptr(_tuxi_huifu, nil)
+	timer.start(0.2)
 end
 function _tuxi_sub1(va_list)
 	local ID_s, ID_mubiao
@@ -1907,6 +1985,9 @@ function _tuxi_sub1(va_list)
 	card = char_juese[ID_mubiao].shoupai[t]
 	card_shanchu({ID_mubiao, t})
 	table.insert(char_juese[ID_s].shoupai, card)
+end
+function _tuxi_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  庞统：连环  --

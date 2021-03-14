@@ -1,20 +1,3 @@
---  AI 在牌堆中查找牌，若没有则尝试使用技能  --
-function card_judge_chupai(ID, card)
-	local name, card_id, card_name, card_huase, skill
-	skill = ""
-	name = char_juese[ID].name
-	card_id = card_chazhao(ID,card)
-	return card_id
-end
-
-function card_judge_arm(ID, card)
-	local name, card_id, card_name, card_huase, skill
-	skill = ""
-	name = char_juese[ID].name
-	card_id = card_chazhaoarm(ID,card)
-	return card_id
-end
-
 --  AI从手牌中查找杀  --
 function ai_chazhao_sha(ID, shoupai)
 	local c_pos = _sha_card_chazhao(shoupai, "杀")
@@ -76,7 +59,9 @@ end
 --  AI决定是否发动寒冰剑  --
 function ai_judge_hanbing(ID_mubiao)
 	if #char_juese[ID_mubiao].shoupai >= 2 then
-		return true
+		if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max then
+			return true
+		end
 	end
 
 	return false
@@ -101,31 +86,53 @@ function ai_judge_jiejiu(ID_s, ID_jiu)
 	return false
 end
 
---  AI决定雷击的目标 (暂为明身份)  --
+--  AI为主公时决定雷击的目标  --
 function ai_judge_leiji_mubiao(ID_mubiao)
 	local i, v
 	
-	if char_juese[ID_mubiao].shenfen == "反贼" then
+	if char_juese[ID_mubiao].isantigovernment == true then
 		return ID_mubiao
 	end
 	
 	for i, v in ipairs(char_juese) do
 		if v.siwang == false then
-			if v.shenfen == "反贼" then
-				return i
-			end
-		end
-	end
-	
-	for i, v in ipairs(char_juese) do
-		if v.siwang == false then
-			if v.shenfen == "内奸" then
+			if v.isantigovernment == true then
 				return i
 			end
 		end
 	end
 	
 	return -1
+end
+
+--  AI决定崩坏选择  --
+--  true减体力，false减上限  --
+function ai_judge_benghuai(ID)
+	if char_juese[ID].tili == char_juese[ID].tili_max then
+		return true
+	else
+		return false
+	end
+end
+
+--  AI决定是否发动裸衣  --
+--  1发动，2不发动  --
+function ai_judge_luoyi(ID)
+	return 2
+end
+
+--  AI决定是否发动将驰  --
+--  1多摸一张，2少摸一张，3不发动  --
+function ai_judge_jiangchi(ID)
+	return 3
+end
+
+--  AI决定突袭目标  --
+--  返回含有角色ID的表，如为空则表示不发动  --
+function ai_judge_tuxi_mubiao()
+	local char_id = {}
+
+	return {}
 end
 
 --  AI修改判定牌策略  --
@@ -231,6 +238,21 @@ function ai_judge_jieming_mubiao(ID_s)
 	end
 
 	return nil
+end
+
+--  明身份临时：AI初始化其反政府属性  --
+function ai_init_shenfen()
+	for i = 1, 5 do
+		if char_juese[i].shenfen == "反贼" then
+			char_juese[i].isantigovernment = true
+		elseif char_juese[i].shenfen == "主公" then
+			char_juese[i].isantigovernment = false
+		elseif char_juese[i].shenfen == "忠臣" then
+			char_juese[i].isantigovernment = false
+		elseif char_juese[i].shenfen == "内奸" then
+			char_juese[i].isantigovernment = true
+		end
+	end
 end
 
 -- AI距离与攻击范围测算 --
@@ -387,7 +409,7 @@ function ai_judge_in_range(ID,weapon_ignore,horse_ignore)
 end
 
 -- AI使用牌目标选择 --
-function ai_judge_target(ID,card_treated,cards,target_number)
+function ai_judge_target(ID, card_treated, cards, target_number)
 	if target_number == nil then
 		target_number = 1
 	end
@@ -397,18 +419,18 @@ function ai_judge_target(ID,card_treated,cards,target_number)
 			table.remove(possible_target,i)
 		elseif card_treated ~= "借刀杀人" and string.find(card_treated,"杀") ~= nil and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["帷幕"] == "available" then
 			table.remove(possible_target,i)
-		elseif ID == possible_target[i] and card_treated == "铁索连环" and char_juese[ID].hengzhi == true then
+		elseif ID == possible_target[i] and card_treated == "铁锁连环" and char_juese[ID].hengzhi == true then
 			
 		elseif ID == possible_target[i] then
 			table.remove(possible_target,i)
 		elseif char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣" then
-			if char_juese[possible_target[i]].isantigovernment == false and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
+			if char_juese[possible_target[i]].isantigovernment == false and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
 				
 			elseif char_juese[possible_target[i]].isantigovernment == false then
 				table.remove(possible_target,i)
 			end
 		elseif char_juese[ID].shenfen == "反贼" then
-			if char_juese[possible_target[i]].isantigovernment == true and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
+			if char_juese[possible_target[i]].isantigovernment == true and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
 			
 			elseif char_juese[possible_target[i]].isantigovernment ~= false then
 				table.remove(possible_target,i)
@@ -525,7 +547,7 @@ function ai_judge_target(ID,card_treated,cards,target_number)
 				end
 			end
 		end
-	elseif card_treated == "铁索连环" then
+	elseif card_treated == "铁锁连环" then
 		--剔除已经横置的对手
 		for i=#possible_target,1,-1 do
 			if #char_juese[possible_target[i]].hengzhi == true and (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[possible_target[i]].isantigovernment ~= false then
@@ -547,13 +569,13 @@ function ai_judge_target(ID,card_treated,cards,target_number)
 		end
 		--剔除普杀藤甲
 		for i=#possible_target,1,-1 do
-			if char_juese[possible_target[i]].fangju[1] == "藤甲" and shuxing == false and #char_juese[ID].wuqi ~= "朱雀扇" and #char_juese[ID].wuqi ~= "青钢剑" then
+			if char_juese[possible_target[i]].fangju[1] == "藤甲" and shuxing == false and char_juese[ID].wuqi[1] ~= "朱雀扇" and char_juese[ID].wuqi[1] ~= "青钢剑" then
 				table.remove(possible_target,i)
 			end
 		end
 		--剔除黑杀仁王
 		for i=#possible_target,1,-1 do
-			if char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and #char_juese[ID].wuqi ~= "青钢剑" then
+			if char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[ID].wuqi[1] ~= "青钢剑" then
 				table.remove(possible_target,i)
 			end
 		end
@@ -563,7 +585,7 @@ function ai_judge_target(ID,card_treated,cards,target_number)
 				local liuli_target = ai_judge_in_range(i)
 				if (#char_juese[possible_target[i]].shoupai ~= 0 or #char_juese[possible_target[i]].fangju ~= 0 or #char_juese[possible_target[i]].fangma ~= 0) and #liuli_target > 0 and (#liuli_target ~= 1 or liuli_target[1] ~= ID) then
 					for j=1,#liuli_target do
-						if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[j].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[j].isantigovernment == true) then
+						if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[liuli_target[j]].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[liuli_target[j]].isantigovernment == true) then
 							table.remove(possible_target,i)
 							break
 						end
@@ -573,7 +595,7 @@ function ai_judge_target(ID,card_treated,cards,target_number)
 						local liuli_target = ai_judge_in_range(i,nil,true)
 						if  #liuli_target > 0 and (#liuli_target ~= 1 or liuli_target[1] ~= ID) then
 							for j=1,#liuli_target do
-								if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[j].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[j].isantigovernment == true) then
+								if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[liuli_target[j]].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[liuli_target[j]].isantigovernment == true) then
 									table.remove(possible_target,i)
 									break
 								end
@@ -583,7 +605,7 @@ function ai_judge_target(ID,card_treated,cards,target_number)
 						local liuli_target = ai_judge_in_range(i,true)
 						if  #liuli_target > 0 and (#liuli_target ~= 1 or liuli_target[1] ~= ID) then
 							for j=1,#liuli_target do
-								if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[j].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[j].isantigovernment == true) then
+								if ((char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[liuli_target[j]].isantigovernment == false) or (char_juese[ID].shenfen == "反贼" and char_juese[liuli_target[j]].isantigovernment == true) then
 									table.remove(possible_target,i)
 									break
 								end
@@ -601,139 +623,144 @@ function ai_judge_target(ID,card_treated,cards,target_number)
 end
 
 --  AI根据条件查找牌 --
-function ai_card_search(ID,kind,required)
-	card_searched = {}
+function ai_card_search(ID, kind, required, alt_shoupai)
+	local shoupai = char_juese[ID].shoupai
+	if alt_shoupai ~= nil then
+		shoupai = alt_shoupai
+	end
+	
+	local card_searched = {}
 	if kind == "基本" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "杀" or char_juese[ID].shoupai[i][1] == "火杀" or char_juese[ID].shoupai[i][1] == "雷杀" or char_juese[ID].shoupai[i][1] == "闪" or char_juese[ID].shoupai[i][1] == "桃" or char_juese[ID].shoupai[i][1] == "酒" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "杀" or shoupai[i][1] == "火杀" or shoupai[i][1] == "雷杀" or shoupai[i][1] == "闪" or shoupai[i][1] == "桃" or shoupai[i][1] == "酒" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "锦囊" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "兵粮寸断" or char_juese[ID].shoupai[i][1] == "过河拆桥" or char_juese[ID].shoupai[i][1] == "火攻" or char_juese[ID].shoupai[i][1] == "借刀杀人" or char_juese[ID].shoupai[i][1] == "决斗" or char_juese[ID].shoupai[i][1] == "乐不思蜀" or char_juese[ID].shoupai[i][1] == "南蛮入侵" or char_juese[ID].shoupai[i][1] == "闪电" or char_juese[ID].shoupai[i][1] == "顺手牵羊" or char_juese[ID].shoupai[i][1] == "乐不思蜀" or char_juese[ID].shoupai[i][1] == "桃园结义" or char_juese[ID].shoupai[i][1] == "铁索连环" or char_juese[ID].shoupai[i][1] == "万箭齐发" or char_juese[ID].shoupai[i][1] == "五谷丰登" or char_juese[ID].shoupai[i][1] == "无懈可击" or char_juese[ID].shoupai[i][1] == "无中生有" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "兵粮寸断" or shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "闪电" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁锁连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无懈可击" or shoupai[i][1] == "无中生有" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "非无懈锦囊" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "兵粮寸断" or char_juese[ID].shoupai[i][1] == "过河拆桥" or char_juese[ID].shoupai[i][1] == "火攻" or char_juese[ID].shoupai[i][1] == "借刀杀人" or char_juese[ID].shoupai[i][1] == "决斗" or char_juese[ID].shoupai[i][1] == "乐不思蜀" or char_juese[ID].shoupai[i][1] == "南蛮入侵" or char_juese[ID].shoupai[i][1] == "闪电" or char_juese[ID].shoupai[i][1] == "顺手牵羊" or char_juese[ID].shoupai[i][1] == "乐不思蜀" or char_juese[ID].shoupai[i][1] == "桃园结义" or char_juese[ID].shoupai[i][1] == "铁索连环" or char_juese[ID].shoupai[i][1] == "万箭齐发" or char_juese[ID].shoupai[i][1] == "五谷丰登" or char_juese[ID].shoupai[i][1] == "无中生有" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "兵粮寸断" or shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "闪电" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁锁连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无中生有" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "非延时锦囊" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "过河拆桥" or char_juese[ID].shoupai[i][1] == "火攻" or char_juese[ID].shoupai[i][1] == "借刀杀人" or char_juese[ID].shoupai[i][1] == "决斗" or char_juese[ID].shoupai[i][1] == "乐不思蜀" or char_juese[ID].shoupai[i][1] == "南蛮入侵" or char_juese[ID].shoupai[i][1] == "顺手牵羊" or char_juese[ID].shoupai[i][1] == "桃园结义" or char_juese[ID].shoupai[i][1] == "铁索连环" or char_juese[ID].shoupai[i][1] == "万箭齐发" or char_juese[ID].shoupai[i][1] == "五谷丰登" or char_juese[ID].shoupai[i][1] == "无懈可击" or char_juese[ID].shoupai[i][1] == "无中生有" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁锁连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无懈可击" or shoupai[i][1] == "无中生有" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "装备" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "八卦阵" or char_juese[ID].shoupai[i][1] == "赤兔" or char_juese[ID].shoupai[i][1] == "雌雄剑" or char_juese[ID].shoupai[i][1] == "大宛" or char_juese[ID].shoupai[i][1] == "的卢" or char_juese[ID].shoupai[i][1] == "方天戟" or char_juese[ID].shoupai[i][1] == "贯石斧" or char_juese[ID].shoupai[i][1] == "古锭刀" or char_juese[ID].shoupai[i][1] == "寒冰剑" or char_juese[ID].shoupai[i][1] == "骅骝" or char_juese[ID].shoupai[i][1] == "绝影" or char_juese[ID].shoupai[i][1] == "诸葛弩" or char_juese[ID].shoupai[i][1] == "麒麟弓" or char_juese[ID].shoupai[i][1] == "青钢剑" or char_juese[ID].shoupai[i][1] == "仁王盾" or char_juese[ID].shoupai[i][1] == "白银狮" or char_juese[ID].shoupai[i][1] == "藤甲" or char_juese[ID].shoupai[i][1] == "青龙刀" or char_juese[ID].shoupai[i][1] == "朱雀扇" or char_juese[ID].shoupai[i][1] == "丈八矛" or char_juese[ID].shoupai[i][1] == "爪黄飞电" or char_juese[ID].shoupai[i][1] == "紫骍" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "八卦阵" or shoupai[i][1] == "赤兔" or shoupai[i][1] == "雌雄剑" or shoupai[i][1] == "大宛" or shoupai[i][1] == "的卢" or shoupai[i][1] == "方天戟" or shoupai[i][1] == "贯石斧" or shoupai[i][1] == "古锭刀" or shoupai[i][1] == "寒冰剑" or shoupai[i][1] == "骅骝" or shoupai[i][1] == "绝影" or shoupai[i][1] == "诸葛弩" or shoupai[i][1] == "麒麟弓" or shoupai[i][1] == "青钢剑" or shoupai[i][1] == "仁王盾" or shoupai[i][1] == "白银狮" or shoupai[i][1] == "藤甲" or shoupai[i][1] == "青龙刀" or shoupai[i][1] == "朱雀扇" or shoupai[i][1] == "丈八矛" or shoupai[i][1] == "爪黄飞电" or shoupai[i][1] == "紫骍" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "武器" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "雌雄剑" or char_juese[ID].shoupai[i][1] == "方天戟" or char_juese[ID].shoupai[i][1] == "贯石斧" or char_juese[ID].shoupai[i][1] == "古锭刀" or char_juese[ID].shoupai[i][1] == "寒冰剑" or char_juese[ID].shoupai[i][1] == "诸葛弩" or char_juese[ID].shoupai[i][1] == "麒麟弓" or char_juese[ID].shoupai[i][1] == "青钢剑" or char_juese[ID].shoupai[i][1] == "青龙刀" or char_juese[ID].shoupai[i][1] == "朱雀扇" or char_juese[ID].shoupai[i][1] == "丈八矛" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "雌雄剑" or shoupai[i][1] == "方天戟" or shoupai[i][1] == "贯石斧" or shoupai[i][1] == "古锭刀" or shoupai[i][1] == "寒冰剑" or shoupai[i][1] == "诸葛弩" or shoupai[i][1] == "麒麟弓" or shoupai[i][1] == "青钢剑" or shoupai[i][1] == "青龙刀" or shoupai[i][1] == "朱雀扇" or shoupai[i][1] == "丈八矛" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "防具" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "八卦阵" or char_juese[ID].shoupai[i][1] == "白银狮" or char_juese[ID].shoupai[i][1] == "藤甲" or char_juese[ID].shoupai[i][1] == "仁王盾" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "八卦阵" or shoupai[i][1] == "白银狮" or shoupai[i][1] == "藤甲" or shoupai[i][1] == "仁王盾" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "+1马" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "的卢" or char_juese[ID].shoupai[i][1] == "爪黄飞电" or char_juese[ID].shoupai[i][1] == "骅骝" or char_juese[ID].shoupai[i][1] == "绝影" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "的卢" or shoupai[i][1] == "爪黄飞电" or shoupai[i][1] == "骅骝" or shoupai[i][1] == "绝影" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "-1马" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "紫骍" or char_juese[ID].shoupai[i][1] == "赤兔" or char_juese[ID].shoupai[i][1] == "大宛" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "紫骍" or shoupai[i][1] == "赤兔" or shoupai[i][1] == "大宛" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "红色" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			local ys,hs,ds = ai_judge_cardinfo(ID,{char_juese[ID].shoupai[i]})
+		for i = #shoupai,1,-1 do
+			local ys,hs,ds = ai_judge_cardinfo(ID,{shoupai[i]})
 			if ys == "红色" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "黑色" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			local ys,hs,ds = ai_judge_cardinfo(ID,{char_juese[ID].shoupai[i]})
+		for i = #shoupai,1,-1 do
+			local ys,hs,ds = ai_judge_cardinfo(ID,{shoupai[i]})
 			if ys == "黑色" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "红桃" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			local ys,hs,ds = ai_judge_cardinfo(ID,{char_juese[ID].shoupai[i]})
+		for i = #shoupai,1,-1 do
+			local ys,hs,ds = ai_judge_cardinfo(ID,{shoupai[i]})
 			if hs == "红桃" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "方块" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			local ys,hs,ds = ai_judge_cardinfo(ID,{char_juese[ID].shoupai[i]})
+		for i = #shoupai,1,-1 do
+			local ys,hs,ds = ai_judge_cardinfo(ID,{shoupai[i]})
 			if hs == "方块" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "黑桃" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			local ys,hs,ds = ai_judge_cardinfo(ID,{char_juese[ID].shoupai[i]})
+		for i = #shoupai,1,-1 do
+			local ys,hs,ds = ai_judge_cardinfo(ID,{shoupai[i]})
 			if hs == "黑桃" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "草花" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			local ys,hs,ds = ai_judge_cardinfo(ID,{char_juese[ID].shoupai[i]})
+		for i = #shoupai,1,-1 do
+			local ys,hs,ds = ai_judge_cardinfo(ID,{shoupai[i]})
 			if hs == "草花" then
 				table.insert(card_searched,i)
 			end
 		end	
 	elseif kind == "随意" then
-		for i = #char_juese[ID].shoupai,1,-1 do
+		for i = #shoupai,1,-1 do
 			table.insert(card_searched,i)
 		end	
 	elseif tonumber(kind) ~= nil then
 		if tonumber(kind) > 0 then
-			for i = #char_juese[ID].shoupai,1,-1 do
-				local ys,hs,ds = ai_judge_cardinfo(ID,{char_juese[ID].shoupai[i]})
+			for i = #shoupai,1,-1 do
+				local ys,hs,ds = ai_judge_cardinfo(ID,{shoupai[i]})
 				if ds >= tonumber(kind) then
 					table.insert(card_searched,i)
 				end
 			end	
 		elseif tonumber(kind) < 0 then
-			for i = #char_juese[ID].shoupai,1,-1 do
-				local ys,hs,ds = ai_judge_cardinfo(ID,{char_juese[ID].shoupai[i]})
+			for i = #shoupai,1,-1 do
+				local ys,hs,ds = ai_judge_cardinfo(ID,{shoupai[i]})
 				if ds <= math.abs(tonumber(kind)) then
 					table.insert(card_searched,i)
 				end
 			end
 		end	
 	elseif kind == "杀" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "杀" or char_juese[ID].shoupai[i][1] == "火杀" or char_juese[ID].shoupai[i][1] == "雷杀" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "杀" or shoupai[i][1] == "火杀" or shoupai[i][1] == "雷杀" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "普通杀" then
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == "杀" then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == "杀" then
 				table.insert(card_searched,i)
 			end
 		end
 	else
-		for i = #char_juese[ID].shoupai,1,-1 do
-			if char_juese[ID].shoupai[i][1] == kind then
+		for i = #shoupai,1,-1 do
+			if shoupai[i][1] == kind then
 				table.insert(card_searched,i)
 			end
 		end
@@ -745,160 +772,251 @@ function ai_card_search(ID,kind,required)
 end
 
 --  区域内牌数统计 --
-function ai_card_stat(ID)
+function ai_card_stat(ID, discard_arm)
 	local card = 0
-	if #char_juese[ID].wuqi ~= 0 then
-		card = card + 1
-	end
-	if #char_juese[ID].fangju ~= 0 then
-		card = card + 1
-	end
-	if #char_juese[ID].gongma ~= 0 then
-		card = card + 1
-	end
-	if #char_juese[ID].fangma ~= 0 then
-		card = card + 1
+	if discard_arm then
+		if #char_juese[ID].wuqi ~= 0 then
+			card = card + 1
+		end
+		if #char_juese[ID].fangju ~= 0 then
+			card = card + 1
+		end
+		if #char_juese[ID].gongma ~= 0 then
+			card = card + 1
+		end
+		if #char_juese[ID].fangma ~= 0 then
+			card = card + 1
+		end
 	end
 	card = card + table.maxn(char_juese[ID].shoupai)
 	return card
 end
 
 --  AI主动弃置牌 --
-function ai_judge_withdraw(ID,required)
-	if ai_card_stat(ID) < required then
-		for i = 1, table.maxn(char_juese[ID].shoupai) do
-			if char_juese[ID].shoupai[1] ~= nil then
-				_qipai_sub2({ID, 1})
+--  返回值：从小到大排列的应弃牌索引表  --
+function ai_judge_withdraw(ID, required, discard_arm)
+	local qipai_id = {}
+	local qi_zhuangbei_id = {0, 0, 0, 0}
+
+	local shoupai_copy = table.copy(char_juese[ID].shoupai)
+	local i
+	
+	for i = 1, table.maxn(shoupai_copy) do
+		shoupai_copy[i][4] = i
+	end
+
+	if ai_card_stat(ID, discard_arm) < required then
+		for i = 1, table.maxn(shoupai_copy) do
+			table.insert(qipai_id, i)
+		end
+
+		if discard_arm then
+			if #char_juese[ID].wuqi ~= 0 then
+				qi_zhuangbei_id[1] = 1
+			end
+			if #char_juese[ID].fangju ~= 0 then
+				qi_zhuangbei_id[2] = 1
+			end
+			if #char_juese[ID].gongma ~= 0 then
+				qi_zhuangbei_id[3] = 1
+			end
+			if #char_juese[ID].fangma ~= 0 then
+				qi_zhuangbei_id[4] = 1
 			end
 		end
-		if #char_juese[ID].wuqi ~= 0 then
-			_qipai_sub4(ID)
-		end
-		if #char_juese[ID].fangju ~= 0 then
-			_qipai_sub5(ID)
-		end
-		if #char_juese[ID].gongma ~= 0 then
-			_qipai_sub6(ID)
-		end
-		if #char_juese[ID].fangma ~= 0 then
-			_qipai_sub7(ID)
-		end
-		return false
 	else
 		local withdraw_needed = required
 		while withdraw_needed >= 0 do
-			local withdrawed = ai_card_search(ID,"非无懈锦囊",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+			local withdrawed = ai_card_search(ID, "非无懈锦囊", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"装备",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "装备", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"普通杀",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "普通杀", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"雷杀",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "雷杀", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"火杀",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "火杀", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"酒",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "酒", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"无懈可击",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "无懈可击", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"闪",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "闪", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"桃",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "桃", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			local withdrawed = ai_card_search(ID,"随便",withdraw_needed)
-			for i = 1,#withdrawed do
-				_qipai_sub2({ID, withdrawed[i]})
+
+			local withdrawed = ai_card_search(ID, "随便", withdraw_needed, shoupai_copy)
+			for i = 1, #withdrawed do
+				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
+				shoupai_copy[withdrawed[i]][4] = nil
+				table.remove(shoupai_copy, withdrawed[i])
 				withdraw_needed = withdraw_needed - 1
 			end
 			if withdraw_needed <= 0 then
 				break
 			end
-			if #char_juese[ID].gongma ~= 0 then
-				_qipai_sub6(ID)
-				withdraw_needed = withdraw_needed - 1
-			end
-			if withdraw_needed <= 0 then
-				break
-			end
-			if #char_juese[ID].wuqi ~= 0 then
-				_qipai_sub4(ID)
-				withdraw_needed = withdraw_needed - 1
-			end
-			if withdraw_needed <= 0 then
-				break
-			end
-			if #char_juese[ID].fangma ~= 0 then
-				_qipai_sub7(ID)
-				withdraw_needed = withdraw_needed - 1
-			end
-			if withdraw_needed <= 0 then
-				break
-			end
-			if #char_juese[ID].fangju ~= 0 then
-				_qipai_sub5(ID)
-				withdraw_needed = withdraw_needed - 1
-			end
-			if withdraw_needed <= 0 then
-				break
-			elseif #char_juese[ID].fangju == 0 and char_juese[ID].fangma == 0 and #char_juese[ID].wuqi == 0 and #char_juese[ID].gongma == 0 and #char_juese[ID].shoupai == 0 then
-				break
+
+			if discard_arm then
+				if #char_juese[ID].gongma ~= 0 and qi_zhuangbei_id[3] ~= 1 then
+					qi_zhuangbei_id[3] = 1
+					withdraw_needed = withdraw_needed - 1
+				end
+				if withdraw_needed <= 0 then
+					break
+				end
+
+				if #char_juese[ID].wuqi ~= 0 and qi_zhuangbei_id[1] ~= 1 then
+					qi_zhuangbei_id[1] = 1
+					withdraw_needed = withdraw_needed - 1
+				end
+				if withdraw_needed <= 0 then
+					break
+				end
+
+				if #char_juese[ID].fangma ~= 0 and qi_zhuangbei_id[4] ~= 1 then
+					qi_zhuangbei_id[4] = 1
+					withdraw_needed = withdraw_needed - 1
+				end
+				if withdraw_needed <= 0 then
+					break
+				end
+
+				if #char_juese[ID].fangju ~= 0 and qi_zhuangbei_id[2] ~= 1 then
+					qi_zhuangbei_id[2] = 1
+					withdraw_needed = withdraw_needed - 1
+				end
+				if withdraw_needed <= 0 then
+					break
+				end
 			end
 		end
-		return true
+	end
+
+	table.sort(qipai_id)
+	return qipai_id, qi_zhuangbei_id
+end
+
+--  AI弃牌 (执行) --
+function ai_withdraw(ID, qipai_id, qi_zhuangbei_id, in_queue)
+	for i = #qipai_id, 1, -1 do
+		if in_queue then
+			add_funcptr(_qipai_sub2, {ID, qipai_id[i]})
+		else
+			_qipai_sub2({ID, qipai_id[i]})
+		end
+	end
+
+	if qi_zhuangbei_id[1] == 1 then
+		if in_queue then
+			add_funcptr(_qipai_sub4, ID)
+		else
+			_qipai_sub4(ID)
+		end
+	end
+
+	if qi_zhuangbei_id[2] == 1 then
+		if in_queue then
+			add_funcptr(_qipai_sub5, ID)
+		else
+			_qipai_sub5(ID)
+		end
+	end
+
+	if qi_zhuangbei_id[3] == 1 then
+		if in_queue then
+			add_funcptr(_qipai_sub6, ID)
+		else
+			_qipai_sub6(ID)
+		end
+	end
+
+	if qi_zhuangbei_id[4] == 1 then
+		if in_queue then
+			add_funcptr(_qipai_sub7, ID)
+		else
+			_qipai_sub7(ID)
+		end
 	end
 end
 
@@ -1013,126 +1131,297 @@ function ai_pindian_judge(ID,is_enemy)
 	return card_pindian, card_pindian_dianshu
 end
 
---  AI回合内使用牌 --
+--  AI回合内出牌 (判断)  --
 function ai_card_use(ID)
+	funcptr_queue = {}
+	funcptr_i = 0
+
 	if char_juese[ID].tili < char_juese[ID].tili_max then
-		local card_use = ai_card_search(ID,"桃",1)
+		local card_use = ai_card_search(ID, "桃", 1)
 		if #card_use ~= 0 then
-			card_chupai(card_use[1])
+			if card_chupai_ai(card_use[1], ID, nil, nil) then
+				ai_next_card(ID)
+				return
+			end
+		end
+	end
+
+	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" then
+		local card_use = ai_card_search(ID, "武器", 1)
+		if #card_use ~= 0 then
+			card_chupai_ai(card_use[1], ID, nil, nil)
+			ai_next_card(ID)
 			return
 		end
 	end
-	if #char_juese[ID].wuqi == 0 or card_juese[ID].skill["枭姬"] == "available" then
-		local card_use = ai_card_search(ID,"武器",1)
+
+	if #char_juese[ID].fangju == 0 or char_juese[ID].skill["枭姬"] == "available" then
+		local card_use = ai_card_search(ID, "防具", 1)
 		if #card_use ~= 0 then
-			card_chupai(card_use[1])
+			card_chupai_ai(card_use[1], ID, nil, nil)
+			ai_next_card(ID)
 			return
 		end
 	end
-	if #char_juese[ID].wuqi == 0 or card_juese[ID].skill["枭姬"] == "available" then
-		local card_use = ai_card_search(ID,"防具",1)
+
+	if #char_juese[ID].gongma == 0 or char_juese[ID].skill["枭姬"] == "available" then
+		local card_use = ai_card_search(ID, "-1马", 1)
 		if #card_use ~= 0 then
-			card_chupai(card_use[1])
+			card_chupai_ai(card_use[1], ID, nil, nil)
+			ai_next_card(ID)
 			return
 		end
 	end
-	if #char_juese[ID].wuqi == 0 or card_juese[ID].skill["枭姬"] == "available" then
-		local card_use = ai_card_search(ID,"-1马",1)
+
+	if #char_juese[ID].fangma == 0 or char_juese[ID].skill["枭姬"] == "available" then
+		local card_use = ai_card_search(ID, "+1马", 1)
 		if #card_use ~= 0 then
-			card_chupai(card_use[1])
+			card_chupai_ai(card_use[1], ID, nil, nil)
+			ai_next_card(ID)
 			return
 		end
 	end
-	if #char_juese[ID].wuqi == 0 or card_juese[ID].skill["枭姬"] == "available" then
-		local card_use = ai_card_search(ID,"+1马",1)
-		if #card_use ~= 0 then
-			card_chupai(card_use[1])
+
+	local card_use = ai_card_search(ID, "五谷丰登", 1)
+	if #card_use ~= 0 then
+		card_chupai_ai(card_use[1], ID, nil, nil)
+		ai_next_card(ID)
+		return
+	end
+
+	local card_use = ai_card_search(ID, "过河拆桥", 1)
+	if #card_use ~= 0 then
+		local ID_mubiao, targets
+		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+
+		if #targets > 0 then
+			ID_mubiao = targets[1]
+			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+				--  拆后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		end
+	end
+
+	local card_use = ai_card_search(ID, "铁锁连环", 1)
+	if #card_use ~= 0 then
+		local ID1, ID2, targets
+		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		targets = ai_judge_target(ID, card_use[1], {shoupai}, 2)
+
+		if #targets == 2 then
+			ID1 = targets[1]
+			ID2 = targets[2]
+			if card_chupai_ai(card_use[1], ID1, ID2, ID, "铁锁连环-连环") then
+				--  连后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		else
+			card_chupai_ai(card_use[1], ID, nil, nil, "铁锁连环-重铸")
+			ai_next_card(ID)
 			return
 		end
 	end
-	local card_use = ai_card_search(ID,"五谷丰登",1)
+
+	local card_use = ai_card_search(ID, "顺手牵羊", 1)
 	if #card_use ~= 0 then
-		card_chupai(card_use[1])
+		local ID_mubiao, targets
+		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+
+		if #targets > 0 then
+			ID_mubiao = targets[1]
+			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+				--  顺后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		end
+	end
+
+	local card_use = ai_card_search(ID, "南蛮入侵", 1)
+	if #card_use ~= 0 then
+		card_chupai_ai(card_use[1], ID, nil, nil)
+		--  南蛮后处理ai_next_card --
+		timer.start(0.6)
 		return
 	end
-	local card_use = ai_card_search(ID,"过河拆桥",1)
+
+	local card_use = ai_card_search(ID, "万箭齐发", 1)
 	if #card_use ~= 0 then
-		card_chupai(card_use[1])
+		card_chupai_ai(card_use[1], ID, nil, nil)
+		--  万箭后处理ai_next_card --
+		timer.start(0.6)
 		return
 	end
-	local card_use = ai_card_search(ID,"铁索连环",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"顺手牵羊",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"南蛮入侵",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"万箭齐发",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"决斗",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"借刀杀人",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"火攻",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"无中生有",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"桃园结义",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"杀",1)
-	if #card_use > 1 then
-		local card_use = ai_card_search(ID,"酒",1)
+
+	if ai_chazhao_sha(ID, char_juese[ID].shoupai) > 0 then
+		local card_use = ai_card_search(ID, "决斗", 1)
 		if #card_use ~= 0 then
-			card_chupai(card_use[1])
+			local ID_mubiao, targets
+			local shoupai = char_juese[ID].shoupai[card_use[1]]
+			targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+	
+			if #targets > 0 then
+				ID_mubiao = targets[1]
+				card_chupai_ai(card_use[1], ID, ID_mubiao, nil)
+				--  决斗后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		end
+	end
+
+	local card_use = ai_card_search(ID, "借刀杀人", 1)
+	if #card_use ~= 0 then
+		local ID1, ID2, targets
+		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		targets = ai_judge_target(ID, card_use[1], {shoupai}, 2)
+
+		if #targets == 2 then
+			ID1 = targets[1]
+			ID2 = targets[2]
+			if card_chupai_ai(card_use[1], ID1, ID2, ID, "借刀杀人") then
+				--  借刀后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		end
+	end
+
+	local card_use = ai_card_search(ID, "火攻", 1)
+	if #card_use ~= 0 then
+		local ID_mubiao, targets
+		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+	
+		if #targets > 0 then
+			ID_mubiao = targets[1]
+			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+				--  火攻后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		end
+	end
+
+	local card_use = ai_card_search(ID, "无中生有", 1)
+	if #card_use ~= 0 then
+		card_chupai_ai(card_use[1], ID, nil, nil)
+		ai_next_card(ID)
+		return
+	end
+
+	local card_use = ai_card_search(ID, "桃园结义", 1)
+	if #card_use ~= 0 then
+		card_chupai_ai(card_use[1], ID, nil, nil)
+		ai_next_card(ID)
+		return
+	end
+
+	local card_use = ai_card_search(ID, "杀", 1)
+	if #card_use ~= 0 then
+		local ID_mubiao, targets
+		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+
+		if #targets > 0 and char_hejiu == false then
+			local card_use_jiu = ai_card_search(ID, "酒", 1)
+			if #card_use_jiu ~= 0 then
+				if card_chupai_ai(card_use_jiu[1], ID, nil, nil) then
+					ai_next_card(ID)
+					return
+				end
+			end
+		end
+
+		if #targets > 0 then
+			ID_mubiao = targets[1]
+			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+				--  杀后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		end
+	end
+
+	local card_use = ai_card_search(ID, "乐不思蜀", 1)
+	if #card_use ~= 0 then
+		local ID_mubiao, targets
+		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+	
+		if #targets > 0 then
+			ID_mubiao = targets[1]
+			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+				ai_next_card(ID)
+				return
+			end
+		end
+	end
+
+	local card_use = ai_card_search(ID, "兵粮寸断", 1)
+	if #card_use ~= 0 then
+		local ID_mubiao, targets
+		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		targets = ai_judge_target(ID, card_use[1], {shoupai}, 1)
+	
+		if #targets > 0 then
+			ID_mubiao = targets[1]
+			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+				ai_next_card(ID)
+				return
+			end
+		end
+	end
+
+	local card_use = ai_card_search(ID, "闪电", 1)
+	if #card_use ~= 0 then
+		if card_chupai_ai(card_use[1], ID, nil, nil) then
+			ai_next_card(ID)
 			return
 		end
 	end
-	local card_use = ai_card_search(ID,"杀",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
+
+	ai_stage_qipai(ID)
+end
+
+function ai_next_card(ID)
+	funcptr_add_tag = "下一次出牌"
+	add_funcptr(ai_card_use, ID)
+	funcptr_add_tag = nil
+	timer.start(0.6)
+end
+
+function ai_stage_qipai(ID)
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_huihe_set("弃牌")
+    add_funcptr(push_message, table.concat({char_juese[ID].name, "弃牌阶段"}))
+
+	local extra = 0
+	extra = skills_judge_xueyi(char_current_i)
+	
+	if skills_judge_keji() == true and #char_juese[ID].shoupai > char_juese[ID].tili_max then
+		add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
 	end
-	local card_use = ai_card_search(ID,"乐不思蜀",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
+
+	if skills_judge_keji() == false and char_juese[ID].tili + extra < #char_juese[ID].shoupai then
+		local qipai_id, i
+		local required = math.max(#char_juese[ID].shoupai - char_juese[ID].tili - extra, 0)
+		qipai_id, _ = ai_judge_withdraw(ID, required, false)
+
+		for i = #qipai_id, 1, -1 do
+			add_funcptr(_qipai_sub1, qipai_id[i])
+		end
 	end
-	local card_use = ai_card_search(ID,"兵粮寸断",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
-	local card_use = ai_card_search(ID,"闪电",1)
-	if #card_use ~= 0 then
-		card_chupai(card_use[1])
-		return
-	end
+
+	gamerun_huihe_jieshu(true)
+	timer.start(0.6)
 end
 
 --  AI身份判定 --
@@ -1140,6 +1429,11 @@ end
 isblackjack:true为内奸
 ]]
 function ai_judge_shenfen()
+	--  明身份临时  --
+	if true then
+		return
+	end
+
 	for i = 1,5 do
 		if char_juese[i].shenfen == "主公" then
 			char_juese[i].isblackjack,char_juese[i].isantigovernment = false,false
@@ -1168,6 +1462,23 @@ end
 
 
 --[[
+--  AI 在牌堆中查找牌，若没有则尝试使用技能  --
+function card_judge_chupai(ID, card)
+	local name, card_id, card_name, card_huase, skill
+	skill = ""
+	name = char_juese[ID].name
+	card_id = card_chazhao(ID,card)
+	return card_id
+end
+
+function card_judge_arm(ID, card)
+	local name, card_id, card_name, card_huase, skill
+	skill = ""
+	name = char_juese[ID].name
+	card_id = card_chazhaoarm(ID,card)
+	return card_id
+end
+
 --  AI 回合内出牌处理  --
 function auto_chupai(ID)
 	local shoupai_c, tili, tili_max, name, shenfen, shili

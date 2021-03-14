@@ -219,17 +219,18 @@ function gamerun_init()
 	add_funcptr(card_xipai, false)    -- 重置牌堆
 	char_fenpei_id()    -- 分配身份
 	char_fenpei_wujiang()    -- 分配武将
+	add_funcptr(ai_init_shenfen)
 	add_funcptr(card_fenfa_init, nil)  -- 初始发牌
 	add_funcptr(_init_huashen)
 	add_funcptr(_init_sub1, nil)
 end
 function _init_huashen()
+	huashen_paidui = {}
 	if char_juese[char_current_i].skill["化身"] == "available" then
 		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 		funcptr_queue = {}
 		funcptr_i = 0
 
-		huashen_paidui = {}
 		add_funcptr(skills_xinsheng, {char_current_i, true})
 		add_funcptr(skills_xinsheng, {char_current_i, true})
 		add_funcptr(skills_huashen, {char_current_i, "游戏开始"})
@@ -244,7 +245,7 @@ function _init_sub1()
 	set_hints("请按'确定'继续")
 end
 
---  当前玩家回合开始 (至出牌阶段)  --
+--  当前玩家/AI回合开始 (至出牌阶段)  --
 function gamerun_huihe_start()
     local msg
 	
@@ -259,26 +260,26 @@ function gamerun_huihe_start()
 	char_hejiu = false
 	
 	--  回合开始阶段  --
-	msg = {char_juese[char_current_i].name, "回合开始"}
+	msg = {char_juese[char_acting_i].name, "回合开始"}
     add_funcptr(push_message, table.concat(msg))
 	gamerun_huihe = "开始"
 	msg = nil; collectgarbage()
 
 	--  回合开始阶段技能  --
-	if char_juese[char_current_i].skill["化身"] == "available" then
-		add_funcptr(skills_huashen, {char_current_i, "回合开始"})
+	if char_juese[char_acting_i].skill["化身"] == "available" then
+		add_funcptr(skills_huashen, {char_acting_i, "回合开始"})
 	end
 	
-	if char_juese[char_current_i].skill["魂姿"] == "available" and char_juese[char_current_i].tili == 1 then
+	if char_juese[char_acting_i].skill["魂姿"] == "available" and char_juese[char_acting_i].tili == 1 then
 		add_funcptr(skills_hunzi)
 	end
 	
-	if char_juese[char_current_i].skill["英魂"] == "available" and char_juese[char_current_i].tili < char_juese[char_current_i].tili_max then
-		add_funcptr(skills_yinghun_enter)
+	if char_juese[char_acting_i].skill["英魂"] == "available" and char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
+		add_funcptr(skills_yinghun_enter, char_acting_i)
 	end
 
-	if char_juese[char_current_i].skill["洛神"] == "available" then
-		add_funcptr(skills_luoshen, char_current_i)
+	if char_juese[char_acting_i].skill["洛神"] == "available" then
+		add_funcptr(skills_luoshen, char_acting_i)
 	end
 	
 	--  判定阶段  --
@@ -286,32 +287,31 @@ function gamerun_huihe_start()
 	
 	--  摸牌阶段  --
 	--  摸牌阶段技能  --
-	if char_juese[char_current_i].skill["英姿"] == "available" then
-		add_funcptr(skills_yingzi,char_current_i)
+	if char_juese[char_acting_i].skill["英姿"] == "available" then
+		add_funcptr(skills_yingzi, char_acting_i)
 	end
 
-	if char_juese[char_current_i].skill["裸衣"] == "available" then
-		add_funcptr(skills_luoyi_enter,char_current_i)
-		return
+	if char_juese[char_acting_i].skill["裸衣"] == "available" then
+		add_funcptr(skills_luoyi, char_acting_i)
 	end
 
-	if char_juese[char_current_i].skill["将驰"] == "available" then
-		add_funcptr(skills_jiangchi_enter,char_current_i)
-		return
+	if char_juese[char_acting_i].skill["将驰"] == "available" then
+		add_funcptr(skills_jiangchi, char_acting_i)
 	end
 
-	if game_skip_mopai == false then
-		if char_juese[char_current_i].skill["突袭"] == "available" then
-			add_funcptr(skills_tuxi_enter,char_current_i)
-			return
-		end
+	if char_juese[char_acting_i].skill["突袭"] == "available" then
+		add_funcptr(skills_tuxi, char_acting_i)
 	end
 	add_funcptr(card_mopai, nil)
 	
 	--  出牌阶段  --
-	add_funcptr(_start_sub1, nil)
+	if char_acting_i == char_current_i then
+		add_funcptr(_start_sub1, nil)
+	else
+		add_funcptr(_start_chupai_ai, nil)
+	end
 end
-function _start_sub1()
+function _start_sub1()	--  回合开始：当前玩家进入出牌阶段
     local msg
 	
 	gamerun_status = ""
@@ -331,24 +331,41 @@ function _start_sub1()
 		on.escapeKey()
 	end
 end
+function _start_chupai_ai()		--  回合开始：AI进入出牌阶段
+	funcptr_queue = {}
+	funcptr_i = 0
+	
+	gamerun_status = "AI出牌"
+	gamerun_huihe_set("出牌")
+    set_hints("")
+
+	if game_skip_chupai == false then
+	    push_message(table.concat({char_juese[char_acting_i].name, "出牌阶段"}))
+		add_funcptr(ai_card_use, char_acting_i)
+	else
+		push_message(table.concat({char_juese[char_acting_i].name, "对'乐不思蜀'判定成功, 不能出牌"}))
+		ai_stage_qipai(char_acting_i)
+	end
+	timer.start(0.6)
+end
 
 --  判定阶段  --
 function gamerun_huihe_panding()
     local msg
 
-    msg = {char_juese[char_current_i].name, "判定阶段"}
+    msg = {char_juese[char_acting_i].name, "判定阶段"}
     add_funcptr(push_message, table.concat(msg))
 	gamerun_temp = add_funcptr(gamerun_huihe_set, "判定") + 1
 	msg = nil; collectgarbage()
 	
-	for _, card in ipairs(char_juese[char_current_i].panding) do
-		card_wuxie(card, char_current_i, char_current_i, nil)
+	for _, card in ipairs(char_juese[char_acting_i].panding) do
+		card_wuxie(card, char_acting_i, char_acting_i, nil)
 
 		funcptr_add_tag = "无懈无效结算"
-	    add_funcptr(_panding_sub1, char_current_i)
+	    add_funcptr(_panding_sub1, char_acting_i)
 
 		--  如场上有司马懿或张角，询问其改判技能  --
-		skills_guicai_guidao_ask(char_current_i, nil, char_current_i, _panding_get_leixing(char_current_i, 1))
+		skills_guicai_guidao_ask(char_acting_i, nil, char_acting_i, _panding_get_leixing(char_acting_i, 1))
 
 		funcptr_add_tag = "无懈无效结算/伤害插队"
 		add_funcptr(_panding_sub2, {1, nil})
@@ -390,17 +407,17 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	local id, p
 	id = va_list[1]; p = va_list[2]
 	
-	card = _panding_get_leixing(char_current_i, id)
+	card = _panding_get_leixing(char_acting_i, id)
     pass = false
 	
     if card == "乐不思蜀" then
 	    --  如果判定结果不是红桃，则跳过出牌阶段  --
 	    if card_panding_card[2] ~= "红桃" then
 		    game_skip_chupai = true
-		    msg = {char_juese[char_current_i].name, "的'乐不思蜀'判定成功"}
+		    msg = {char_juese[char_acting_i].name, "的'乐不思蜀'判定成功"}
 			push_message(table.concat(msg))
 		else
-		    msg = {char_juese[char_current_i].name, "的'乐不思蜀'判定失败"}
+		    msg = {char_juese[char_acting_i].name, "的'乐不思蜀'判定失败"}
 			push_message(table.concat(msg))
 		end
 	end
@@ -409,10 +426,10 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	    --  如果判定结果不是草花，则跳过摸牌阶段  --
 	    if card_panding_card[2] ~= "草花" then
 		    game_skip_mopai = true
-		    msg = {char_juese[char_current_i].name, "的'兵粮寸断'判定成功"}
+		    msg = {char_juese[char_acting_i].name, "的'兵粮寸断'判定成功"}
 			push_message(table.concat(msg))
 		else
-		    msg = {char_juese[char_current_i].name, "的'兵粮寸断'判定失败"}
+		    msg = {char_juese[char_acting_i].name, "的'兵粮寸断'判定失败"}
 			push_message(table.concat(msg))
 		end
 	end
@@ -420,7 +437,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	if card == "闪电" then
 	    --  如果判定结果是黑桃2~9，失去3点体力  --
 	    if card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
-		    msg = {char_juese[char_current_i].name, "的'闪电'判定成功"}
+		    msg = {char_juese[char_acting_i].name, "的'闪电'判定成功"}
 			push_message(table.concat(msg))
 
 			push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
@@ -428,11 +445,11 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			funcptr_queue = {}
 			funcptr_i = 0
 
-			char_tili_deduct({3, char_current_i, nil, "雷", ID_mubiao})
+			char_tili_deduct({3, char_acting_i, nil, "雷", ID_mubiao})
 			add_funcptr(_panding_huifu)
 			timer.start(0.6)
 		else
-		    msg = {char_juese[char_current_i].name, "的'闪电'判定失败"}
+		    msg = {char_juese[char_acting_i].name, "的'闪电'判定失败"}
 			push_message(table.concat(msg))
 			pass = true
 		end
@@ -443,19 +460,19 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	    _panding_pass(id)
 	else
 	    --  弃掉玩家判定区及临时判定区内的牌  --
-		card_add_qipai(char_juese[char_current_i].panding[id])
+		card_add_qipai(char_juese[char_acting_i].panding[id])
 		
-		if #char_juese[char_current_i].panding == 1 then
-			char_juese[char_current_i].panding = {}
+		if #char_juese[char_acting_i].panding == 1 then
+			char_juese[char_acting_i].panding = {}
 		else
-			table.remove(char_juese[char_current_i].panding, id)
+			table.remove(char_juese[char_acting_i].panding, id)
 		end
 		
-		if char_juese[char_current_i].skill["天妒"] ~= "available" then
+		if char_juese[char_acting_i].skill["天妒"] ~= "available" then
 			card_add_qipai(card_panding_card)
 		else
-			push_message(char_juese[char_current_i].name .. "发动了武将技能 '天妒', 获得了判定牌")
-			skills_tiandu_add({char_current_i, card_panding_card})
+			push_message(char_juese[char_acting_i].name .. "发动了武将技能 '天妒', 获得了判定牌")
+			skills_tiandu_add({char_acting_i, card_panding_card})
 		end
 	end
 	
@@ -469,7 +486,7 @@ function _panding_huifu()	--  判定阶段：闪电伤害结算后恢复原有�
 end
 function _panding_pass(id)    -- 将闪电传给下一个玩家
 	local p, j
-	p = char_current_i
+	p = char_acting_i
 	j = true
 	while j do
 		p = p + 1
@@ -490,20 +507,20 @@ function _panding_pass(id)    -- 将闪电传给下一个玩家
 		end
 	end
 	
-	table.insert(char_juese[p].panding, 1, char_juese[char_current_i].panding[id])
-	table.remove(char_juese[char_current_i].panding, id)
+	table.insert(char_juese[p].panding, 1, char_juese[char_acting_i].panding[id])
+	table.remove(char_juese[char_acting_i].panding, id)
 end
 function _panding_wuxie()	-- 判定被无懈
 	push_message("判定牌被无懈，无需判定")
-	if char_juese[char_current_i].panding[1][1] == "闪电" then
+	if char_juese[char_acting_i].panding[1][1] == "闪电" then
 		_panding_pass(1)
 	else
-		card_add_qipai(char_juese[char_current_i].panding[1])
-		table.remove(char_juese[char_current_i].panding, 1)
+		card_add_qipai(char_juese[char_acting_i].panding[1])
+		table.remove(char_juese[char_acting_i].panding, 1)
 	end
 end
 
---  当前玩家回合结束 (弃牌阶段~回合结束阶段)
+--  当前玩家/AI回合结束 (弃牌阶段~回合结束阶段)
 function gamerun_huihe_jieshu(qipai)
     local msg
 	
@@ -511,36 +528,43 @@ function gamerun_huihe_jieshu(qipai)
 	    funcptr_queue = {}
 		
 		--  弃牌阶段  --
-	    msg = {char_juese[char_current_i].name, "弃牌阶段"}
+	    msg = {char_juese[char_acting_i].name, "弃牌阶段"}
         add_funcptr(push_message, table.concat(msg))
 		
-		if skills_judge_keji(char_current_i) and #char_juese[char_current_i].shoupai > char_juese[char_current_i].tili_max then
-			add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '克己'")
+		if skills_judge_keji(char_acting_i) and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
+			add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
 		end
 	end
 	
-	if skills_judge_xueyi(char_current_i) > 0 and #char_juese[char_current_i].shoupai > char_juese[char_current_i].tili_max then
-		add_funcptr(push_message, char_juese[char_current_i].name.."发动了武将技能 '血裔'")
+	if skills_judge_xueyi(char_acting_i) > 0 and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
+		add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '血裔'")
 	end
 	
 	--  回合结束  --
 	
+	--  回合结束阶段技能  --
 	--  貂蝉闭月：可在回合结束阶段摸一张牌  --
-	if char_juese[char_current_i].skill["闭月"] == "available" then
-		skills_biyue(char_current_i)
+	if char_juese[char_acting_i].skill["闭月"] == "available" then
+		skills_biyue(char_acting_i)
 	end
-	if char_juese[char_current_i].skill["崩坏"] == "available" then
-		if skills_judge_benghuai(char_current_i) then
-			add_funcptr(skills_benghuai_enter)
-			return
+
+	if char_juese[char_acting_i].skill["崩坏"] == "available" then
+		if skills_judge_benghuai(char_acting_i) then
+			add_funcptr(skills_benghuai)
 		end
 	end
 	
+	if char_juese[char_acting_i].skill["化身"] == "available" then
+		add_funcptr(skills_huashen, {char_acting_i, "回合结束"})
+	end
+
 	--  重置仁德给出牌计数  --
 	char_rende_given = 0
 	last_OK = false
 	char_luoyi = false
 	skill_disrow = 0
+
+	--  重置所有 '出牌阶段限x次' 技能  --
 	for i = 1,5 do
 		for k,v in pairs(char_juese[i].skill) do
 			if v=="locked" then
@@ -548,11 +572,8 @@ function gamerun_huihe_jieshu(qipai)
 			end
 		end
 	end
-	if char_juese[char_current_i].skill["化身"] == "available" then
-		add_funcptr(skills_huashen, {char_current_i, "回合结束"})
-	end
 	
-	msg = {char_juese[char_current_i].name, "回合结束"}
+	msg = {char_juese[char_acting_i].name, "回合结束"}
     add_funcptr(push_message, table.concat(msg))
 	
 	add_funcptr(_jieshu_sub1, nil)
@@ -810,7 +831,7 @@ end
 
 --  "确定" 键  --
 function on.enterKey()
-    if gamerun_status == "手牌生效中" then return end
+    if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then return end
 	local card
 	
 	if string.find(gamerun_status, "无懈") then
@@ -923,7 +944,7 @@ function on.enterKey()
 			        card = char_juese[char_current_i].shoupai[card_highlighted][1]
 					if card_judge_if_sha(char_current_i, card_highlighted) then
 			            funcptr_queue = {}
-						_juedou_exe_ji(wuxie_va[2], wuxie_va[1], card_highlighted)
+						_juedou_exe_ji(wuxie_va[1], wuxie_va[2], card_highlighted)
 			            consent_func_queue(0.6)
 					end
 				end
@@ -1134,28 +1155,31 @@ function on.enterKey()
 	else
 		if gamerun_huihe == "结束" or gamerun_huihe == "开始" then
 			if gamerun_huihe == "结束" then
-				char_current_i = char_current_i + 1
-				if char_current_i > 5 then
-					char_current_i = 1
+				char_acting_i = char_acting_i + 1
+				if char_acting_i > 5 then
+					char_acting_i = 1
 				end
 			
 				--  跳过死亡以及翻面的玩家  --
 				local j = true
 				while j do
 					j = false
-					if char_juese[char_current_i].siwang == true then
-						char_current_i = char_current_i + 1
+					if char_juese[char_acting_i].siwang == true then
+						char_acting_i = char_acting_i + 1
 						j = true
-					elseif char_juese[char_current_i].fanmian == true and char_juese[char_current_i].siwang == false then
-						char_juese[char_current_i].fanmian = false
-						push_message(table.concat({char_juese[char_current_i].name,"将武将牌翻回正面"}))
-						char_current_i = char_current_i + 1
+					elseif char_juese[char_acting_i].fanmian == true and char_juese[char_acting_i].siwang == false then
+						char_juese[char_acting_i].fanmian = false
+						push_message(table.concat({char_juese[char_acting_i].name, "将武将牌翻回正面"}))
+						char_acting_i = char_acting_i + 1
 						j = true
 					end
-					if char_current_i > 5 then
-						char_current_i = 1
+					if char_acting_i > 5 then
+						char_acting_i = 1
 					end
 				end
+
+				--  注释此行即使用主动AI，不注释不使用  --
+				--char_current_i = char_acting_i
 			end
 			
 			set_hints("")
@@ -1187,7 +1211,7 @@ function on.escapeKey()
     local msg, card
 
 	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then return end
-	if gamerun_status == "手牌生效中" or string.find(gamerun_status, "观看手牌") then return end
+	if gamerun_status == "手牌生效中" or string.find(gamerun_status, "观看手牌") or gamerun_status == "AI出牌" then return end
 	
 	if string.find(gamerun_status, "无懈") then
 		funcptr_queue = {}
@@ -1208,7 +1232,7 @@ function on.escapeKey()
 			    --  无牌进行主动回应，放弃  --
 			    if string.find(gamerun_status, "决斗") then
 				    funcptr_queue = {}
-				    _juedou_exe_fangqi(char_current_i, gamerun_target_selected)
+				    _juedou_exe_fangqi(va_list[1], va_list[2])
 					consent_func_queue(0.6)
 				end
 				
@@ -1315,7 +1339,7 @@ function on.escapeKey()
 		if table.getn2(card_selected) == 1 and card == "铁锁连环" then
 			if gamerun_status == "选择目标" then
 				--  发动铁索连环 (重铸效果)  --
-				card_lian_chongzhu(card_highlighted, char_current_i)
+				card_lian_chongzhu({card_highlighted, char_current_i})
 				--  恢复状态  --
 				--on.tabKey()
 				card_selected = {}
@@ -1459,7 +1483,7 @@ end
 function on.tabKey()
     local card, card2
     if card_highlighted <=0 then return end
-	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" or gamerun_status == "手牌生效中" then return end
+	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" or gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then return end
     if gamerun_huihe == "结束" or string.find(gamerun_status, "确认操作") or string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then return end
 	if #char_juese[char_current_i].shoupai == 0 then return end
 	
@@ -1587,6 +1611,7 @@ function on.charIn(char)
 	local skills
 	if char_juese[char_current_i].name == "" then return end
 	if gamerun_huihe ~= "出牌" then return end
+	if gamerun_status == "AI出牌" then return end
 	
 	skills = char_juese[char_current_i].skillname
 	
