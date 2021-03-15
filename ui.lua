@@ -204,7 +204,13 @@ function draw_opponent(gc)
 		--]]
 		
 		gc:setColorRGB(0, 0, 0)
-		
+		if char_acting_i == id then
+			gc:setColorRGB(0, 255, 0)
+			gc:setPen("medium")
+			gc:drawRect(x1, y1, 88, 57)
+			gc:setPen("thin")
+			gc:setColorRGB(0, 0, 0)
+		end
 		--  选择卡牌使用目标状态  --
 		if string.find(gamerun_status, "选择目标") or gamerun_status == "技能选择-目标" or gamerun_status == "技能选择-目标B" then
 			local card
@@ -254,7 +260,11 @@ function draw_opponent(gc)
 						fun = function(card) return card_if_d_limit(card, char_current_i, id) end
 					end
 					
-					if fun(card) then
+					if char_acting_i == id and fun(card) then
+						gc:setColorRGB(195, 195, 0)
+					elseif char_acting_i == id then
+						gc:setColorRGB(17, 69, 20)
+					elseif fun(card) then
 						--  选择的角色可作为目标  --
 						gc:setColorRGB(255, 0, 0)
 					else
@@ -440,6 +450,14 @@ function draw_self(gc)
 		end
 	end
 	
+	if char_acting_i == char_current_i then
+		gc:setColorRGB(0, 255, 0)
+		gc:setPen("medium")
+		gc:drawRect(224, 151, 88, 57)
+		gc:setPen("thin")
+		gc:setColorRGB(0, 0, 0)
+	end
+	
 	--  被选择目标 (借刀杀人第二阶段)
 	if (gamerun_status == "选择目标-B" or ((imp_card == "驱虎2" or imp_card == "节命") and gamerun_status == "技能选择-目标B")) and char_current_i == gamerun_target_selected then
 		if card_highlighted ~= nil or gamerun_status ~= "选择目标-B" then
@@ -451,7 +469,11 @@ function draw_self(gc)
 				card = imp_card
 			end
 
-			if card_if_d_limit(card, guankan_s, gamerun_target_selected) then
+			if char_acting_i == char_current_i and card_if_d_limit(card, guankan_s, gamerun_target_selected) then
+				gc:setColorRGB(195, 195, 0)
+			elseif char_acting_i == char_current_i then
+				gc:setColorRGB(17, 69, 20)
+			elseif card_if_d_limit(card, guankan_s, gamerun_target_selected) then
 				--  选择的角色可作为目标  --
 				gc:setColorRGB(255, 0, 0)
 			else

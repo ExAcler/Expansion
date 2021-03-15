@@ -83,7 +83,82 @@ end
 
 --  AI决定是否出桃解救濒死角色  --
 function ai_judge_jiejiu(ID_s, ID_jiu)
-	return false
+	local jiejiu = false
+	if char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" then
+		if char_juese[ID_jiu].shenfen == "主公" or char_juese[ID_jiu].isantigovernment == false then 
+			jiejiu = true
+		end
+	elseif char_juese[ID_s].shenfen == "反贼" then
+		if char_juese[ID_jiu].isantigovernment == true and char_juese[ID_jiu].isblackjack ~= true then 
+			jiejiu = true
+		end
+	elseif char_juese[ID_s].shenfen == "内奸" then
+		local pk = true
+		for i = 1, 5 do
+			if char_juese[ID_jiu].shenfen ~= "主公" and char_juese[ID_jiu].shenfen ~= "内奸" and char_juese[ID_jiu].siwang == false then
+				pk = false
+			end
+		end
+		if char_juese[ID_jiu].shenfen == "主公" and pk == true then
+			jiejiu = false
+		elseif char_juese[ID_jiu].shenfen == "主公" then
+			jiejiu = true
+		end
+	end
+	return jiejiu
+end
+
+--  AI决定是否出无懈可击  --
+--  凡是敌人拥护的，我们就要去反对；凡是敌人反对的，我们就要去拥护。
+function ai_judge_wuxie(id, ID_s, ID_jiu, name)
+local help = false
+local use = true
+	if char_juese[id].shenfen == "主公" or char_juese[id].shenfen == "忠臣" then
+		if char_juese[ID_jiu].shenfen == "主公" or char_juese[ID_jiu].isantigovernment == false then 
+			if char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].isantigovernment == false then 
+				help = false
+			else
+				help = true
+			end
+		end
+	elseif char_juese[id].shenfen == "反贼" then
+		if char_juese[ID_jiu].isantigovernment == true and char_juese[ID_jiu].isblackjack ~= true then 
+			if char_juese[ID_s].isantigovernment == true and char_juese[ID_s].isblackjack ~= true then 
+				help = false
+			else
+				help = true
+			end
+		elseif char_juese[ID_s].isblackjack == true then 
+			use = false
+		end
+	elseif char_juese[id].shenfen == "内奸" then
+		if char_juese[id].shenfen == "主公" and char_juese[ID_s].isantigovernment == true and char_juese[id].tili == 1 then
+			help = true
+		else
+			use = false
+		end
+	end
+	if use == false then
+		return false
+	elseif (name == "万箭齐发" or name == "南蛮入侵") and char_juese[ID_jiu].fangju[1] == "藤甲" then
+		return false
+	elseif name == "万箭齐发" or name == "南蛮入侵" or name == "火攻" or name == "借刀杀人" or name == "决斗" then
+		return help
+	elseif name == "桃园结义" or name == "五谷丰登" or name == "无中生有" then
+		return not help
+	elseif (name == "顺手牵羊" or name == "过河拆桥") and #char_juese[ID_jiu].panding > 0 then
+		return not help
+	elseif name == "顺手牵羊" or name == "过河拆桥" then
+		return help
+	elseif name == "铁锁连环" and char_juese[ID_jiu].hengzhi then
+		return not help
+	elseif name == "铁锁连环" or name == "乐不思蜀" or name == "兵粮寸断" or name == "闪电" then
+		return help
+	elseif name == "无懈可击" then
+		return help
+	else
+		return false
+	end
 end
 
 --  AI为主公时决定雷击的目标  --
@@ -125,6 +200,36 @@ end
 --  1多摸一张，2少摸一张，3不发动  --
 function ai_judge_jiangchi(ID)
 	return 3
+end
+
+--  AI决定是否发动焚心  --
+--  1发动，2不发动  --
+function ai_judge_fenxin(ID)
+	local left, lord_blood = {1,2,1}, 0
+	for i = 1, 5 do
+		if char_juese[i].siwang == true then
+			if char_juese[i].shenfen == "忠臣" then
+				left[1] = left[1] - 1
+			elseif char_juese[i].shenfen == "反贼" then
+				left[2] = left[2] - 1
+			elseif char_juese[i].shenfen == "内奸" then
+				left[3] = left[3] - 1
+			end
+		elseif char_juese[i].shenfen == "主公" then
+			lord_blood = char_juese[i].tili
+		end
+	end
+	if char_juese[ID] == "忠臣" and left[2] <= 1 and left[3] == 0 and lord_blood <= 2 then
+		return ai_judge_random_percent(20) + 1
+	elseif char_juese[ID] == "反贼" and left[2] == 1 and left[3] == 0 then
+		return 1
+	elseif char_juese[ID] == "内奸" and left[2] == 0 and left[1] == 1 then
+		return 1
+	elseif char_juese[ID] == "内奸" then
+		return ai_judge_random_percent(50) + 1
+	else
+		return ai_judge_random_percent(70) + 1
+	end
 end
 
 --  AI决定突袭目标  --
@@ -643,6 +748,168 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 	return possible_target
 end
 
+--  AI计算AOE收益  --
+function ai_judge_AOE(ID,card)
+	local gain, bonus = -1, 1
+	for i = 1, 5 do
+		if char_juese[i].siwang == true then
+			
+		elseif i == ID and card == "桃园结义" or card == "五谷丰登" then
+			if card == "桃园结义" and char_juese[i].tili < char_juese[i].tili_max then
+				gain = gain + 2
+			elseif card == "五谷丰登" then
+				gain = gain + 1
+			end
+		elseif i == ID then
+			
+		elseif char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣" then
+			if char_juese[i].shenfen == "主公" or char_juese[i].isantigovernment == false then 
+				if card == "桃园结义" and char_juese[i].tili < char_juese[i].tili_max then
+					gain = gain + 2
+				elseif card == "五谷丰登" then
+					gain = gain + 1
+				elseif card == "万箭齐发" then
+					if char_juese[i].fangju[1] == "藤甲" then
+						
+					elseif char_juese[i].fangju[1] == "八卦阵" or (char_juese[i].skill["八阵"] == "available" and #char_juese[i].fangju == 0) then
+						if char_juese[i].shenfen == "主公" and char_juese[i].tili < 2 then
+							gain = gain - 3 / (#char_juese[i].shoupai + 1)
+						else
+							gain = gain - 1 / (#char_juese[i].shoupai + 1)
+						end
+					elseif (char_juese[i].shenfen == "主公" and char_juese[i].tili < 3) or (char_juese[ID].shenfen == "主公" and char_juese[i].tili == 1) then
+						bonus = 0
+					else
+						gain = gain - 2 / #char_juese[i].shoupai
+					end
+				elseif card == "南蛮入侵" then
+					if char_juese[i].fangju[1] == "藤甲" then
+						
+					elseif char_juese[i].skill["祸首"] == "available" then
+						
+					elseif char_juese[i].skill["帷幕"] == "available" then
+						
+					elseif char_juese[i].shenfen == "主公" and char_juese[i].tili < 3 then
+						bonus = 0
+					else
+						gain = gain - 1.5 / #char_juese[i].shoupai
+					end
+				end
+			else
+				if card == "桃园结义" and char_juese[i].tili < char_juese[i].tili_max then
+					gain = gain - 2
+				elseif card == "五谷丰登" then
+					gain = gain - 1
+				elseif card == "万箭齐发" then
+					if char_juese[i].fangju[1] == "藤甲" or (char_juese[i].skill["八阵"] == "available" and #char_juese[i].fangju == 0) then
+						
+					elseif char_juese[i].fangju[1] == "八卦阵" then
+						gain = gain + 1 / #char_juese[i].shoupai
+					else
+						gain = gain + 2 / #char_juese[i].shoupai
+					end
+				elseif card == "南蛮入侵" then
+					if char_juese[i].fangju[1] == "藤甲" then
+						
+					elseif char_juese[i].skill["祸首"] == "available" then
+						
+					elseif char_juese[i].skill["帷幕"] == "available" then
+						
+					else
+						gain = gain + 1.5 / #char_juese[i].shoupai
+					end
+				end
+			end
+		elseif char_juese[ID].shenfen == "反贼" then
+			if char_juese[i].isantigovernment == true and char_juese[ID_jiu].isblackjack ~= true then 
+				if card == "桃园结义" and char_juese[i].tili < char_juese[i].tili_max then
+					gain = gain + 2
+				elseif card == "五谷丰登" then
+					gain = gain + 1
+				elseif card == "万箭齐发" then
+					if char_juese[i].fangju[1] == "藤甲" then
+						
+					elseif char_juese[i].fangju[1] == "八卦阵" or (char_juese[i].skill["八阵"] == "available" and #char_juese[i].fangju == 0) then
+						gain = gain - 1 / (#char_juese[i].shoupai + 1)
+					else
+						gain = gain - 2 / (#char_juese[i].shoupai + 1)
+					end
+				elseif card == "南蛮入侵" then
+					if char_juese[i].fangju[1] == "藤甲" then
+						
+					elseif char_juese[i].skill["祸首"] == "available" then
+						
+					elseif char_juese[i].skill["帷幕"] == "available" then
+						
+					else
+						gain = gain - 1.5 / (#char_juese[i].shoupai + 1)
+					end
+				end
+			else
+				if card == "桃园结义" and char_juese[i].tili < char_juese[i].tili_max then
+					gain = gain - 2
+				elseif card == "五谷丰登" then
+					gain = gain - 1
+				elseif card == "万箭齐发" then
+					if char_juese[i].fangju[1] == "藤甲" then
+						
+					elseif char_juese[i].fangju[1] == "八卦阵" or (char_juese[i].skill["八阵"] == "available" and #char_juese[i].fangju == 0) then
+						if char_juese[i].shenfen == "主公" and char_juese[i].tili < 2 then
+							gain = gain + 3 / (#char_juese[i].shoupai + 1)
+						else
+							gain = gain + 1 / (#char_juese[i].shoupai + 1)
+						end
+					elseif char_juese[i].shenfen == "主公" and char_juese[i].tili < 3 then
+						gain = gain + 3
+					else
+						gain = gain + 2 / (#char_juese[i].shoupai + 1)
+					end
+				elseif card == "南蛮入侵" then
+					if char_juese[i].fangju[1] == "藤甲" then
+						
+					elseif char_juese[i].skill["祸首"] == "available" then
+						
+					elseif char_juese[i].skill["帷幕"] == "available" then
+						
+					elseif char_juese[i].shenfen == "主公" and char_juese[i].tili < 3 then
+						gain = gain + 3
+					else
+						gain = gain + 1.5 / (#char_juese[i].shoupai)
+					end
+				end
+			end
+		elseif char_juese[ID].shenfen == "内奸" then
+			if card == "桃园结义" and char_juese[ID].tili < char_juese[ID].tili_max then
+				gain = 1
+			elseif card == "五谷丰登" then
+				gain = 0
+			elseif card == "万箭齐发" then
+				if char_juese[i].shenfen == "主公" and char_juese[i].fangju[1] ~= "藤甲" and (char_juese[i].skill["八阵"] ~= "available" or #char_juese[i].fangju ~= 0) and char_juese[i].tili <= 2 then
+					bonus = 0
+				else
+					gain = 2
+				end
+			elseif card == "南蛮入侵" then
+				if char_juese[i].shenfen == "主公" and char_juese[i].fangju[1] ~= "藤甲" and char_juese[i].skill["帷幕"] ~= "available" and char_juese[i].skill["祸首"] ~= "available" and char_juese[i].tili <= 2 then
+					bonus = 0
+				else
+					gain = 2
+				end
+			end
+		end
+	end
+	return bonus * gain
+end
+
+-- AI随机选择系数 --
+function ai_judge_random_percent(percent)
+	if percent / 100 > math.random() then
+		return 0
+	else
+		return 1
+	end
+end
+
 --  AI根据条件查找牌 --
 function ai_card_search(ID, kind, required, alt_shoupai)
 	local shoupai = char_juese[ID].shoupai
@@ -1049,7 +1316,7 @@ function ai_judge_withdraw_other(ID,ID_s,is_zhuangbei_included,is_panding_includ
 			is_enemy = false
 		end
 	elseif char_juese[ID_s].shenfen == "反贼" then
-		if char_juese[ID].isantigovernment == true then 
+		if char_juese[ID].isantigovernment == true and char_juese[ID_jiu].isblackjack ~= true then 
 			is_enemy = false
 		end
 	end
@@ -1237,8 +1504,8 @@ function ai_card_use(ID)
 			end
 		end
 	end
-
-	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" then
+	targets = ai_judge_target(ID, "火杀", {"火杀","红桃","K"}, 1)
+	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" or #targets == 0 then
 		local card_use = ai_card_search(ID, "武器", 1)
 		if #card_use ~= 0 then
 			card_chupai_ai(card_use[1], ID, nil, nil)
@@ -1275,7 +1542,7 @@ function ai_card_use(ID)
 	end
 
 	local card_use = ai_card_search(ID, "五谷丰登", 1)
-	if #card_use ~= 0 then
+	if #card_use ~= 0 and ai_judge_AOE(ID,"五谷丰登") >= 0.5 then
 		card_chupai_ai(card_use[1], ID, nil, nil)
 		ai_next_card(ID)
 		return
@@ -1335,7 +1602,7 @@ function ai_card_use(ID)
 	end
 
 	local card_use = ai_card_search(ID, "南蛮入侵", 1)
-	if #card_use ~= 0 then
+	if #card_use ~= 0 and ai_judge_AOE(ID,"南蛮入侵") >= 0.5 then
 		card_chupai_ai(card_use[1], ID, nil, nil)
 		--  南蛮后处理ai_next_card --
 		timer.start(0.6)
@@ -1343,7 +1610,7 @@ function ai_card_use(ID)
 	end
 
 	local card_use = ai_card_search(ID, "万箭齐发", 1)
-	if #card_use ~= 0 then
+	if #card_use ~= 0 and ai_judge_AOE(ID,"万箭齐发") >= 0.5 then
 		card_chupai_ai(card_use[1], ID, nil, nil)
 		--  万箭后处理ai_next_card --
 		timer.start(0.6)
@@ -1408,7 +1675,7 @@ function ai_card_use(ID)
 	end
 
 	local card_use = ai_card_search(ID, "桃园结义", 1)
-	if #card_use ~= 0 then
+	if #card_use ~= 0 and ai_judge_AOE(ID,"桃园结义") >= 0.5 then
 		card_chupai_ai(card_use[1], ID, nil, nil)
 		ai_next_card(ID)
 		return
@@ -1471,7 +1738,7 @@ function ai_card_use(ID)
 	end
 
 	local card_use = ai_card_search(ID, "闪电", 1)
-	if #card_use ~= 0 then
+	if #card_use ~= 0 and ai_judge_random_percent(30) == 1 then
 		if card_chupai_ai(card_use[1], ID, nil, nil) then
 			ai_next_card(ID)
 			return

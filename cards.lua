@@ -1778,15 +1778,40 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 	
 	
 	local should_use_wuxie = false
-	if card == nil then
-		should_use_wuxie = false
-	else
-		name = card[1]
-		if id == ID_mubiao and (name == "决斗" or name == "过河拆桥" or name == "顺手牵羊" or name == "万箭齐发" or name == "南蛮入侵" or name == "借刀杀人" or name == "无懈可击" or name == "火攻" or name == "铁锁连环") then
-			should_use_wuxie = true
-		elseif ai_should_use_wuxie then
-			should_use_wuxie = true
+	if id == ID_mubiao then
+		if card == nil then
+			should_use_wuxie = false
+		else
+			name = card[1]
+			if id == ID_mubiao and (name == "决斗" or name == "过河拆桥" or name == "顺手牵羊" or name == "万箭齐发" or name == "南蛮入侵" or name == "借刀杀人" or name == "无懈可击" or name == "火攻" or name == "铁锁连环") then
+				should_use_wuxie = true
+			--elseif ai_should_use_wuxie then
+				--should_use_wuxie = true
+			end
 		end
+	else
+		if card == nil then
+			should_use_wuxie = false
+		else
+			name = card[1]
+			should_use_wuxie = ai_judge_wuxie(id, ID_s, ID_mubiao, name)
+		end
+		--[[if should_use_wuxie then
+			if name == nil then
+				name = "转化牌"
+			end
+			if wuxie_in_effect then
+				print("身份为"..char_juese[id].shenfen.."的"..char_juese[id].name.."想帮".."身份为"..char_juese[ID_mubiao].shenfen.."的"..char_juese[ID_mubiao].name.."对身份为"..char_juese[ID_s].shenfen.."的"..char_juese[ID_s].name.."使用的"..name.."出反无懈")
+			else
+				print("身份为"..char_juese[id].shenfen.."的"..char_juese[id].name.."想帮".."身份为"..char_juese[ID_mubiao].shenfen.."的"..char_juese[ID_mubiao].name.."对身份为"..char_juese[ID_s].shenfen.."的"..char_juese[ID_s].name.."使用的"..name.."出无懈")
+			end
+		else
+			if wuxie_in_effect then
+				print("身份为"..char_juese[id].shenfen.."的"..char_juese[id].name.."不想帮".."身份为"..char_juese[ID_mubiao].shenfen.."的"..char_juese[ID_mubiao].name.."对身份为"..char_juese[ID_s].shenfen.."的"..char_juese[ID_s].name.."使用的"..name.."出反无懈")
+			else
+				print("身份为"..char_juese[id].shenfen.."的"..char_juese[id].name.."不想帮".."身份为"..char_juese[ID_mubiao].shenfen.."的"..char_juese[ID_mubiao].name.."对身份为"..char_juese[ID_s].shenfen.."的"..char_juese[ID_s].name.."使用的"..name.."出无懈")
+			end
+		end]]
 	end
 	
 	local card_wx
@@ -3206,7 +3231,7 @@ function _huogong_beidong_exe_2(ID_s, ID_mubiao, c_pos)		--  火攻 (己方被�
 		platform.window:invalidate()
 	end
 
-	card_source = char_juese[ID_mubiao].shoupai[c_pos]
+	card_source = table.copy(char_juese[ID_mubiao].shoupai[c_pos])
 	add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "展示了'", card_source[2], card_source[3], "的", card_source[1], "'"})
 	--card_t_pos = card_chazhao_with_huase(ID_s, card_source[2])
 	card_t_pos = ai_card_search(ID_s, card_source[2], 1)
@@ -3260,7 +3285,7 @@ function _huogong_qipai(va_list)    --  火攻：攻方出牌
 	ID_s = va_list[1]; ID_mubiao = va_list[2]; c_pos = va_list[3]
 	local card
 	
-	card = char_juese[ID_s].shoupai[c_pos]
+	card = table.copy(char_juese[ID_s].shoupai[c_pos])
 	card_add_qipai(card)
 	card_remove({ID_s, c_pos})
 	--card_shanchu({ID_s, c_pos})
