@@ -561,7 +561,7 @@ function _napai_sub2(va_list)    --  获得手牌
 	table.insert(char_juese[ID_get].shoupai,card)
     table.remove(char_juese[ID].shoupai, cardID)
 end
-function napai_sub3(va_list)    --  获得判定区
+function _napai_sub3(va_list)    --  获得判定区
     local msg
 	local cardID, ID, ID_get, is_passive
 	ID = va_list[1]; ID_get = va_list[2]; cardID = va_list[3]; is_passive = va_list[4]

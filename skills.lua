@@ -623,6 +623,8 @@ function skills_qixi_enter()
 end
 function skills_qixi()
 	if skills_judge_black() then
+		funcptr_queue = {}
+
 		if card_chai(card_highlighted, char_current_i, gamerun_target_selected) then
 			--gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()

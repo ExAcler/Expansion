@@ -1496,11 +1496,6 @@ end
 
 --  AI回合内出牌 (判断)  --
 function ai_card_use(ID)
-	--  角色已死亡，跳过其所有阶段  --
-	if char_judge_siwang_skip_all_stages(ID) then
-		return
-	end
-
 	funcptr_queue = {}
 	funcptr_i = 0
 

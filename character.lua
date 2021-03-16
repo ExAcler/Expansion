@@ -506,27 +506,6 @@ function _wujiang_sub2(va_list)
 	wujiang_choose = {}
 end
 
---  身份初步判定 --
---[[
-function ai_judge_shenfen()
-	for i = 1,5 do
-		if char_juese[i].shenfen == "主公" then
-			char_juese[i].isblackjack,char_juese[i].isantigovernment = false,false
-		else
-			char_juese[i].antigovernmentmax = math.max(char_juese[i].antigovernmentmax,char_juese[i].antigovernment)
-			char_juese[i].antigovernmentmin = math.min(char_juese[i].antigovernmentmin,char_juese[i].antigovernment)
-			if char_juese[i].antigovernmentmax-char_juese[i].antigovernmentmin > 10 then
-				char_juese[i].isblackjack,char_juese[i].isantigovernment = true,false
-			elseif char_juese[i].antigovernmentmax > 5 then
-				char_juese[i].isblackjack,char_juese[i].isantigovernment = false,true
-			else
-			    char_juese[i].isblackjack,char_juese[i].isantigovernment = false,false
-			end
-		end
-	end
-end
-]]
-
 --  计算玩家与其他玩家的距离  --
 function char_calc_distance(_ID_s, _ID_d)
     local dist, avg, count
@@ -653,7 +632,7 @@ function char_judge_shengli(siwang_id, laiyuan)
 	--  奖惩  --
 	if laiyuan ~= nil then
 		--  任何人杀死反贼，摸3张牌  --
-		if char_juese[siwang_id].shenfen == "反贼" then
+		if siwang_id ~= laiyuan and char_juese[siwang_id].shenfen == "反贼" then
 			add_funcptr(card_fenfa, {laiyuan, 3, true})
 		end
 		
@@ -1228,6 +1207,11 @@ function _binsi_remove_sellblood(has_sellblood)	--  濒死结算：角色已死�
 	--  弹出第二层：濒死结算，此时位于上一层char_tili_deduct所在的函数队列中  --
 	v_funcptr_queue, v_funcptr_i = pop_zhudong_queue()
 
+	--  如果角色已死亡且在自己的回合，跳过其所有阶段  --
+	if char_judge_siwang_skip_all_stages(ID) then
+		return
+	end
+
 	local items_to_remove = {}
 	local keep_after = false
 	for i = 1, #v_funcptr_queue do
@@ -1279,5 +1263,9 @@ function char_judge_siwang_skip_all_stages(ID)
 		gamerun_huihe_set("结束")
 		gamerun_status = ""
 		set_hints("请按'确定'继续")
+
+		return true
+	else
+		return false
 	end
 end

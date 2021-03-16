@@ -334,6 +334,9 @@ function _start_sub1()	--  回合开始：当前玩家进入出牌阶段
     local msg
 	
 	gamerun_status = ""
+	funcptr_queue = {}
+	funcptr_i = 0
+	
 	if game_skip_chupai == false then
 	    msg = {char_juese[char_current_i].name, "出牌阶段"}
 	    push_message(table.concat(msg))
