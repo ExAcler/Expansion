@@ -1195,10 +1195,13 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 		char_judge_shengli(id, ID_shanghai)
 	end
 
-	add_funcptr(_binsi_remove_sellblood, has_sellblood)
+	add_funcptr(_binsi_remove_sellblood, {has_sellblood, id})
 	timer.start(0.6)
 end
-function _binsi_remove_sellblood(has_sellblood)	--  濒死结算：角色已死亡，从队列中删除所有卖血结算函数
+function _binsi_remove_sellblood(va_list)	--  濒死结算：角色已死亡，从队列中删除所有卖血结算函数
+	local has_sellblood, siwang_id
+	has_sellblood = va_list[1]; siwang_id = va_list[2]
+
 	local v_funcptr_queue, v_funcptr_i
 
 	--  弹出第一层：死亡结算，此时位于濒死结算的函数队列中  --
@@ -1208,7 +1211,7 @@ function _binsi_remove_sellblood(has_sellblood)	--  濒死结算：角色已死�
 	v_funcptr_queue, v_funcptr_i = pop_zhudong_queue()
 
 	--  如果角色已死亡且在自己的回合，跳过其所有阶段  --
-	if char_judge_siwang_skip_all_stages(ID) then
+	if char_judge_siwang_skip_all_stages(siwang_id) then
 		return
 	end
 
