@@ -1173,6 +1173,7 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	funcptr_queue = {}
 	funcptr_i = 0
 	char_juese[id].hengzhi = false
+	
 	--  曹丕发动行殇  --
 	local xingshang_id ,fenxin_id = 0, 0
 	for i = 1, 5 do
@@ -1184,21 +1185,30 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 
 	--  关索发动征南  --
 	--  暂留空
+
+	--  设置死亡标志  --
+	char_juese[id].siwang = true
+
 	--  死亡丢弃所有手牌  --
 	if xingshang_id == 0 then
 		card_qipai_all(id, true)
 	else
 		add_funcptr(skills_xingshang, {xingshang_id, id, true})
 	end
+
+	--  灵雎发动焚心  --
 	if ID_shanghai ~= nil and shuxing ~= "流失" and ID_shanghai ~= id and char_juese[ID_shanghai].skill["焚心"] == 1 and char_juese[ID_shanghai].shenfen ~= "主公" and char_juese[id].shenfen ~= "主公" then
+		fenxin_pending = id
 		add_funcptr(skills_fenxin, {ID_shanghai, id})
-	else
-		char_juese[id].siwang = true
 	end
+	
+	--  蔡文姬发动断肠  --
 	if ID_shanghai ~= nil and shuxing ~= "流失" and char_juese[id].skill["断肠"] == "available" then
 		add_funcptr(skills_duanchang, {id, ID_shanghai})
 	end
+
 	add_funcptr(_binsi_sub1, id)
+
 	--  胜利条件判断  --
 	if shanghai_shuxing == "流失" then
 		char_judge_shengli(id, nil)
@@ -1248,11 +1258,6 @@ function _binsi_remove_sellblood(has_sellblood)	--  濒死结算：角色已死�
 
 	funcptr_queue = v_funcptr_queue
 	funcptr_i = 0
-
-	--  如果当前玩家死亡，则跳过其接下来所有阶段  --
-	--if id == char_current_i then
-	--	add_funcptr(_binsi_sub3, id)
-	--end
 end
 function _binsi_huifu()		--  濒死结算：角色未死亡，恢复濒死结算前的函数队列
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -1264,12 +1269,15 @@ end
 function _binsi_sub2()
 	timer.start(0.2)
 end
-function _binsi_sub3()
-	--  当前玩家死亡，跳过其接下来所有阶段  --
-	timer.stop()
-	funcptr_queue = {}
-	
-	gamerun_huihe_set("结束")
-	gamerun_status = ""
-	set_hints("请按'确定'继续")
+
+--  当前玩家死亡，跳过其接下来所有阶段  --
+function char_judge_siwang_skip_all_stages(ID)
+	if char_juese[ID].siwang == true and ID == char_acting_i then
+		timer.stop()
+		funcptr_queue = {}
+
+		gamerun_huihe_set("结束")
+		gamerun_status = ""
+		set_hints("请按'确定'继续")
+	end
 end

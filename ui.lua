@@ -99,10 +99,10 @@ function draw_opponent(gc)
 		if char_juese[id].shenfen == "主公" then
 		    gc:drawImage(identity_img["主公"], x1 + 65, y1 + 3)
 		else
-			if gamerun_status == "游戏结束" then
+			if gamerun_huihe == "游戏结束" then
 				gc:drawImage(identity_img[char_juese[id].shenfen], x1 + 65, y1 + 3)
 			else
-				if char_juese[id].siwang == false then
+				if char_juese[id].siwang == false or fenxin_pending == id then
 					gc:drawImage(identity_img["未知"], x1 + 65, y1 + 3)  -- (5 + 65, 5 + 3)
 				else
 					gc:drawImage(identity_img[char_juese[id].shenfen], x1 + 65, y1 + 3)
@@ -195,13 +195,6 @@ function draw_opponent(gc)
 				end
 			end
 		end
-		
-		--[[
-		if char_juese[id].hengzhi == true then
-			gc:setColorRGB(233, 233, 216)
-			gc:fillRect(x1 + 57, y1 + 39, 19, 18)
-		end
-		--]]
 		
 		gc:setColorRGB(0, 0, 0)
 		if char_acting_i == id then
@@ -349,7 +342,11 @@ function draw_self(gc)
 		end
 	end
 	if card_selected[card_highlighted] == nil and card_highlighted ~= nil then
-		if card_highlighted > 0 then
+		if #char_juese[char_current_i].shoupai > 0 and card_highlighted > 0 then
+			if card_highlighted > #char_juese[char_current_i].shoupai then
+				card_highlighted = 1
+			end
+
 			gc:drawImage(cards_img[char_juese[char_current_i].shoupai[card_highlighted][1]], 81 + img_width * (card_highlighted - 1), 151)
 			gc:drawImage(color_img[char_juese[char_current_i].shoupai[card_highlighted][2]], 82 + img_width * (card_highlighted - 1), 153)
 			gc:setFont("sansserif", "r", 7)
@@ -449,6 +446,46 @@ function draw_self(gc)
 		    gc:drawString("+1", 5, 190 + 19)
 		end
 	end
+
+	-- 锦囊状态 --
+	local i, v, cnt, sel
+	v = table.copy(char_juese[char_current_i].panding)
+	if char_juese[char_current_i].hengzhi == true then
+		table.insert(v, {"铁锁连环"})
+	end
+	
+	for i = 1, #v do
+		if v[i][1] ~= "乐不思蜀" and v[i][1] ~= "兵粮寸断" and v[i][1] ~= "闪电" and v[i][1] ~= "铁锁连环" then
+			sel = 4
+		else
+			sel = 1
+		end
+		if v[i][sel] == "乐不思蜀" then
+			gc:setColorRGB(255, 128, 128)
+		end
+		if v[i][sel] == "兵粮寸断" then
+			gc:setColorRGB(242, 242, 0)
+		end
+		if v[i][sel] == "闪电" then
+			gc:setColorRGB(0, 128, 255)
+		end
+		if v[i][sel] == "铁锁连环" then
+			gc:setColorRGB(233, 233, 216)
+		end
+		
+		if i == 1 then
+			gc:fillRect(5, 132, 5, 18)
+		end
+		if i == 2 then
+			gc:fillRect(10, 132, 5, 18)
+		end
+		if i == 3 then
+			gc:fillRect(15, 132, 5, 19)
+		end
+		if i == 4 then
+			gc:fillRect(20, 132, 5, 18)
+		end
+	end
 	
 	if char_acting_i == char_current_i then
 		gc:setColorRGB(0, 255, 0)
@@ -457,7 +494,7 @@ function draw_self(gc)
 		gc:setPen("thin")
 		gc:setColorRGB(0, 0, 0)
 	end
-	
+
 	--  被选择目标 (借刀杀人第二阶段)
 	if (gamerun_status == "选择目标-B" or ((imp_card == "驱虎2" or imp_card == "节命") and gamerun_status == "技能选择-目标B")) and char_current_i == gamerun_target_selected then
 		if card_highlighted ~= nil or gamerun_status ~= "选择目标-B" then

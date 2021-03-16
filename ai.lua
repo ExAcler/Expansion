@@ -186,7 +186,11 @@ function ai_judge_benghuai(ID)
 	if char_juese[ID].tili == char_juese[ID].tili_max then
 		return true
 	else
-		return false
+		if char_juese[ID].tili_max <= 1 then
+			return true
+		else
+			return false
+		end
 	end
 end
 
@@ -821,7 +825,7 @@ function ai_judge_AOE(ID,card)
 				end
 			end
 		elseif char_juese[ID].shenfen == "反贼" then
-			if char_juese[i].isantigovernment == true and char_juese[ID_jiu].isblackjack ~= true then 
+			if char_juese[i].isantigovernment == true and char_juese[i].isblackjack ~= true then 
 				if card == "桃园结义" and char_juese[i].tili < char_juese[i].tili_max then
 					gain = gain + 2
 				elseif card == "五谷丰登" then
@@ -1316,7 +1320,7 @@ function ai_judge_withdraw_other(ID,ID_s,is_zhuangbei_included,is_panding_includ
 			is_enemy = false
 		end
 	elseif char_juese[ID_s].shenfen == "反贼" then
-		if char_juese[ID].isantigovernment == true and char_juese[ID_jiu].isblackjack ~= true then 
+		if char_juese[ID].isantigovernment == true and char_juese[ID].isblackjack ~= true then 
 			is_enemy = false
 		end
 	end
@@ -1492,6 +1496,11 @@ end
 
 --  AI回合内出牌 (判断)  --
 function ai_card_use(ID)
+	--  角色已死亡，跳过其所有阶段  --
+	if char_judge_siwang_skip_all_stages(ID) then
+		return
+	end
+
 	funcptr_queue = {}
 	funcptr_i = 0
 

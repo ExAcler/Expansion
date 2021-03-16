@@ -48,7 +48,7 @@ end
 function skills_fenxin_enter(ID, ID_mubiao)
 	gamerun_status = "选项选择"
 	choose_name = "焚心"
-	jiaohu_text = "是否使用 '焚心'与"..char_juese[ID_mubiao].name.."换身份?"
+	jiaohu_text = "是否使用 '焚心' 与"..char_juese[ID_mubiao].name.."换身份?"
 	choose_option = {"发动","不发动"}
 	txt_messages:setVisible(false)
 	gamerun_guankan_selected = 1
@@ -77,10 +77,8 @@ function skills_fenxin_set(ID, ID_mubiao, option)
 		char_juese[ID].antigovernmentmax, char_juese[ID_mubiao].antigovernmentmax = char_juese[ID_mubiao].antigovernmentmax, char_juese[ID].antigovernmentmax
 		char_juese[ID].antigovernmentmin, char_juese[ID_mubiao].antigovernmentmin = char_juese[ID_mubiao].antigovernmentmin, char_juese[ID].antigovernmentmin
 		char_juese[ID].isblackjack, char_juese[ID_mubiao].isblackjack = char_juese[ID_mubiao].isblackjack, char_juese[ID].isblackjack
-		char_juese[ID_mubiao].siwang = true
-	elseif option == 2 then
-		char_juese[ID_mubiao].siwang = true
 	end
+	fenxin_pending = nil
 end
 
 --  蔡文姬：断肠 --
@@ -275,7 +273,7 @@ end
 
 --  魏延：狂骨  --
 function skills_kuanggu(ID_s)
-	add_funcptr(char_juese[ID_s].name..push_message, "发动了武将技能 '狂骨'")
+	add_funcptr(push_message, char_juese[ID_s].name .. "触发了武将技能 '狂骨'")
 	add_funcptr(_kuanggu_sub1, ID_s)
 end
 function _kuanggu_sub1(ID_s)
@@ -285,7 +283,7 @@ end
 
 --  孟获：祸首  --
 function skills_huoshou(ID_s)
-	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '祸首'")
+	add_funcptr(push_message, char_juese[ID_s].name.."触发了武将技能 '祸首'")
 end
 
 --  郭嘉：遗计  --
@@ -392,7 +390,7 @@ end
 
 --  卧龙诸葛：八阵  --
 function skills_bazhen(ID_s)
-	push_message(char_juese[ID_s].name.."发动了武将技能 '八阵'")
+	push_message(char_juese[ID_s].name .. "触发了武将技能 '八阵'")
 end
 
 --  董卓：崩坏  --
@@ -421,11 +419,11 @@ function skills_benghuai()
 	end
 end
 function skills_benghuai_ai()
-	add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '崩坏'")
+	add_funcptr(push_message, char_juese[char_acting_i].name .. "触发了武将技能 '崩坏'")
 	if ai_judge_benghuai(char_acting_i) == false then
-		add_funcptr(_benghuai_reduce_max, char_current_i)
+		add_funcptr(_benghuai_reduce_max, char_acting_i)
 	else
-		char_tili_deduct({1, char_current_i, nil, "流失", char_current_i})
+		char_tili_deduct({1, char_acting_i, nil, "流失", char_acting_i})
 	end
 
 	add_funcptr(_skills_benghuai_huifu)
@@ -445,7 +443,7 @@ function skills_benghuai_enter()    --  进入崩坏状态
 			if char_juese[char_current_i].tili_max > 1 then
 				set_hints("")
 				
-				add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '崩坏'")
+				add_funcptr(push_message, char_juese[char_current_i].name .. "触发了武将技能 '崩坏'")
 				add_funcptr(_benghuai_reduce_max, char_current_i)
 
 				add_funcptr(_skills_benghuai_huifu)
@@ -802,7 +800,7 @@ end
 function _kurou_sub1()
 	set_hints("")
 	gamerun_status = "手牌生效中"
-	push_message(char_juese[char_current_i].name.."发动了武将技能 '苦肉'")
+	push_message(char_juese[char_current_i].name .. "发动了武将技能 '苦肉'")
 end
 function _kurou_sub2()
 	set_hints("请您出牌")
@@ -2306,6 +2304,18 @@ function skills_guicai_guidao_zhudong_choose(old_gamerun_status)
 			add_funcptr(_guicai_guidao_exe, {id, card})
 			add_funcptr(_guicai_guidao_huifu)
 			timer.start(0.6)
+		elseif gamerun_OK == false then
+			card_selected = {}
+			card_highlighted = 1
+			imp_card = ""
+
+			set_hints("")
+			gamerun_status = old_gamerun_status
+			push_message(char_juese[id].name .. "放弃改判")
+			
+			_guicai_guidao_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
 		end
 	end
 end
@@ -2453,7 +2463,6 @@ function _shangshi_sub(id)
 end
 
 --  曹丕：放逐  --
-
 function skills_fangzhu(va_list)
 	local ID, laiyuan
 	ID = va_list[1]

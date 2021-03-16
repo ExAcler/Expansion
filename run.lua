@@ -61,6 +61,8 @@ zhudong_queue_stack_i = {}
 skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的选项的个数
 gamerun_dangxian = false -- 廖化当先发动与否的存储
+fenxin_pending = nil	-- 玩家当前需要决定是否发动焚心的死亡角色ID (无则为nil)，如果是，则暂时隐藏死亡角色的身份牌
+
 end
 
 --  定义变量  --
@@ -554,7 +556,7 @@ function gamerun_huihe_jieshu(qipai)
 	end
 	
 	if skills_judge_xueyi(char_acting_i) > 0 and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
-		add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '血裔'")
+		add_funcptr(push_message, char_juese[char_acting_i].name .. "触发了武将技能 '血裔'")
 	end
 	
 	--  回合结束  --
@@ -607,7 +609,9 @@ end
 function gamerun_select_target(dir)
     local card
 
-	card = char_juese[char_current_i].shoupai[card_highlighted][1]
+	if #char_juese[char_current_i].shoupai[card_highlighted] > 0 then
+		card = char_juese[char_current_i].shoupai[card_highlighted][1]
+	end
 	
 	if dir == "init" then
 	    gamerun_target_selected = char_current_i - 1
@@ -982,9 +986,9 @@ function on.enterKey()
 
 			if string.find(gamerun_status, "火攻B") then
 			    if table.getn2(card_selected) ~= 0 then
-			        card = char_juese[char_current_i].shoupai[card_highlighted][2]
+			        local shoupai = char_juese[wuxie_va[1]].shoupai
 			        funcptr_queue = {}
-					_huogong_beidong_exe_2(wuxie_va[1], wuxie_va[2], card_highlighted)
+					_huogong_beidong_exe_2(wuxie_va[1], wuxie_va[2], shoupai, card_highlighted)
 			        consent_func_queue(0.6)
 				end
 				return
@@ -1447,7 +1451,8 @@ end
 function on.arrowKey(key)
 	--if card_highlighted <= 0 then return end
 	if (gamerun_huihe == "" or gamerun_huihe == "游戏结束") and gamerun_status ~= "选项选择" then return end
-    if ((gamerun_huihe == "结束" or gamerun_status == "手牌生效中" or string.find(gamerun_status, "确认操作")) and gamerun_status ~= "选项选择") then return end
+    --if ((gamerun_huihe == "结束" or gamerun_status == "手牌生效中" or string.find(gamerun_status, "确认操作")) and gamerun_status ~= "选项选择") then return end
+	if ((gamerun_huihe == "结束" or gamerun_status == "手牌生效中") and gamerun_status ~= "选项选择") then return end
     if key == "left" then
 	    if string.find(gamerun_status, "选择目标") or gamerun_status == "技能选择-目标" or gamerun_status == "技能选择-目标B" then
 		    --  选择卡牌使用目标状态  --
@@ -1608,7 +1613,7 @@ function on.tabKey()
 			end
 		end
 	else
-	    if gamerun_huihe == "开始" or gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or imp_card == "鬼才")) then
+	    if gamerun_huihe == "开始" or gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or string.find(gamerun_status, "技能选择"))) then
 			if gamerun_status == "技能选择-单牌" or gamerun_status == "技能选择-多牌" then
 				card_selected[card_highlighted] = 0
 				if gamerun_tab_ptr ~= nil then
@@ -1749,33 +1754,11 @@ function on.charIn(char)
 		gamerun_card_select_zhuangbei(-4)
 	end
 
-	if char == 'i' then
-		for i = 1, 5 do
-			if char_juese[i].shenfen == "主公" then
-				funcptr_queue = {}
-				card_sha(1, i, char_current_i, true)
-				consent_func_queue(0.6)
-				break
-			end
-		end
-	end
-
-	if char == 'j' then
-		funcptr_queue = {}
-		card_sha(1, 2, 3, true)
-		consent_func_queue(0.6)
-	end
-
-	if char == 'k' then
-		funcptr_queue = {}
-		card_wugu(1, 1)
-		consent_func_queue(0.6)
-	end
-
 	platform.window:invalidate()
 end
 
 function skills_rst()
+	gamerun_wuqi_out_hand(char_current_i)
 	card_selected = {}
 	card_highlighted = 1
 	imp_card = ""
