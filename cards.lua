@@ -4045,7 +4045,10 @@ function _sha_exe_2(ID_s, ID_mubiao, c_pos)    --  杀：青龙刀追杀
 	
 	card_shoupai = char_juese[ID_s].shoupai[c_pos]
 	add_funcptr(_sha_sub1, {c_pos, ID_s, ID_mubiao})
-	_sha_exe_1(card_shoupai, ID_s, ID_mubiao, true)
+
+	local wushuang_flag = _sha_judge_if_xiangying_2(ID_s, ID_mubiao)
+
+	_sha_exe_1(card_shoupai, ID_s, ID_mubiao, true, wushuang_flag)
 end
 function _sha_exe_2_g()    --  杀：放弃使用装备效果
 	_sha_sub2()
@@ -4206,7 +4209,9 @@ function _sha_zhuque()    --  杀：朱雀羽扇状态设置
 			skills_jiang(char_current_i)
 		end
 		
-	    _sha_exe_1(guankan_s, char_current_i, gamerun_target_selected, true)
+		local wushuang_flag = _sha_judge_if_xiangying_2(char_current_i, gamerun_target_selected)
+
+	    _sha_exe_1(guankan_s, char_current_i, gamerun_target_selected, true, wushuang_flag)
 		consent_func_queue(0.6)
 	end
 	platform.window:invalidate()
@@ -4262,7 +4267,9 @@ function _sha_cixiong()    --  杀：雌雄双股剑状态设置
 			skills_jiang(char_current_i)
 		end
 		
-	    _sha_exe_1(guankan_s, char_current_i, gamerun_target_selected, true)
+		local wushuang_flag = _sha_judge_if_xiangying_2(char_current_i, gamerun_target_selected)
+
+		_sha_exe_1(guankan_s, char_current_i, gamerun_target_selected, true, wushuang_flag)
 		consent_func_queue(0.6)
 	end
 	platform.window:invalidate()
