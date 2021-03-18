@@ -3,7 +3,8 @@
 --  他方区域  --
 function draw_opponent(gc)
     local elems = {{224, 72}, {224, 5}, {5, 5}, {5, 72}}
-    local id = 2, i, j
+    local id = 2
+	local i, j
 	local x1, y1
 	local msg
 	
@@ -563,7 +564,8 @@ end
 
 --  其他元素  --
 function draw_others(gc)
-    local msg = {}, i, v
+    local msg = {}
+	local i, v
 
 	--  手牌展示区  --
     if string.find(gamerun_status, "观看手牌") then

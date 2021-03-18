@@ -363,7 +363,7 @@ function _start_sub1()	--  回合开始：当前玩家进入出牌阶段
         gamerun_huihe_set("出牌")
         set_hints("请您出牌")
 	else
-	    msg = {char_juese[char_current_i].name, "对'乐不思蜀'判定成功, 不能出牌"}
+	    msg = {char_juese[char_current_i].name, "不能出牌"}
 		push_message(table.concat(msg))
 		msg = nil; --collectgarbage()
 	
@@ -398,7 +398,6 @@ function gamerun_huihe_panding()
 	add_funcptr(gamerun_huihe_set, "判定")
 	
 	for i = #char_juese[char_acting_i].panding, 1, -1 do
-	--for i, card in ipairs(char_juese[char_acting_i].panding) do
 		local card = char_juese[char_acting_i].panding[i]
 		card_wuxie(card, char_acting_i, char_acting_i, nil)
 
@@ -499,7 +498,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	if pass then
 	    --  闪电判定失败时传递给下一玩家  --
 	    _panding_pass(id)
-	end
+	else
 	    --  弃掉玩家判定区及临时判定区内的牌  --
 		card_add_qipai(char_juese[char_acting_i].panding[id])
 		
@@ -516,6 +515,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			push_message(char_juese[char_acting_i].name .. "发动了武将技能 '天妒', 获得了判定牌")
 			skills_tiandu_add({char_acting_i, card_panding_card})
 		end
+	end
 	
 	msg = nil; --collectgarbage()
 end
@@ -586,7 +586,7 @@ function gamerun_huihe_jieshu(qipai)
 	--  回合结束阶段技能  --
 	--  貂蝉闭月：可在回合结束阶段摸一张牌  --
 	if char_juese[char_acting_i].skill["闭月"] == "available" then
-		skills_biyue(char_acting_i)
+		add_funcptr(skills_biyue,char_acting_i)
 	end
 
 	if char_juese[char_acting_i].skill["崩坏"] == "available" then
@@ -968,6 +968,14 @@ function on.enterKey()
 		elseif string.find(gamerun_status, "寒2") then
 			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
 			_sha_sub2()
+		elseif string.find(gamerun_status, "归心") then
+			card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
+			_guixin_sub2({gamerun_guankan_selected, guankan_s, guankan_d})
+		elseif string.find(gamerun_status, "反馈") then
+			gamerun_status = fankui_gamerun_status
+			set_hints("")
+			card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
+			_fankui_huifu()
 		end
 
 		platform.window:invalidate()
