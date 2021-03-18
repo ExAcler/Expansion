@@ -925,7 +925,6 @@ function on.enterKey()
 		if string.find(gamerun_status, "拼点") then
 			gamerun_OK_pindian_ptr()
 		else
-			gamerun_OK = true
 			gamerun_OK_ptr()
 		end
 		return
@@ -1443,7 +1442,7 @@ function on.arrowKey(key)
 				wuqi = ""
 			end
 		
-		    if (table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or wuqi == "丈八矛" or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈") then
+		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or wuqi == "丈八矛" or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
 	            if card_highlighted < #char_juese[char_current_i].shoupai then
 		            card_highlighted = card_highlighted + 1
 			    end
@@ -1523,7 +1522,7 @@ function on.tabKey()
 		end
 		
 		if table.getn2(card_selected) == 0 then
-		    if string.find(gamerun_status, "选择目标") or gamerun_status == "" then
+		    if gamerun_huihe == "出牌" and (string.find(gamerun_status, "选择目标") or gamerun_status == "") then
 			    set_hints("请您出牌")
 			    gamerun_status = ""
 			    gamerun_target_selected = 0
@@ -1547,7 +1546,7 @@ function on.tabKey()
 			end
 		end
 		
-		--  丈八蛇矛恢复默认出牌方式  --
+		--  丈八蛇矛取消选择第二张牌时，恢复第一张牌出牌  --
 		if #char_juese[char_current_i].wuqi ~= 0 then
 			if gamerun_huihe == "出牌" and table.getn2(card_selected) == 1 and char_juese[char_current_i].wuqi[1] == "丈八矛" then
 				local i
@@ -1565,6 +1564,14 @@ function on.tabKey()
 			return
 		end
 	else
+		--  弃牌阶段  --
+	    --  选择的牌超过需弃牌数，则不能继续选择  --
+		if gamerun_huihe == "弃牌" and table.getn2(card_selected) < #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili then
+		    card_selected[card_highlighted] = 0
+			return
+		end
+
+		--  技能选择  --
 		if gamerun_status == "技能选择-单牌" or gamerun_status == "技能选择-多牌" then
 			card_selected[card_highlighted] = 0
 			if gamerun_tab_ptr ~= nil then
@@ -1574,34 +1581,41 @@ function on.tabKey()
 			return
 		end
 
+		--  其他情况  --
 		card = char_juese[char_current_i].shoupai[card_highlighted][1]
+		local flag = true
 
-		if gamerun_status == "" then
+		if gamerun_huihe == "出牌" and gamerun_status == "" then
 			set_hints(card_tishi[card])
 		
-			--  选取的是锦囊 (闪电、无懈可击、南蛮入侵、万箭齐发、桃园结义、无中生有、五谷丰登除外)、杀  --
-			--  借刀杀人、铁锁连环选取目标A  --
-			if card_get_leixing(card) == "延时类锦囊" and card ~= "闪电" or card == "顺手牵羊" or card == "过河拆桥" or card == "决斗" or card == "火攻" or card == "杀" or card == "火杀" or card == "雷杀" or card == "借刀杀人" or card == "铁锁连环" then
-				gamerun_status = "选择目标"
-				gamerun_select_target("init")    -- 初始化选择目标状态
-			end
-		end
-		    
-		local flag = true
-		if #char_juese[char_current_i].wuqi ~= 0 then
-			if char_juese[char_current_i].wuqi[1] == "丈八矛" then
-				if table.getn2(card_selected) < 2 then
-					card_selected[card_highlighted] = 0
+			--  判断是否进入丈八蛇矛状态  --
+			if #char_juese[char_current_i].wuqi ~= 0 then
+				if char_juese[char_current_i].wuqi[1] == "丈八矛" then
+					if table.getn2(card_selected) < 2 then
+						card_selected[card_highlighted] = 0
+					end
+					if table.getn2(card_selected) == 2 then
+						set_hints("杀")
+						gamerun_status = "选择目标"
+						gamerun_select_target("init")
+					end
+					flag = false
 				end
-				if table.getn2(card_selected) == 2 then
-					set_hints("杀")
+			end
+
+			--  如未进入丈八蛇矛状态  --
+			if gamerun_status == "" then
+				--  选取的是锦囊 (闪电、无懈可击、南蛮入侵、万箭齐发、桃园结义、无中生有、五谷丰登除外)、杀  --
+				--  借刀杀人、铁锁连环选取目标A  --
+				if card_get_leixing(card) == "延时类锦囊" and card ~= "闪电" or card == "顺手牵羊" or card == "过河拆桥" or card == "决斗" or card == "火攻" or card == "杀" or card == "火杀" or card == "雷杀" or card == "借刀杀人" or card == "铁锁连环" then
 					gamerun_status = "选择目标"
-					gamerun_select_target("init")
+					gamerun_select_target("init")    -- 初始化选择目标状态
 				end
-				flag = false
 			end
 		end
-			
+		
+		--  选择牌  --
+		--  丈八蛇矛状态若已处理选牌，此处不再处理选牌  --
 		if flag then
 			if string.find(gamerun_status, "贯石") then
 				if table.getn2(card_selected) < 2 then
@@ -1610,11 +1624,6 @@ function on.tabKey()
 			else
 				card_selected[card_highlighted] = 0
 			end
-		end
-			
-	    --  选择的牌超过需弃牌数，则不能继续选择  --
-		if gamerun_huihe == "弃牌" and table.getn2(card_selected) < #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili then
-		    card_selected[card_highlighted] = 0
 		end
 	end
 	platform.window:invalidate()

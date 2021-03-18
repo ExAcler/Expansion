@@ -245,7 +245,7 @@ function draw_opponent(gc)
 						wuqi = ""
 					end
 			
-					if gamerun_status == "选择目标-B" or ((card == "驱虎2" or card == "节命" or card == "好施") and gamerun_status == "技能选择-目标B") then
+					if gamerun_status == "选择目标-B" or ((card == "驱虎2" or card == "节命" or card == "好施" or card == "遗计") and gamerun_status == "技能选择-目标B") then
 						fun = function(card) return card_if_d_limit(card, guankan_s, gamerun_target_selected) end
 					elseif wuqi == "丈八矛" then
 						card = {}
