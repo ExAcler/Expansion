@@ -206,6 +206,130 @@ function ai_judge_jiangchi(ID)
 	return 3
 end
 
+--  AI决定是否发动英魂  --
+--  1摸1弃x，2摸x弃1，3不发动
+function ai_judge_yinghun(ID)
+	return 3
+end
+
+--  AI决定英魂的发动目标  --
+function ai_judge_yinghun_mubiao(ID, yinghun_choice)
+	return 1
+end
+
+--  基本AI技能作用目标决定，完全依照身份  --
+function ai_basic_judge_mubiao(ID, required, is_help, target_list)
+	local possible_target
+	if target_list == nil then
+		possible_target = {1, 2, 3, 4, 5}
+	else
+		possible_target = table.copy(target_list)
+	end
+
+	for i = #possible_target, 1, -1 do
+		if char_juese[possible_target[i]].siwang == true then
+			table.remove(possible_target, i)
+		end
+	end
+
+	for i = #possible_target, 1, -1 do
+		if char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣" then
+			if char_juese[possible_target[i]].isantigovernment == is_help then
+				table.remove(possible_target, i)
+			end
+		elseif char_juese[ID].shenfen == "反贼" then
+			if char_juese[possible_target[i]].isantigovernment == not is_help and char_juese[possible_target[i]].isblackjack == false then
+				table.remove(possible_target, i)
+			end
+		elseif char_juese[ID].shenfen == "内奸" then
+			if ai_judge_blackjack(ID) then
+				if char_juese[possible_target[i]].isantigovernment == is_help then
+					table.remove(possible_target, i)
+				end
+			else
+				if char_juese[possible_target[i]].isantigovernment == not is_help then
+					table.remove(possible_target, i)
+				end
+			end
+		end
+	end
+
+	while #possible_target > required do
+		table.remove(possible_target, math.random(#possible_target))
+	end
+
+	return possible_target
+end
+
+--  AI决定是否发动好施  --
+--  1发动，2不发动  --
+function ai_judge_haoshi(ID)
+	local n_shoupai = #char_juese[ID].shoupai
+	n_shoupai = n_shoupai + 4
+	
+	if ai_judge_jiangchi(ID) == 1 then
+		n_shoupai = n_shoupai + 1
+	elseif ai_judge_jiangchi(ID) == 2 then
+		n_shoupai = n_shoupai - 1
+	end
+	if ai_judge_luoyi(ID) == 1 then
+		n_shoupai = n_shoupai - 1
+	end
+	if char_juese[ID].skill["英姿"] == "available" then
+		n_shoupai = n_shoupai + 1
+	end
+
+	if n_shoupai <= 5 then
+		return 1
+	end
+
+	local target = ai_judge_haoshi_mubiao(ID, n_shoupai, false)
+	if #target == 0 then
+		return 2
+	else
+		return 1
+	end
+end
+
+--  AI决定好施的发动目标  --
+function ai_judge_haoshi_mubiao(ID, n_ID_shoupai, at_least_1)
+	local possible_target = {1, 2, 3, 4, 5}
+	local possible_target_2 = {}
+
+	local shoupais = {}
+	for i = 1, 5 do
+		if i == ID then
+			table.insert(shoupais, n_ID_shoupai)
+		else
+			table.insert(shoupais, #char_juese[i].shoupai)
+		end
+	end
+
+	--  找出所有手牌最少的角色  --
+	for i = 5, 1, -1 do
+		if char_juese[i].siwang == true then
+			table.remove(possible_target, i)
+		else
+			for j = 1, 5 do
+				if char_juese[j].siwang == false and shoupais[j] < shoupais[i] then
+					print(i)
+					table.remove(possible_target, i)
+					break
+				end
+			end
+		end
+	end
+
+	print(table.concat(possible_target, ","))
+
+	possible_target_2 = ai_basic_judge_mubiao(ID, 1, true, possible_target)
+	if at_least_1 and #possible_target_2 == 0 and #possible_target > 0 then
+		table.insert(possible_target_2, possible_target[math.random(1, #possible_target)])
+	end
+
+	return possible_target_2
+end
+
 --  AI决定是否发动焚心  --
 --  1发动，2不发动  --
 function ai_judge_fenxin(ID)
@@ -238,7 +362,7 @@ end
 
 --  AI决定突袭目标  --
 --  返回含有角色ID的表，如为空则表示不发动  --
-function ai_judge_tuxi_mubiao()
+function ai_judge_tuxi_mubiao(ID)
 	local char_id = {}
 
 	return {}
@@ -1503,7 +1627,7 @@ function ai_card_use(ID)
 		local card_use = ai_card_search(ID, "桃", 1)
 		if #card_use ~= 0 then
 			if card_chupai_ai(card_use[1], ID, nil, nil) then
-				ai_next_card(ID)
+				--  桃后处理ai_next_card --
 				return
 			end
 		end

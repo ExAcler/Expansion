@@ -355,9 +355,15 @@ function card_mopai()
 	if char_juese[char_acting_i].skill["英姿"] == "available" then
 		draw_number = draw_number + 1
 	end
+	
+	if char_haoshi == true then
+		draw_number = draw_number + 2
+	end
+
 	if char_luoyi == true then
 		draw_number = draw_number - 1
 	end
+
 	if type(char_jiangchi) == "number" then
 		draw_number = draw_number + char_jiangchi
 		if char_jiangchi > 0 then
@@ -368,10 +374,12 @@ function card_mopai()
 		end
 		char_jiangchi = nil
 	end
+
 	if char_tuxi then
 		draw_number = 0
 		char_tuxi = nil
 	end
+	
 	if draw_number > 0 then
 		card_fenfa({char_acting_i, draw_number, true})
 	end
@@ -662,35 +670,35 @@ end
 
 
 --  拼点结算  --
-function card_pindian(ID_s, ID_mubiao, win_fp)
+function card_pindian(va_list)
+	local ID_s, ID_mubiao, win_fp
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; win_fp = va_list[3]
+
 	pindianing = {}
 	if ID_s == char_current_i or ID_mubiao == char_current_i then
 		skills_enter("请选择拼点的牌", "", "进行拼点", "技能选择-拼点")
 		gamerun_OK_pindian_ptr = function()
-			if ID_s == char_current_i then
-				set_hints("")
-				gamerun_status = "手牌生效中"
-				card_into_pindian(ID_s,card_highlighted)
-				card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
-				local win = card_pindian_judge(ID_s,ID_mubiao)
+			local win
+			set_hints("")
+			gamerun_status = "手牌生效中"
 
-				win_fp(win)
-			--[[
-			elseif ID_mubiao == char_current_i then
-				set_hints("")
-				gamerun_status = ""
-				card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+			if ID_s == char_current_i then
 				card_into_pindian(ID_s,card_highlighted)
-				win = card_pindian_judge(ID_s,ID_mubiao)
-			]]
+				card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+			elseif ID_mubiao == char_current_i then
+				card_into_pindian(ID_s,ai_pindian_judge(ID_s,true))
+				card_into_pindian(ID_mubiao,card_highlighted)
 			end
+
+			win = card_pindian_judge(ID_s,ID_mubiao)
+			win_fp(win)
 		end
-	--[[
 	else
 		card_into_pindian(ID_s,ai_pindian_judge(ID_s,true))
 		card_into_pindian(ID_mubiao,ai_pindian_judge(ID_mubiao,true))
+
 		win = card_pindian_judge(ID_s,ID_mubiao)
-	]]
+		win_fp(win)
 	end
 end
 
@@ -1050,7 +1058,15 @@ function card_if_d_limit(card, ID_s, ID_d)
 		if #char_juese[ID_d].shoupai == 0 then
 			return false
 		end
-	end	
+	end
+
+	--  鲁肃好施  --
+	if card == "好施" then
+		if skills_judge_haoshi(ID_d) == false then
+			return false
+		end
+	end
+
 	return true
 end
 
@@ -1953,6 +1969,8 @@ function _tao_sub(va_list)
 	else
 		gamerun_status = "AI出牌"
 		set_hints("")
+
+		ai_card_use(char_acting_i)
 	end
 end
 function _tao_show(va_list)

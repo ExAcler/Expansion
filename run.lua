@@ -265,7 +265,7 @@ function gamerun_huihe_start()
 
 	--  廖化当先额外出牌阶段  --
 	if char_juese[char_acting_i].skill["当先"] == "available" and gamerun_dangxian == false then
-		msg = {char_juese[char_acting_i].name, "触发了技能'当先'"}
+		msg = {char_juese[char_acting_i].name, "触发了技能 '当先'"}
 		push_message(table.concat(msg))
 		if char_acting_i == char_current_i then
 			add_funcptr(_start_sub1, nil)
@@ -282,7 +282,7 @@ function gamerun_huihe_start()
 	msg = {char_juese[char_acting_i].name, "回合开始"}
     add_funcptr(push_message, table.concat(msg))
 	gamerun_huihe = "开始"
-	msg = nil; --collectgarbage()
+	msg = nil
 
 	--  回合开始阶段技能  --
 	if char_juese[char_acting_i].skill["化身"] == "available" then
@@ -294,7 +294,9 @@ function gamerun_huihe_start()
 	end
 	
 	if char_juese[char_acting_i].skill["英魂"] == "available" and char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
-		add_funcptr(skills_yinghun_enter, char_acting_i)
+		if char_acting_i == char_current_i or ai_judge_yinghun(char_acting_i) ~= 3 then
+			add_funcptr(skills_yinghun, char_acting_i)
+		end
 	end
 
 	if char_juese[char_acting_i].skill["洛神"] == "available" then
@@ -311,17 +313,33 @@ function gamerun_huihe_start()
 	end
 
 	if char_juese[char_acting_i].skill["裸衣"] == "available" then
-		add_funcptr(skills_luoyi, char_acting_i)
+		if char_acting_i == char_current_i or ai_judge_luoyi(char_acting_i) == 1 then
+			add_funcptr(skills_luoyi, char_acting_i)
+		end
 	end
 
 	if char_juese[char_acting_i].skill["将驰"] == "available" then
-		add_funcptr(skills_jiangchi, char_acting_i)
+		if char_acting_i == char_current_i or ai_judge_jiangchi(char_acting_i) ~= 3 then
+			add_funcptr(skills_jiangchi, char_acting_i)
+		end
 	end
 
 	if char_juese[char_acting_i].skill["突袭"] == "available" then
 		add_funcptr(skills_tuxi, char_acting_i)
 	end
+
+	if char_juese[char_acting_i].skill["好施"] == "available" then
+		if char_acting_i == char_current_i or ai_judge_haoshi(char_acting_i) == 1 then
+			add_funcptr(skills_haoshi_stage_1, char_acting_i)
+		end
+	end
+
+	--  摸牌  --
 	add_funcptr(card_mopai, nil)
+
+	if char_juese[char_acting_i].skill["好施"] == "available" then
+		add_funcptr(skills_haoshi_stage_2, char_acting_i)
+	end
 	
 	--  出牌阶段  --
 	if char_acting_i == char_current_i then
@@ -377,20 +395,21 @@ function gamerun_huihe_panding()
 
     msg = {char_juese[char_acting_i].name, "判定阶段"}
     add_funcptr(push_message, table.concat(msg))
-	gamerun_temp = add_funcptr(gamerun_huihe_set, "判定") + 1
-	msg = nil; --collectgarbage()
+	add_funcptr(gamerun_huihe_set, "判定")
 	
-	for _, card in ipairs(char_juese[char_acting_i].panding) do
+	for i = #char_juese[char_acting_i].panding, 1, -1 do
+	--for i, card in ipairs(char_juese[char_acting_i].panding) do
+		local card = char_juese[char_acting_i].panding[i]
 		card_wuxie(card, char_acting_i, char_acting_i, nil)
 
 		funcptr_add_tag = "无懈无效结算"
 	    add_funcptr(_panding_sub1, char_acting_i)
 
 		--  如场上有司马懿或张角，询问其改判技能  --
-		skills_guicai_guidao_ask(char_acting_i, nil, char_acting_i, _panding_get_leixing(char_acting_i, 1))
+		skills_guicai_guidao_ask(char_acting_i, nil, char_acting_i, _panding_get_leixing(char_acting_i, i))
 
 		funcptr_add_tag = "无懈无效结算/伤害插队"
-		add_funcptr(_panding_sub2, {1, nil})
+		add_funcptr(_panding_sub2, {i, nil})
 		funcptr_add_tag = nil
 
 		funcptr_add_tag = "无懈有效结算"
@@ -467,7 +486,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			funcptr_queue = {}
 			funcptr_i = 0
 
-			char_tili_deduct({3, char_acting_i, nil, "雷", ID_mubiao})
+			char_tili_deduct({3, char_acting_i, nil, "雷", char_acting_i})
 			add_funcptr(_panding_huifu)
 			timer.start(0.6)
 		else
@@ -586,14 +605,7 @@ function gamerun_huihe_jieshu(qipai)
 	char_luoyi = false
 	skill_disrow = 0
 
-	--  重置所有 '出牌阶段限x次' 技能  --
-	for i = 1,5 do
-		for k,v in pairs(char_juese[i].skill) do
-			if v=="locked" then
-				char_juese[i].skill[k] = 1
-			end
-		end
-	end
+	gamerun_skills_reset()
 	
 	msg = {char_juese[char_acting_i].name, "回合结束"}
     add_funcptr(push_message, table.concat(msg))
@@ -618,17 +630,11 @@ function gamerun_select_target(dir)
 	
 	if dir == "init" then
 	    gamerun_target_selected = char_current_i - 1
-		if gamerun_target_selected < 1 then
-			gamerun_target_selected = 5
-		end
-		if gamerun_target_selected == guankan_s then
-			gamerun_target_selected = gamerun_target_selected - 1
-		end
+		gamerun_target_skip_self("right")
 		if gamerun_target_selected < 1 then
 			gamerun_target_selected = 5
 		end
 		
-		--  跳过死亡角色  --
 		local j = true
 		while j do
 			j = false
@@ -636,6 +642,7 @@ function gamerun_select_target(dir)
 				gamerun_target_selected = gamerun_target_selected - 1
 				j = true
 			end
+			gamerun_target_skip_self("right")
 			if gamerun_target_selected < 1 then
 				gamerun_target_selected = 5
 			end
@@ -644,22 +651,11 @@ function gamerun_select_target(dir)
 	
     if dir == "right" then
 	    gamerun_target_selected = gamerun_target_selected - 1
-		
-		--  使用目标不能是自己 (火攻、借刀杀人除外)  --
-		if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
-			if gamerun_target_selected == char_current_i then
-				gamerun_target_selected = gamerun_target_selected - 1
-			end
-		else
-			if gamerun_target_selected == guankan_s then
-				gamerun_target_selected = gamerun_target_selected - 1
-			end
-		end
+		gamerun_target_skip_self("right")
 		if gamerun_target_selected < 1 then
 			gamerun_target_selected = 5
 		end
 		
-		--  跳过死亡角色  --
 		local j = true
 		while j do
 			j = false
@@ -667,15 +663,7 @@ function gamerun_select_target(dir)
 				gamerun_target_selected = gamerun_target_selected - 1
 				j = true
 			end
-			if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
-				if gamerun_target_selected == char_current_i then
-					gamerun_target_selected = gamerun_target_selected - 1
-				end
-			else
-				if gamerun_target_selected == guankan_s then
-					gamerun_target_selected = gamerun_target_selected - 1
-				end
-			end
+			gamerun_target_skip_self("right")
 			if gamerun_target_selected < 1 then
 				gamerun_target_selected = 5
 			end
@@ -684,16 +672,7 @@ function gamerun_select_target(dir)
 	
 	if dir == "left" then
 	    gamerun_target_selected = gamerun_target_selected + 1
-		
-		if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
-			if gamerun_target_selected == char_current_i then
-				gamerun_target_selected = gamerun_target_selected + 1
-			end
-		else
-			if gamerun_target_selected == guankan_s then
-				gamerun_target_selected = gamerun_target_selected + 1
-			end
-		end
+		gamerun_target_skip_self("left")
 		if gamerun_target_selected > 5 then
 		    gamerun_target_selected = 1
 		end
@@ -705,18 +684,33 @@ function gamerun_select_target(dir)
 				gamerun_target_selected = gamerun_target_selected + 1
 				j = true
 			end
-			if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
-				if gamerun_target_selected == char_current_i then
-					gamerun_target_selected = gamerun_target_selected + 1
-				end
-			else
-				if gamerun_target_selected == guankan_s then
-					gamerun_target_selected = gamerun_target_selected + 1
-				end
-			end
+			gamerun_target_skip_self("left")
 			if gamerun_target_selected > 5 then
 				gamerun_target_selected = 1
 			end
+		end
+	end
+end
+
+function gamerun_target_skip_self(direction)
+	local increment
+	if direction == "left" then
+		increment = 1
+	elseif direction == "right" then
+		increment = -1
+	end
+
+	if gamerun_target_selected > 5 then
+		gamerun_target_selected = 1
+	end
+
+	if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
+		if gamerun_target_selected == char_current_i then
+			gamerun_target_selected = gamerun_target_selected + increment
+		end
+	else
+		if gamerun_target_selected == guankan_s and (imp_card ~= "节命" and imp_card ~= "好施") then
+			gamerun_target_selected = gamerun_target_selected + increment
 		end
 	end
 end
@@ -789,34 +783,77 @@ function gamerun_wuqi_in_hand_chu(ID_s, i)
 	end
 end
 
+--  将游戏回合交给下一位玩家  --
+function gamerun_next_player()
+	char_acting_i = char_acting_i + 1
+	if char_acting_i > 5 then
+		char_acting_i = 1
+	end
+			
+	--  跳过死亡以及翻面的玩家  --
+	local j = true
+	while j do
+		j = false
+		if char_juese[char_acting_i].siwang == true then
+			char_acting_i = char_acting_i + 1
+			j = true
+		elseif char_juese[char_acting_i].fanmian == true and char_juese[char_acting_i].siwang == false then
+			char_juese[char_acting_i].fanmian = false
+			push_message(table.concat({char_juese[char_acting_i].name, "将武将牌翻回正面"}))
+			char_acting_i = char_acting_i + 1
+			j = true
+		end
+		if char_acting_i > 5 then
+			char_acting_i = 1
+		end
+	end
+
+	--  注释此行即使用主动AI，不注释不使用  --
+	--char_current_i = char_acting_i
+end
+
+--  从主公开始游戏  --
+function gamerun_start_from_lord()
+	while char_juese[char_acting_i].shenfen ~= "主公" do
+		char_acting_i = char_acting_i + 1
+		if char_acting_i > 5 then
+			char_acting_i = 1
+		end
+	end
+end
+
+--  重置所有"回限x"技能  --
+function gamerun_skills_reset()
+	for i = 1,5 do
+		for k,v in pairs(char_juese[i].skill) do
+			if v=="locked" then
+				char_juese[i].skill[k] = 1
+			end
+		end
+	end
+end
+
 
 
 
 
 
 --                     TI-Lua 系统事件                 --
-pause = false
 function on.timer()
-    --if pause == false then 
-		if funcptr_i == 0 then
-			funcptr_i = 1
-		end
-		for i = 1,#funcptr_queue do
-		end
-		if funcptr_i <= #funcptr_queue then
-			if funcptr_queue[funcptr_i].func ~= nil then
-				funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
-			else
-				print(funcptr_queue[funcptr_i].func)
-			end
-			funcptr_i = funcptr_i + 1
+	if funcptr_i == 0 then
+		funcptr_i = 1
+	end
+	
+	if funcptr_i <= #funcptr_queue then
+		if funcptr_queue[funcptr_i].func ~= nil then
+			funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
 		else
-			--stick_at,funcptr_queue = nil,{}
-			timer.stop()
+			print(funcptr_queue[funcptr_i].func)
 		end
-	--else
-		--return
-	--end
+		funcptr_i = funcptr_i + 1
+	else
+		timer.stop()
+	end
 end
 
 --  脚本初始化  --
@@ -849,307 +886,14 @@ function on.construction()
 	
 	txt_messages_init()
 	set_hints("请按'确定'开始")
-	
-    --collectgarbage()
 end
 
---  "确定" 键  --
 function on.enterKey()
     if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then return end
 	local card
-	
-	if string.find(gamerun_status, "无懈") then
-		if table.getn2(card_selected) ~= 0 then
-			card = char_juese[char_current_i].shoupai[card_highlighted]
-			if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
-				_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
-				card_selected = {}
-				set_hints("")
-				card_highlighted = 1
-			end
-		end
-		return
-	end
 
-	if gamerun_status == "选项选择" then
-		gamerun_item(item_disrow + gamerun_guankan_selected)
-		return 
-	end
-
-	--if gamerun_huihe == "开始" then
-		--  孙坚英魂  --
-		if gamerun_status == "选择目标-英魂" then
-			_yinghun_exe(is_drawx)
-			return
-		end
-	--end
-
-	if gamerun_huihe == "开始" and (gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择")) then
-		gamerun_OK = true
-		gamerun_OK_ptr()
-		return
-	end
-
-	if gamerun_huihe == "判定" then
-		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
-		    gamerun_OK = true
-			gamerun_OK_ptr()
-		end
-		return
-	end
-	
-	if gamerun_huihe == "摸牌" then
-		--  张辽突袭  --
-		if gamerun_status == "选择目标" then
-			if #char_juese[gamerun_target_selected].shoupai ~= 0 then
-				guankan_s = gamerun_target_selected
-				set_hints("'确定': 选择B '取消': 仅A")
-				gamerun_status = "选择目标-B"
-				gamerun_select_target("init")
-				platform.window:invalidate()
-				return
-			end
-		end
-		if gamerun_status == "选择目标-B" then
-			if #char_juese[gamerun_target_selected].shoupai ~= 0 then
-				_tuxi_exe(true)
-			end
-		end
-	end
-	
-	if gamerun_huihe == "出牌" then
-	    if string.find(gamerun_status, "观看手牌") then
-		    --  确认拆除/顺走手牌  --
-		    if string.find(gamerun_status, "顺") then
-			    _shun_sub2()
-				card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
-			elseif string.find(gamerun_status, "拆") then
-				if lianhuan_va == nil then
-					_chai_sub2()
-				else
-					gamerun_status = "手牌生效中"
-					set_hints("")
-				end
-				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-				
-				if lianhuan_va ~= nil then
-					local id, shuxing, hengzhi
-					id = lianhuan_va[2]; shuxing = lianhuan_va[4]
-					hengzhi = char_juese[id].hengzhi
-					
-					if hengzhi then
-						if shuxing == "火" or shuxing == "雷" then
-							_deduct_lianhuan(lianhuan_va)
-							consent_func_queue(0.6)
-						end
-					end
-				end
-			elseif string.find(gamerun_status, "杀") then
-				gamerun_status = "手牌生效中"
-				set_hints("")
-				
-				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-			    _sha_qilin_huifu()
-			elseif string.find(gamerun_status, "寒") then
-				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-			    _sha_sub3()
-			elseif string.find(gamerun_status, "寒2") then
-				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-			    _sha_sub2()
-			end
-			platform.window:invalidate()
-		elseif string.find(gamerun_status, "牌堆选择") then
-			if string.find(gamerun_status, "五谷") then
-				_wugu_get_card_zhudong(char_current_i, gamerun_guankan_selected)
-			end
-		elseif string.find(gamerun_status, "主动出牌") then
-		    if string.find(gamerun_status, "决斗") then
-			    if table.getn2(card_selected) ~= 0 then
-			        card = char_juese[char_current_i].shoupai[card_highlighted][1]
-					if card_judge_if_sha(char_current_i, card_highlighted) then
-			            funcptr_queue = {}
-						_juedou_exe_ji(wuxie_va[1], wuxie_va[2], card_highlighted)
-			            consent_func_queue(0.6)
-					end
-				end
-				return
-			end
-			
-			if string.find(gamerun_status, "火攻A") then
-			    if table.getn2(card_selected) ~= 0 then
-			        card = char_juese[char_current_i].shoupai[card_highlighted][2]
-					if card == guankan_s then
-			            funcptr_queue = {}
-						_huogong_exe_2(char_current_i, gamerun_target_selected, card_highlighted)
-			            consent_func_queue(0.6)
-					end
-				end
-				return
-			end
-
-			if string.find(gamerun_status, "火攻B") then
-			    if table.getn2(card_selected) ~= 0 then
-			        local shoupai = char_juese[wuxie_va[1]].shoupai
-			        funcptr_queue = {}
-					_huogong_beidong_exe_2(wuxie_va[1], wuxie_va[2], shoupai, card_highlighted)
-			        consent_func_queue(0.6)
-				end
-				return
-			end
-
-			if string.find(gamerun_status, "南蛮") then
-				if table.getn2(card_selected) ~= 0 then
-					card = char_juese[char_current_i].shoupai[card_highlighted]
-					if card_judge_if_sha(char_current_i, card_highlighted) then
-						funcptr_queue = {}
-						_nanman_zhudong_chu(wuxie_va)
-						consent_func_queue(0.6)
-					end
-				end
-				return
-			end
-
-			if string.find(gamerun_status, "万箭") then
-				if table.getn2(card_selected) ~= 0 then
-					card = char_juese[char_current_i].shoupai[card_highlighted]
-					if card_judge_if_shan(char_current_i, card_highlighted) then
-						funcptr_queue = {}
-						_wanjian_zhudong_chu(wuxie_va)
-						consent_func_queue(0.6)
-					end
-				end
-				return
-			end
-
-			if string.find(gamerun_status, "借刀") then
-				if table.getn2(card_selected) ~= 0 then
-					card = char_juese[char_current_i].shoupai[card_highlighted]
-					if card_judge_if_sha(char_current_i, card_highlighted) then
-						funcptr_queue = {}
-						_jiedao_beidong_chu(char_current_i, wuxie_va)
-						consent_func_queue(0.6)
-					end
-				end
-				return
-			end
-
-			if string.find(gamerun_status, "-杀") then
-				if table.getn2(card_selected) ~= 0 then
-					if card_judge_if_shan(char_current_i, card_highlighted) then
-						funcptr_queue = {}
-						_sha_zhudong_chu(wuxie_va)
-						consent_func_queue(0.6)
-					end
-				end
-				return
-			end
-
-			if string.find(gamerun_status, "雌雄") then
-				if table.getn2(card_selected) ~= 0 then
-					funcptr_queue = {}
-					_sha_cixiong_zhudong_qipai(wuxie_va)
-					consent_func_queue(0.6)
-				end
-				return
-			end
-			
-			--  青龙刀出杀  --
-			if string.find(gamerun_status, "青龙") then
-			    if table.getn2(card_selected) ~= 0 then
-			        card = char_juese[char_current_i].shoupai[card_highlighted][1]
-					if card_judge_if_sha(char_current_i, card_highlighted) then
-			            funcptr_queue = {}
-						_sha_exe_2(char_current_i, gamerun_target_selected, card_highlighted)
-			            consent_func_queue(0.6)
-					end
-				end
-			end
-	    
-		    --  贯石斧强制命中  --
-		    if string.find(gamerun_status, "贯石") then
-		        if table.getn2(card_selected) == 2 then
-				    gamerun_status = "手牌生效中"
-		            set_hints("")
-			        funcptr_queue = {}; card_highlighted = 1
-			        card_qipai_go()
-	                _sha_exe_3(char_current_i, gamerun_target_selected, guankan_s)
-		            consent_func_queue(0.6)
-				end
-		    end
-			
-			--  夏侯惇刚烈  --
-			if string.find(gamerun_status, "刚烈") then
-		        if table.getn2(card_selected) == 2 then
-					funcptr_queue = {}
-					_ganglie_exe_1()
-					consent_func_queue(0.6)
-				end
-				return
-		    end
-
-		elseif string.find(gamerun_status, "拼点") then
-			gamerun_OK = true
-			gamerun_OK_pindian_ptr()
-			return
-		elseif gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
-		    gamerun_OK = true
-			gamerun_OK_ptr()
-			return
-		else
-		    if table.getn2(card_selected) == 1 and card_selected[card_highlighted] ~= nil then
-				local carda = char_juese[char_current_i].shoupai[card_highlighted][1]
-				if carda == "借刀杀人" or carda == "铁锁连环" then
-					if gamerun_status == "选择目标" then
-						--  进入借刀杀人/铁索连环第二阶段  --
-						if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
-							guankan_s = gamerun_target_selected
-							if carda == "借刀杀人" then
-								set_hints("请选择目标B")
-							else
-								set_hints("'确定'：选择B '取消'：仅A")
-							end
-							gamerun_status = "选择目标-B"
-							gamerun_select_target("init")
-							platform.window:invalidate()
-						end
-					elseif gamerun_status == "选择目标-B" then
-						--  开始借刀杀人/连环  --
-						if card_chupai(true) then
-							--  恢复状态  --
-							--on.tabKey()
-							card_selected = {}
-							card_highlighted = 1
-							platform.window:invalidate()
-						end
-					end
-				else
-					--  出牌  --
-					if card_chupai(card_highlighted) then
-						--  恢复状态  --
-						--on.tabKey()
-						card_selected = {}
-						card_highlighted = 1
-						platform.window:invalidate()
-					end
-				end
-			end
-			
-			--  丈八蛇矛  --
-			if table.getn2(card_selected) == 2 then
-				if card_chupai(card_highlighted) then
-					--  恢复状态  --
-					card_selected = {}
-					--on.tabKey()
-					card_highlighted = 1
-					platform.window:invalidate()
-				end
-			end
-		end
-		return
-	end
-	
     --  刚刚选局  --
-    if gamerun_huihe == "" then
+    if gamerun_huihe == "" and gamerun_status ~= "选项选择" then
 	    set_hints("")
         gamerun_init()    -- 开始阶段初始化
 	    consent_func_queue(0.2)
@@ -1170,61 +914,268 @@ function on.enterKey()
 	    consent_func_queue(0.2)
 		return
 	end
-	
-	--  上一玩家回合结束，按确定键继续  --
-	
-	if gamerun_status == "确认操作" then
+
+	if gamerun_status == "选项选择" then
+		gamerun_item(item_disrow + gamerun_guankan_selected)
+		return
+	end
+
+	if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		gamerun_OK = true
-		gamerun_OK_ptr()
-	else
-		if gamerun_huihe == "结束" or gamerun_huihe == "开始" then
-			if gamerun_huihe == "结束" then
-				char_acting_i = char_acting_i + 1
-				if char_acting_i > 5 then
-					char_acting_i = 1
-				end
+		if string.find(gamerun_status, "拼点") then
+			gamerun_OK_pindian_ptr()
+		else
+			gamerun_OK = true
+			gamerun_OK_ptr()
+		end
+		return
+	end
+
+	if string.find(gamerun_status, "观看手牌") then
+		if string.find(gamerun_status, "顺") then
+			_shun_sub2()
+			card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
+		elseif string.find(gamerun_status, "拆") then
+			if lianhuan_va == nil then
+				_chai_sub2()
+			else
+				gamerun_status = "手牌生效中"
+				set_hints("")
+			end
+			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
 			
-				--  跳过死亡以及翻面的玩家  --
-				local j = true
-				while j do
-					j = false
-					if char_juese[char_acting_i].siwang == true then
-						char_acting_i = char_acting_i + 1
-						j = true
-					elseif char_juese[char_acting_i].fanmian == true and char_juese[char_acting_i].siwang == false then
-						char_juese[char_acting_i].fanmian = false
-						push_message(table.concat({char_juese[char_acting_i].name, "将武将牌翻回正面"}))
-						char_acting_i = char_acting_i + 1
-						j = true
-					end
-					if char_acting_i > 5 then
-						char_acting_i = 1
-					end
-				end
-
-
-
-
-
-				--  注释此行即使用主动AI，不注释不使用  --
-				--char_current_i = char_acting_i
-			elseif gamerun_huihe == "开始" then
-				while char_juese[char_acting_i].shenfen ~= "主公" do
-					char_acting_i = char_acting_i + 1
-					if char_acting_i > 5 then
-						char_acting_i = 1
+			if lianhuan_va ~= nil then
+				local id, shuxing, hengzhi
+				id = lianhuan_va[2]; shuxing = lianhuan_va[4]
+				hengzhi = char_juese[id].hengzhi
+				
+				if hengzhi then
+					if shuxing == "火" or shuxing == "雷" then
+						_deduct_lianhuan(lianhuan_va)
+						consent_func_queue(0.6)
 					end
 				end
 			end
-			
+		elseif string.find(gamerun_status, "杀") then
+			gamerun_status = "手牌生效中"
 			set_hints("")
-			card_highlighted = 1
-			gamerun_huihe_start()    -- 下一玩家回合开始
-			consent_func_queue(0.2)
+			
+			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
+			_sha_qilin_huifu()
+		elseif string.find(gamerun_status, "寒") then
+			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
+			_sha_sub3()
+		elseif string.find(gamerun_status, "寒2") then
+			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
+			_sha_sub2()
 		end
+
+		platform.window:invalidate()
+		return
+	end
+
+	if string.find(gamerun_status, "主动出牌") then
+		if string.find(gamerun_status, "无懈") then
+			if table.getn2(card_selected) ~= 0 then
+				card = char_juese[char_current_i].shoupai[card_highlighted]
+				if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
+					_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
+					card_selected = {}
+					set_hints("")
+					card_highlighted = 1
+				end
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "决斗") then
+			if table.getn2(card_selected) ~= 0 then
+				card = char_juese[char_current_i].shoupai[card_highlighted][1]
+				if card_judge_if_sha(char_current_i, card_highlighted) then
+					funcptr_queue = {}
+					_juedou_exe_ji(wuxie_va[1], wuxie_va[2], card_highlighted)
+					consent_func_queue(0.6)
+				end
+			end
+			return
+		end
+	
+		if string.find(gamerun_status, "火攻A") then
+			if table.getn2(card_selected) ~= 0 then
+				card = char_juese[char_current_i].shoupai[card_highlighted][2]
+				if card == guankan_s then
+					funcptr_queue = {}
+					_huogong_exe_2(char_current_i, gamerun_target_selected, card_highlighted)
+					consent_func_queue(0.6)
+				end
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "火攻B") then
+			if table.getn2(card_selected) ~= 0 then
+				local shoupai = char_juese[wuxie_va[1]].shoupai
+				funcptr_queue = {}
+				_huogong_beidong_exe_2(wuxie_va[1], wuxie_va[2], shoupai, card_highlighted)
+				consent_func_queue(0.6)
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "南蛮") then
+			if table.getn2(card_selected) ~= 0 then
+				card = char_juese[char_current_i].shoupai[card_highlighted]
+				if card_judge_if_sha(char_current_i, card_highlighted) then
+					funcptr_queue = {}
+					_nanman_zhudong_chu(wuxie_va)
+					consent_func_queue(0.6)
+				end
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "万箭") then
+			if table.getn2(card_selected) ~= 0 then
+				card = char_juese[char_current_i].shoupai[card_highlighted]
+				if card_judge_if_shan(char_current_i, card_highlighted) then
+					funcptr_queue = {}
+					_wanjian_zhudong_chu(wuxie_va)
+					consent_func_queue(0.6)
+				end
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "借刀") then
+			if table.getn2(card_selected) ~= 0 then
+				card = char_juese[char_current_i].shoupai[card_highlighted]
+				if card_judge_if_sha(char_current_i, card_highlighted) then
+					funcptr_queue = {}
+					_jiedao_beidong_chu(char_current_i, wuxie_va)
+					consent_func_queue(0.6)
+				end
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "-杀") then
+			if table.getn2(card_selected) ~= 0 then
+				if card_judge_if_shan(char_current_i, card_highlighted) then
+					funcptr_queue = {}
+					_sha_zhudong_chu(wuxie_va)
+					consent_func_queue(0.6)
+				end
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "雌雄") then
+			if table.getn2(card_selected) ~= 0 then
+				funcptr_queue = {}
+				_sha_cixiong_zhudong_qipai(wuxie_va)
+				consent_func_queue(0.6)
+			end
+			return
+		end
+	
+		if string.find(gamerun_status, "青龙") then
+			if table.getn2(card_selected) ~= 0 then
+				card = char_juese[char_current_i].shoupai[card_highlighted][1]
+				if card_judge_if_sha(char_current_i, card_highlighted) then
+					funcptr_queue = {}
+					_sha_exe_2(char_current_i, gamerun_target_selected, card_highlighted)
+					consent_func_queue(0.6)
+				end
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "贯石") then
+			if table.getn2(card_selected) == 2 then
+				gamerun_status = "手牌生效中"
+				set_hints("")
+				funcptr_queue = {}; card_highlighted = 1
+				card_qipai_go()
+				_sha_exe_3(char_current_i, gamerun_target_selected, guankan_s)
+				consent_func_queue(0.6)
+			end
+			return
+		end
+	
+		if string.find(gamerun_status, "刚烈") then
+			if table.getn2(card_selected) == 2 then
+				funcptr_queue = {}
+				_ganglie_exe_1()
+				consent_func_queue(0.6)
+			end
+			return
+		end
+
+		return
+	end
+
+	if string.find(gamerun_status, "牌堆选择") then
+		if string.find(gamerun_status, "五谷") then
+			_wugu_get_card_zhudong(char_current_i, gamerun_guankan_selected)
+		end
+		return
 	end
 	
-	--  需弃的牌选择完毕  --
+	--  出牌阶段特有模式  --
+	if gamerun_huihe == "出牌" then
+		if table.getn2(card_selected) == 1 and card_selected[card_highlighted] ~= nil then
+			local carda = char_juese[char_current_i].shoupai[card_highlighted][1]
+			if carda == "借刀杀人" or carda == "铁锁连环" then
+				if gamerun_status == "选择目标" then
+					--  进入借刀杀人/铁索连环第二阶段  --
+					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
+						guankan_s = gamerun_target_selected
+						if carda == "借刀杀人" then
+							set_hints("请选择目标B")
+						else
+							set_hints("'确定'：选择B '取消'：仅A")
+						end
+						gamerun_status = "选择目标-B"
+						gamerun_select_target("init")
+						platform.window:invalidate()
+					end
+				elseif gamerun_status == "选择目标-B" then
+					--  开始借刀杀人/连环  --
+					if card_chupai(true) then
+						--  恢复状态  --
+						card_selected = {}
+						card_highlighted = 1
+						platform.window:invalidate()
+					end
+				end
+			else
+				--  出牌  --
+				if card_chupai(card_highlighted) then
+					--  恢复状态  --
+					card_selected = {}
+					card_highlighted = 1
+					platform.window:invalidate()
+				end
+			end
+
+			return
+		end
+			
+		--  丈八蛇矛  --
+		if table.getn2(card_selected) == 2 then
+			if card_chupai(card_highlighted) then
+				--  恢复状态  --
+				card_selected = {}
+				card_highlighted = 1
+				platform.window:invalidate()
+			end
+			return
+		end
+
+		return
+	end
+
+	--  弃牌阶段特有模式  --
 	if gamerun_huihe == "弃牌" then
 		--  袁绍作为主公，若有一个群雄势力角色存活，其手牌上限+2  --
 		local extra = 0
@@ -1239,6 +1190,22 @@ function on.enterKey()
 		    consent_func_queue(0.2)
 		end
 	end
+	
+	--  结束阶段特有模式  --
+	if gamerun_huihe == "结束" or gamerun_huihe == "开始" then
+		if gamerun_huihe == "结束" then
+			gamerun_next_player()
+		elseif gamerun_huihe == "开始" then
+			gamerun_start_from_lord()
+		end
+			
+		set_hints("")
+		card_highlighted = 1
+		gamerun_huihe_start()    -- 下一玩家回合开始
+		consent_func_queue(0.2)
+		
+		return
+	end
 end
 
 --  "取消/弃牌" 键  --
@@ -1246,136 +1213,114 @@ function on.escapeKey()
     local msg, card
 
 	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then return end
-	if gamerun_status == "手牌生效中" or string.find(gamerun_status, "观看手牌") or gamerun_status == "AI出牌" then return end
+	if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then return end
 	if string.find(gamerun_status, "五谷") then return end
-	if string.find(gamerun_status, "无懈") then
-		funcptr_queue = {}
-		_wuxie_zhudong_fangqi(char_current_i, gamerun_target_selected)
-		return
-	end
 	
-	if gamerun_huihe == "摸牌" then
-		if gamerun_status == "选择目标-B" then
-			_tuxi_exe(false)
+	--  未选取牌时  --
+	if table.getn2(card_selected) == 0 then
+		if string.find(gamerun_status, "主动出牌") then
+			if string.find(gamerun_status, "无懈") then
+				funcptr_queue = {}
+				_wuxie_zhudong_fangqi()
+				return
+			end
+
+			if string.find(gamerun_status, "决斗") then
+				funcptr_queue = {}
+				_juedou_exe_fangqi(wuxie_va[1], wuxie_va[2])
+				consent_func_queue(0.6)
+				return
+			end
+			
+			if string.find(gamerun_status, "火攻A") then
+				funcptr_queue = {}
+				_huogong_exe_3(char_current_i)
+				consent_func_queue(0.6)
+				return
+			end
+
+			if string.find(gamerun_status, "南蛮") then
+				funcptr_queue = {}
+				_nanman_zhudong_fangqi(wuxie_va)
+				consent_func_queue(0.6)
+				return
+			end
+
+			if string.find(gamerun_status, "万箭") then
+				funcptr_queue = {}
+				_wanjian_zhudong_fangqi(wuxie_va)
+				consent_func_queue(0.6)
+				return
+			end
+
+			if string.find(gamerun_status, "借刀") then
+				funcptr_queue = {}
+				_jiedao_beidong_fangqi(wuxie_va)
+				consent_func_queue(0.6)
+				return
+			end
+
+			if string.find(gamerun_status, "-杀") then
+				funcptr_queue = {}
+				_sha_zhudong_fangqi(wuxie_va, true)
+				consent_func_queue(0.6)
+				return
+			end
+
+			if string.find(gamerun_status, "雌雄") then
+				funcptr_queue = {}
+				_sha_cixiong_zhudong_fangqi(wuxie_va)
+				consent_func_queue(0.6)
+				return
+			end
+			
+			if string.find(gamerun_status, "青龙") or string.find(gamerun_status, "贯石") then
+				_sha_exe_2_g()
+				return
+			end
+
+			if string.find(gamerun_status, "刚烈") then
+				funcptr_queue = {}
+				_ganglie_exe_2()
+				consent_func_queue(0.6)
+				return
+			end
+
+			return
 		end
-	end
-	
-    if gamerun_huihe == "出牌" then
-	    --  未选取牌时  --
-	    if table.getn2(card_selected) == 0 then
-		    if string.find(gamerun_status, "主动出牌") then
-			    --  无牌进行主动回应，放弃  --
-			    if string.find(gamerun_status, "决斗") then
-				    funcptr_queue = {}
-				    _juedou_exe_fangqi(wuxie_va[1], wuxie_va[2])
-					consent_func_queue(0.6)
-				end
-				
-				if string.find(gamerun_status, "火攻A") then
-				    funcptr_queue = {}
-				    _huogong_exe_3(char_current_i)
-					consent_func_queue(0.6)
-				end
 
-				if string.find(gamerun_status, "南蛮") then
-				    funcptr_queue = {}
-				    _nanman_zhudong_fangqi(wuxie_va)
-					consent_func_queue(0.6)
-				end
+		if string.find(gamerun_status, "技能选择") then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" then
+				gamerun_OK = false
+				gamerun_OK_ptr()
+			end
 
-				if string.find(gamerun_status, "万箭") then
-				    funcptr_queue = {}
-				    _wanjian_zhudong_fangqi(wuxie_va)
-					consent_func_queue(0.6)
-				end
+			return
+		end
 
-				if string.find(gamerun_status, "借刀") then
-				    funcptr_queue = {}
-				    _jiedao_beidong_fangqi(wuxie_va)
-					consent_func_queue(0.6)
-				end
-
-				if string.find(gamerun_status, "-杀") then
-				    funcptr_queue = {}
-				    _sha_zhudong_fangqi(wuxie_va, true)
-					consent_func_queue(0.6)
-				end
-
-				if string.find(gamerun_status, "雌雄") then
-				    funcptr_queue = {}
-				    _sha_cixiong_zhudong_fangqi(wuxie_va)
-					consent_func_queue(0.6)
-				end
-
-				if string.find(gamerun_status, "无懈") then
-					_wuxie_zhudong_fangqi()
-				end
-				
-				if string.find(gamerun_status, "青龙") or string.find(gamerun_status, "贯石") then
-				    _sha_exe_2_g()
-				end
-				
-				--  夏侯惇刚烈  --
-				if string.find(gamerun_status, "刚烈") then
-					funcptr_queue = {}
-					_ganglie_exe_2()
-					consent_func_queue(0.6)
-					return
-				end
-
-			elseif gamerun_status == "确认操作" then
-		        gamerun_OK = false
-			    gamerun_OK_ptr()
-			elseif string.find(gamerun_status, "选择目标") then
-				
-			elseif string.find(gamerun_status, "技能选择") then
-				if imp_card == "强袭" and gamerun_status == "技能选择-单牌" then
-					gamerun_OK = false
-					gamerun_OK_ptr()
-				end
-
-				if imp_card == "濒死" and gamerun_status == "技能选择-多牌" then
-					gamerun_OK = false
-					gamerun_OK_ptr()
-				end
-			elseif gamerun_dangxian == true then
-				--  跳过死亡的玩家  --
-				local j = true
-				while j do
-					j = false
-					if char_juese[char_acting_i].siwang == true then
-						char_acting_i = char_acting_i + 1
-						j = true
-					end
-					if char_acting_i > 5 then
-						char_acting_i = 1
-					end
-				end
-				for i = 1,5 do
-					for k,v in pairs(char_juese[i].skill) do
-						if v=="locked" then
-							char_juese[i].skill[k] = 1
-						end
-					end
-				end
-
-
-
-				--  注释此行即使用主动AI，不注释不使用  --
-				--char_current_i = char_acting_i
-
+		if gamerun_status == "确认操作" then
+			gamerun_OK = false
+			gamerun_OK_ptr()
+			return
+		end
+		
+		--  出牌阶段特有模式  --
+		if gamerun_huihe == "出牌" then
+			if gamerun_dangxian == true then
+				gamerun_skills_reset()
 				set_hints("")
 				card_highlighted = 1
 				gamerun_huihe_start()    -- 正常回合开始
 				consent_func_queue(0.2)
 			else
-		        --  出牌结束，进入弃牌阶段  --
-	            gamerun_huihe_set("弃牌")
-		
+				--  出牌结束，进入弃牌阶段  --
+				gamerun_huihe_set("弃牌")
+				gamerun_status = ""
+	
 				--  袁绍作为主公，若有一个群雄势力角色存活，其手牌上限+2  --
 				local extra = 0
 				extra = skills_judge_xueyi(char_current_i)
-		
+	
 				--  判断吕蒙克己条件  --
 				if skills_judge_keji() == false then
 					-- 如果体力小于手牌数则需弃牌 --
@@ -1396,17 +1341,19 @@ function on.escapeKey()
 					consent_func_queue(0.2)
 				end
 			end
-			return
-	    end
-	    
-		--  已选取至少一张牌时  --
+		end
+
+		return
+	end
+	
+	--  已选取至少一张牌时  --
+	if table.getn2(card_selected) > 0 then
 		card = char_juese[char_current_i].shoupai[card_highlighted][1]
 		if table.getn2(card_selected) == 1 and card == "铁锁连环" then
 			if gamerun_status == "选择目标" then
 				--  发动铁索连环 (重铸效果)  --
 				card_lian_chongzhu({card_highlighted, char_current_i})
 				--  恢复状态  --
-				--on.tabKey()
 				card_selected = {}
 				card_highlighted = 1
 				platform.window:invalidate()
@@ -1414,48 +1361,26 @@ function on.escapeKey()
 				--  发动铁索连环 (连环效果)  --
 				if card_chupai(false) then
 					--  恢复状态  --
-					--on.tabKey()
 					card_selected = {}
 					card_highlighted = 1
 					platform.window:invalidate()
 				end
 			end
 		end
-		
-		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "铁锁连环" then
-				gamerun_OK = false
-				gamerun_OK_ptr()
-			end
 
-			if imp_card == "濒死" and gamerun_status == "技能选择-多牌" then
-				gamerun_OK = false
-				gamerun_OK_ptr()
-			end
-		end
-	end
-	
-	if gamerun_huihe == "结束" or gamerun_huihe == "摸牌" then
-		if gamerun_status == "确认操作" then
-		    gamerun_OK = false
-			gamerun_OK_ptr()
-		end
-	end
-
-	if gamerun_huihe == "开始" or gamerun_huihe == "判定" then
-		if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
-		    gamerun_OK = false
-			gamerun_OK_ptr()
-		end
+		return
 	end
 end
 
 --  左/右键 (移动高亮的牌/选择卡牌使用目标)  --
 function on.arrowKey(key)
-	--if card_highlighted <= 0 then return end
-	if (gamerun_huihe == "" or gamerun_huihe == "游戏结束") and gamerun_status ~= "选项选择" then return end
-    --if ((gamerun_huihe == "结束" or gamerun_status == "手牌生效中" or string.find(gamerun_status, "确认操作")) and gamerun_status ~= "选项选择") then return end
-	if ((gamerun_huihe == "结束" or gamerun_status == "手牌生效中") and gamerun_status ~= "选项选择") then return end
+	if (gamerun_huihe == "" or gamerun_huihe == "游戏结束") and gamerun_status ~= "选项选择" then
+		return
+	end
+	if ((gamerun_huihe == "结束" or gamerun_status == "手牌生效中") and gamerun_status ~= "选项选择") then
+		return
+	end
+
     if key == "left" then
 	    if string.find(gamerun_status, "选择目标") or gamerun_status == "技能选择-目标" or gamerun_status == "技能选择-目标B" then
 		    --  选择卡牌使用目标状态  --
@@ -1473,7 +1398,7 @@ function on.arrowKey(key)
 			end
 		else
 		    --  选取手牌状态  --
-			--  已选取牌的情况下不允许移动 (弃牌阶段、装备丈八蛇矛时、贯石斧效果除外)  --
+			--  已选取牌的情况下不允许移动  --
 			local wuqi
 			if #char_juese[char_current_i].wuqi ~= 0 then
 				wuqi = char_juese[char_current_i].wuqi[1]
@@ -1481,6 +1406,7 @@ function on.arrowKey(key)
 				wuqi = ""
 			end
 			
+			--  允许移动的情况  --
 		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or wuqi == "丈八矛" or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
 		        if card_highlighted > 1 then
 		            card_highlighted = card_highlighted - 1
@@ -1548,10 +1474,26 @@ end
 --  "选取" 键  --
 function on.tabKey()
     local card, card2
-    if card_highlighted <=0 then return end
-	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" or gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then return end
-    if gamerun_huihe == "结束" or string.find(gamerun_status, "确认操作") or string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then return end
-	if #char_juese[char_current_i].shoupai == 0 then return end
+
+    if card_highlighted <= 0 then
+		return
+	end
+
+	if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then
+		return
+	end
+	
+	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" or gamerun_huihe == "结束" then
+		return
+	end
+
+    if string.find(gamerun_status, "确认操作") or string.find(gamerun_status, "选项选择") or string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then
+		return
+	end
+	
+	if #char_juese[char_current_i].shoupai == 0 then
+		return
+	end
 	
     if card_selected[card_highlighted] ~= nil then
 	    --  取消选择  --
@@ -1572,11 +1514,12 @@ function on.tabKey()
 			end
 		end
 		
-		if (gamerun_huihe == "开始" or gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or imp_card == "鬼才"))) and table.getn2(card_selected) == 0 then
+		if table.getn2(card_selected) == 0 then
 		    if string.find(gamerun_status, "选择目标") or gamerun_status == "" then
 			    set_hints("请您出牌")
 			    gamerun_status = ""
 			    gamerun_target_selected = 0
+				return
 			end
 			
 			if gamerun_status == "技能选择-目标" or gamerun_status == "技能选择-目标B" then
@@ -1594,10 +1537,6 @@ function on.tabKey()
 				end
 				return
 			end
-			
-			if string.find(gamerun_status, "主动出牌") then
-			
-			end
 		end
 		
 		--  丈八蛇矛恢复默认出牌方式  --
@@ -1614,56 +1553,57 @@ function on.tabKey()
 			    gamerun_status = ""
 			    gamerun_target_selected = 0
 			end
+
+			return
 		end
 	else
-	    if gamerun_huihe == "开始" or gamerun_huihe == "出牌" or (gamerun_huihe == "判定" and (string.find(gamerun_status, "无懈") or string.find(gamerun_status, "技能选择"))) then
-			if gamerun_status == "技能选择-单牌" or gamerun_status == "技能选择-多牌" then
-				card_selected[card_highlighted] = 0
-				if gamerun_tab_ptr ~= nil then
-					gamerun_tab_ptr()
-				end
-				platform.window:invalidate()
-				return
+		if gamerun_status == "技能选择-单牌" or gamerun_status == "技能选择-多牌" then
+			card_selected[card_highlighted] = 0
+			if gamerun_tab_ptr ~= nil then
+				gamerun_tab_ptr()
 			end
+			platform.window:invalidate()
+			return
+		end
+
+		card = char_juese[char_current_i].shoupai[card_highlighted][1]
+
+		if gamerun_status == "" then
+			set_hints(card_tishi[card])
 		
-		    card = char_juese[char_current_i].shoupai[card_highlighted][1]
-		    
-			local flag = true
-			if #char_juese[char_current_i].wuqi ~= 0 then
-				if char_juese[char_current_i].wuqi[1] == "丈八矛" then
-					if table.getn2(card_selected) < 2 then
-						card_selected[card_highlighted] = 0
-					end
-					if table.getn2(card_selected) == 2 then
-						set_hints("杀")
-						gamerun_status = "选择目标"
-						gamerun_select_target("init")
-					end
-					flag = false
-				end
-			end
-			
-			if flag then
-				if string.find(gamerun_status, "贯石") then
-					if table.getn2(card_selected) < 2 then
-						card_selected[card_highlighted] = 0
-					end
-				else
-					card_selected[card_highlighted] = 0
-				end
-			end
-			
-			if gamerun_status == "" then
-			    set_hints(card_tishi[card])
-			
-			    --  选取的是锦囊 (闪电、无懈可击、南蛮入侵、万箭齐发、桃园结义、无中生有、五谷丰登除外)、杀  --
-				--  借刀杀人、铁锁连环选取目标A  --
-			    if card_get_leixing(card) == "延时类锦囊" and card ~= "闪电" or card == "顺手牵羊" or card == "过河拆桥" or card == "决斗" or card == "火攻" or card == "杀" or card == "火杀" or card == "雷杀" or card == "借刀杀人" or card == "铁锁连环" then
-			        gamerun_status = "选择目标"
-				    gamerun_select_target("init")    -- 初始化选择目标状态
-			    end
+			--  选取的是锦囊 (闪电、无懈可击、南蛮入侵、万箭齐发、桃园结义、无中生有、五谷丰登除外)、杀  --
+			--  借刀杀人、铁锁连环选取目标A  --
+			if card_get_leixing(card) == "延时类锦囊" and card ~= "闪电" or card == "顺手牵羊" or card == "过河拆桥" or card == "决斗" or card == "火攻" or card == "杀" or card == "火杀" or card == "雷杀" or card == "借刀杀人" or card == "铁锁连环" then
+				gamerun_status = "选择目标"
+				gamerun_select_target("init")    -- 初始化选择目标状态
 			end
 		end
+		    
+		local flag = true
+		if #char_juese[char_current_i].wuqi ~= 0 then
+			if char_juese[char_current_i].wuqi[1] == "丈八矛" then
+				if table.getn2(card_selected) < 2 then
+					card_selected[card_highlighted] = 0
+				end
+				if table.getn2(card_selected) == 2 then
+					set_hints("杀")
+					gamerun_status = "选择目标"
+					gamerun_select_target("init")
+				end
+				flag = false
+			end
+		end
+			
+		if flag then
+			if string.find(gamerun_status, "贯石") then
+				if table.getn2(card_selected) < 2 then
+					card_selected[card_highlighted] = 0
+				end
+			else
+				card_selected[card_highlighted] = 0
+			end
+		end
+			
 	    --  选择的牌超过需弃牌数，则不能继续选择  --
 		if gamerun_huihe == "弃牌" and table.getn2(card_selected) < #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili then
 		    card_selected[card_highlighted] = 0
@@ -1761,15 +1701,23 @@ function on.charIn(char)
 end
 
 function skills_rst()
-	gamerun_wuqi_out_hand(char_current_i)
-	card_selected = {}
-	card_highlighted = 1
+	last_OK = false
 	imp_card = ""
 	skill_text_1 = ""
 	skill_text_2 = ""
-	set_hints("请您出牌")
-	gamerun_status = ""
-	last_OK = false
+	gamerun_wuqi_out_hand(char_acting_i)
+
+	if char_acting_i == char_current_i then
+		card_selected = {}
+		card_highlighted = 1
+		set_hints("请您出牌")
+		gamerun_status = ""
+	else
+		set_hints("")
+		gamerun_status = "AI出牌"
+
+		ai_card_use(char_acting_i)
+	end
 end
 
 --  点击客户区时，移除富文本框的焦点  --

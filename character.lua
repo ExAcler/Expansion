@@ -62,7 +62,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["贾诩"] = {{3,3}, "群", false, {"完杀", "乱武", "帷幕"}, {"锁定", "限定", "锁定"}, true},	
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","节命","乱击","鬼才","放逐","当先","火计","化身","新生","魂姿","天义","归心","反馈"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","节命","好施","制衡","直谏","当先","火计","化身","新生","英魂","天义","结姻","仁德"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -232,6 +232,7 @@ char_luoyi = false  -- 许褚使用了裸衣技能
 char_xiangying_2 = false	-- 吕布无双、董卓肉林，需要己方使用两张手牌抵消的
 char_liegong = false	-- 黄忠发动烈弓标志
 char_zhuque = false		-- 发动朱雀羽扇标志
+char_haoshi = false		-- 鲁肃发动好施标志
 skill_used = false  -- 已经发动过技能
 end
 
@@ -423,6 +424,7 @@ function _wujiang_sub1()
 	    if char_juese[i].shenfen == "主公" and i ~= char_current_i then
 		    t = math.random(#char_wujiang_zhugong)
 			-- t = 10 取消锁定选择孙笑川主公
+			t = 10
 			char_juese[i].name = char_wujiang_zhugong[t]
 			zhugong_name = char_juese[i].name
 			char_juese[i].tili_max = char_juese_jineng[char_wujiang_zhugong[t]][1][1] + 1
@@ -655,7 +657,7 @@ end
 function char_skills_sellblood(va_list)
 	local id, laiyuan, tili, shuxing, AOE
 	local hengzhi
-	local p = _p, fp
+
 	id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]; fp = va_list[6]; AOE = va_list[7]
 	tili = char_juese[id].tili - _deduct_count(va_list)
 
@@ -1107,7 +1109,7 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 	local n_jiu = 0
 
 	for i = 1, #qualified_cards do
-		local card = char_juese[char_current_i].shoupai[i]
+		local card = char_juese[char_current_i].shoupai[qualified_cards[i]]
 
 		if card[1] == "酒" then
 			n_jiu = n_jiu + 1
