@@ -62,7 +62,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["贾诩"] = {{3,3}, "群", false, {"完杀", "乱武", "帷幕"}, {"锁定", "限定", "锁定"}, true},	
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","节命","乱击","鬼才","放逐","当先","火计","化身","新生","魂姿","天义","归心","反馈"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","节命","乱击","鬼才","放逐","当先","火计","化身","新生","魂姿","天义","遗计"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -649,6 +649,8 @@ end
 --  翻面结算 --
 function char_fanmian(ID)
 	char_juese[ID].fanmian = not char_juese[ID].fanmian
+	local msg = table.concat({char_juese[ID].name, "将武将牌翻面"})
+	push_message(msg)
 end
 
 --  卖血技能结算  --
@@ -663,14 +665,16 @@ function char_skills_sellblood(va_list)
 
 	--  郭嘉发动遗计  --
 	if char_juese[id].skill["遗计"] == "available" and cansellblood == true then
-		skills_yiji(id, _deduct_count(va_list))
+		skills_yiji_add(id, _deduct_count(va_list))
 		soldblood = true
 	end
 
 	--  司马懿发动反馈  --
 	if char_juese[id].skill["反馈"] == "available" and cansellblood == true and laiyuan ~= nil then
-		skills_fankui(id, laiyuan)
-		soldblood = true
+		if ai_card_stat(laiyuan, true) >= 1 then
+			add_funcptr(skills_fankui, {id, laiyuan})
+			soldblood = true
+		end
 	end
 	
 	--  曹丕发动放逐  --
@@ -681,7 +685,7 @@ function char_skills_sellblood(va_list)
 	
 	--  神曹操发动归心  --
 	if char_juese[id].skill["归心"] == "available" and cansellblood == true and laiyuan ~= nil then
-		skills_guixin(id)
+		skills_guixin_add(id, _deduct_count(va_list))
 		soldblood = true
 	end
 	
@@ -1107,7 +1111,7 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 	local n_jiu = 0
 
 	for i = 1, #qualified_cards do
-		local card = char_juese[char_current_i].shoupai[i]
+		local card = char_juese[char_current_i].shoupai[qualified_cards[i]]
 
 		if card[1] == "酒" then
 			n_jiu = n_jiu + 1

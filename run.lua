@@ -345,7 +345,7 @@ function _start_sub1()	--  回合开始：当前玩家进入出牌阶段
         gamerun_huihe_set("出牌")
         set_hints("请您出牌")
 	else
-	    msg = {char_juese[char_current_i].name, "对'乐不思蜀'判定成功, 不能出牌"}
+	    msg = {char_juese[char_current_i].name, "不能出牌"}
 		push_message(table.concat(msg))
 		msg = nil; --collectgarbage()
 	
@@ -567,7 +567,7 @@ function gamerun_huihe_jieshu(qipai)
 	--  回合结束阶段技能  --
 	--  貂蝉闭月：可在回合结束阶段摸一张牌  --
 	if char_juese[char_acting_i].skill["闭月"] == "available" then
-		skills_biyue(char_acting_i)
+		add_funcptr(skills_biyue,char_acting_i)
 	end
 
 	if char_juese[char_acting_i].skill["崩坏"] == "available" then
@@ -956,6 +956,14 @@ function on.enterKey()
 			elseif string.find(gamerun_status, "寒2") then
 				card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
 			    _sha_sub2()
+			elseif string.find(gamerun_status, "归心") then
+				card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
+				_guixin_sub2({gamerun_guankan_selected, guankan_s, guankan_d})
+			elseif string.find(gamerun_status, "反馈") then
+				gamerun_status = fankui_gamerun_status
+				set_hints("")
+				card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
+				_fankui_huifu()
 			end
 			platform.window:invalidate()
 		elseif string.find(gamerun_status, "牌堆选择") then

@@ -59,7 +59,9 @@ end
 --  AI决定是否发动寒冰剑  --
 function ai_judge_hanbing(ID_mubiao)
 	if #char_juese[ID_mubiao].shoupai >= 2 then
-		if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max then
+		if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max and ai_judge_random_percent(70) == 1 then
+			return true
+		elseif ai_judge_random_percent(30) == 1 then
 			return true
 		end
 	end
@@ -95,7 +97,7 @@ function ai_judge_jiejiu(ID_s, ID_jiu)
 	elseif char_juese[ID_s].shenfen == "内奸" then
 		local pk = true
 		for i = 1, 5 do
-			if char_juese[ID_jiu].shenfen ~= "主公" and char_juese[ID_jiu].shenfen ~= "内奸" and char_juese[ID_jiu].siwang == false then
+			if char_juese[i].shenfen ~= "主公" and char_juese[i].shenfen ~= "内奸" and char_juese[i].siwang == false then
 				pk = false
 			end
 		end
@@ -114,8 +116,8 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 local help = false
 local use = true
 	if char_juese[id].shenfen == "主公" or char_juese[id].shenfen == "忠臣" then
-		if char_juese[ID_jiu].shenfen == "主公" or char_juese[ID_jiu].isantigovernment == false then 
-			if char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].isantigovernment == false then 
+		if char_juese[ID_jiu].shenfen == "主公" or (char_juese[ID_jiu].isantigovernment == false and char_juese[ID_jiu].isblackjack == false) then 
+			if char_juese[ID_s].shenfen == "主公" or (char_juese[ID_s].isantigovernment == false and char_juese[ID_jiu].isblackjack == false) then 
 				help = false
 			else
 				help = true
@@ -198,6 +200,30 @@ end
 --  1发动，2不发动  --
 function ai_judge_luoyi(ID)
 	return 2
+end
+
+--  AI决定是否发动英姿  --
+--  true发动，false不发动  --
+function ai_judge_yingzi(ID)
+	return true
+end
+
+--  AI决定是否发动闭月  --
+--  true发动，false不发动  --
+function ai_judge_biyue(ID)
+	return true
+end
+
+--  AI决定是否发动集智  --
+--  true发动，false不发动  --
+function ai_judge_jizhi(ID)
+	return true
+end
+
+--  AI决定是否发动激昂  --
+--  true发动，false不发动  --
+function ai_judge_jiang(ID)
+	return true
 end
 
 --  AI决定是否发动将驰  --
@@ -344,6 +370,28 @@ function ai_judge_jieming_mubiao(ID_s)
 	--  优先选择给自己补牌  --
 	if tili_max - n_shoupai > 0 then
 		return ID
+	else
+		for i = 1, 5 do
+			if i == ID then
+				
+			elseif char_juese[i].siwang == true then
+			
+			elseif char_juese[ID].shenfen == "内奸" then
+				
+			elseif char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣" then
+				if char_juese[i].shenfen == "主公" or (char_juese[i].isantigovernment == false and char_juese[i].isblackjack ~= true) then
+					if math.min(char_juese[i].tili_max, 5) > #char_juese[i].shoupai then
+						return i
+					end
+				end
+			elseif char_juese[ID].shenfen == "反贼" then
+				if char_juese[i].isantigovernment == true and char_juese[i].isblackjack ~= true then
+					if math.min(char_juese[i].tili_max, 5) > #char_juese[i].shoupai then
+						return i
+					end
+				end
+			end
+		end
 	end
 
 	return nil
@@ -366,14 +414,102 @@ end
 
 --  AI决定放逐的翻面目标  --
 function ai_judge_fangzhu_mubiao(ID_s,ID_mubiao)
-	if ID_mubiao ~= nil then
-		local fanmian = char_juese[ID_mubiao].fanmian
-		--  翻面武将牌正面朝上的伤害来源  --
-		if not fanmian then
-			return ID_mubiao
+	
+	local tili_max = char_juese[ID_s].tili_max
+	local tili = char_juese[ID_s].tili
+	local benefit = 0
+	if tili_max - tili > 3 then
+		benefit = 1
+	elseif tili_max - tili < 3 then
+		benefit = 0
+	else
+		benefit = ai_judge_random_percent(50)
+	end
+	for i = 1 ,5 do
+		if ID_mubiao ~= nil then
+			if i == ID then
+				
+			elseif char_juese[i].siwang == true then
+				
+			elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_s) == true) then
+				if char_juese[i].shenfen == "主公" or (char_juese[i].isantigovernment == false and char_juese[i].isblackjack ~= true) then
+					if benefit == 1 then
+						return i
+					elseif char_juese[i].fanmian == true then
+						return i
+					end
+				else
+					if char_juese[i].fanmian == true then
+						
+					elseif benefit == 0 then
+						return i
+					end
+				end
+			elseif char_juese[ID].shenfen == "反贼" then
+				if char_juese[i].isantigovernment == true and char_juese[i].isblackjack ~= true then
+					if benefit == 1 then
+						return i
+					elseif char_juese[i].fanmian == true then
+						return i
+					end
+				else
+					if char_juese[i].fanmian == true then
+						
+					elseif benefit == 0 then
+						return i
+					end
+				end
+			end
 		end
 	end
 	return nil
+end
+
+-- AI决定是否反馈 --
+function ai_judge_fankui_mubiao(ID_s, ID_mubiao)
+	if ID_mubiao ~= nil then
+		if i == ID then
+			return ID_mubiao
+		elseif char_juese[ID_mubiao].siwang == true then
+			
+		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_s) == true) then
+			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
+				
+			else
+				return ID_mubiao
+			end
+		elseif char_juese[ID].shenfen == "反贼" then
+			if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
+				
+			else
+				return ID_mubiao
+			end
+		end
+	end
+	return nil
+end
+
+-- AI决定是否归心 --
+function ai_judge_guixin(ID_s)
+	local gain = -3
+	for i = 1, 5 do
+		if i ~= ID_s and char_juese[i].siwang ~= true and ai_card_stat(i,true,true) > 0 then
+			gain = gain + 2
+		end
+	end
+	if guixin_left > 0 then
+		return true
+	elseif char_juese[ID_s].fanmian == true then
+		return true
+	elseif gain > 0 then
+		return true
+	else
+		return false
+	end
+end
+
+function ai_judge_yiji_mubiao(ID)
+	return ID
 end
 
 -- AI距离与攻击范围测算 --
@@ -697,6 +833,16 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 		if card_treated == "火杀" or card_treated=="雷杀" then
 			shuxing = true
 		end
+		--剔除牌多的雷击
+		for i=#possible_target,1,-1 do
+			if char_juese[possible_target[i]].skill["雷击"] == "available" and (#char_juese[possible_target[i]].shoupai >= 3 or char_juese[possible_target[i]].fangju[1] == "藤甲") then
+				table.remove(possible_target,i)
+			end
+		end
+		local shuxing = false
+		if card_treated == "火杀" or card_treated=="雷杀" then
+			shuxing = true
+		end
 		--剔除普杀藤甲
 		for i=#possible_target,1,-1 do
 			if char_juese[possible_target[i]].fangju[1] == "藤甲" and shuxing == false and char_juese[ID].wuqi[1] ~= "朱雀扇" and char_juese[ID].wuqi[1] ~= "青钢剑" then
@@ -793,7 +939,7 @@ function ai_judge_AOE(ID,card)
 						
 					elseif char_juese[i].skill["帷幕"] == "available" then
 						
-					elseif char_juese[i].shenfen == "主公" and char_juese[i].tili < 3 then
+					elseif (char_juese[i].shenfen == "主公" and char_juese[i].tili < 3) or (char_juese[ID].shenfen == "主公" and char_juese[i].tili == 1) then
 						bonus = 0
 					else
 						gain = gain - 1.5 / #char_juese[i].shoupai
@@ -883,18 +1029,24 @@ function ai_judge_AOE(ID,card)
 				end
 			end
 		elseif char_juese[ID].shenfen == "内奸" then
+				local pk = true
+			for i = 1, 5 do
+				if char_juese[i].shenfen ~= "主公" and char_juese[i].shenfen ~= "内奸" and char_juese[i].siwang == false then
+					pk = false
+				end
+			end
 			if card == "桃园结义" and char_juese[ID].tili < char_juese[ID].tili_max then
 				gain = 1
 			elseif card == "五谷丰登" then
 				gain = 0
 			elseif card == "万箭齐发" then
-				if char_juese[i].shenfen == "主公" and char_juese[i].fangju[1] ~= "藤甲" and (char_juese[i].skill["八阵"] ~= "available" or #char_juese[i].fangju ~= 0) and char_juese[i].tili <= 2 then
+				if char_juese[i].shenfen == "主公" and char_juese[i].fangju[1] ~= "藤甲" and (char_juese[i].skill["八阵"] ~= "available" or #char_juese[i].fangju ~= 0) and char_juese[i].tili <= 2 and pk == false then
 					bonus = 0
 				else
 					gain = 2
 				end
 			elseif card == "南蛮入侵" then
-				if char_juese[i].shenfen == "主公" and char_juese[i].fangju[1] ~= "藤甲" and char_juese[i].skill["帷幕"] ~= "available" and char_juese[i].skill["祸首"] ~= "available" and char_juese[i].tili <= 2 then
+				if char_juese[i].shenfen == "主公" and char_juese[i].fangju[1] ~= "藤甲" and char_juese[i].skill["帷幕"] ~= "available" and char_juese[i].skill["祸首"] ~= "available" and char_juese[i].tili <= 2 and pk == false then
 					bonus = 0
 				else
 					gain = 2
@@ -1064,7 +1216,7 @@ function ai_card_search(ID, kind, required, alt_shoupai)
 end
 
 --  区域内牌数统计 --
-function ai_card_stat(ID, discard_arm)
+function ai_card_stat(ID, discard_arm, discard_panding)
 	local card = 0
 	if discard_arm then
 		if #char_juese[ID].wuqi ~= 0 then
@@ -1079,6 +1231,9 @@ function ai_card_stat(ID, discard_arm)
 		if #char_juese[ID].fangma ~= 0 then
 			card = card + 1
 		end
+	end
+	if discard_panding then
+		card = card + #char_juese[ID].panding
 	end
 	card = card + table.maxn(char_juese[ID].shoupai)
 	return card
@@ -1794,7 +1949,7 @@ function ai_stage_qipai(ID)
 		add_funcptr(push_message, table.concat({char_juese[ID].name, "弃牌阶段"}))
 
 		local extra = 0
-		extra = skills_judge_xueyi(char_current_i)
+		extra = skills_judge_xueyi(char_acting_i)
 		
 		if skills_judge_keji() == true and #char_juese[ID].shoupai > char_juese[ID].tili_max then
 			add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
