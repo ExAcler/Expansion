@@ -1785,7 +1785,7 @@ function ai_card_use(ID)
 	if char_juese[ID].tili < char_juese[ID].tili_max then
 		local card_use = ai_card_search(ID, "桃", 1)
 		if #card_use ~= 0 then
-			if card_chupai_ai(card_use[1], ID, nil, nil) then
+			if card_chupai_ai({card_use[1]}, ID, nil, nil, "桃") then
 				--  桃后处理ai_next_card --
 				return
 			end
@@ -1795,7 +1795,8 @@ function ai_card_use(ID)
 	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" or #targets == 0 then
 		local card_use = ai_card_search(ID, "武器", 1)
 		if #card_use ~= 0 then
-			card_chupai_ai(card_use[1], ID, nil, nil)
+			local wuqi_card = char_juese[ID].shoupai[card_use[1]]
+			card_chupai_ai({card_use[1]}, ID, nil, nil, wuqi_card[1])
 			ai_next_card(ID)
 			return
 		end
@@ -1804,7 +1805,8 @@ function ai_card_use(ID)
 	if #char_juese[ID].fangju == 0 or char_juese[ID].skill["枭姬"] == "available" then
 		local card_use = ai_card_search(ID, "防具", 1)
 		if #card_use ~= 0 then
-			card_chupai_ai(card_use[1], ID, nil, nil)
+			local wuqi_card = char_juese[ID].shoupai[card_use[1]]
+			card_chupai_ai({card_use[1]}, ID, nil, nil, wuqi_card[1])
 			ai_next_card(ID)
 			return
 		end
@@ -1813,7 +1815,8 @@ function ai_card_use(ID)
 	if #char_juese[ID].gongma == 0 or char_juese[ID].skill["枭姬"] == "available" then
 		local card_use = ai_card_search(ID, "-1马", 1)
 		if #card_use ~= 0 then
-			card_chupai_ai(card_use[1], ID, nil, nil)
+			local wuqi_card = char_juese[ID].shoupai[card_use[1]]
+			card_chupai_ai({card_use[1]}, ID, nil, nil, wuqi_card[1])
 			ai_next_card(ID)
 			return
 		end
@@ -1822,7 +1825,8 @@ function ai_card_use(ID)
 	if #char_juese[ID].fangma == 0 or char_juese[ID].skill["枭姬"] == "available" then
 		local card_use = ai_card_search(ID, "+1马", 1)
 		if #card_use ~= 0 then
-			card_chupai_ai(card_use[1], ID, nil, nil)
+			local wuqi_card = char_juese[ID].shoupai[card_use[1]]
+			card_chupai_ai({card_use[1]}, ID, nil, nil, wuqi_card[1])
 			ai_next_card(ID)
 			return
 		end
@@ -1830,7 +1834,7 @@ function ai_card_use(ID)
 
 	local card_use = ai_card_search(ID, "五谷丰登", 1)
 	if #card_use ~= 0 and ai_judge_AOE(ID,"五谷丰登") >= 0.5 then
-		card_chupai_ai(card_use[1], ID, nil, nil)
+		card_chupai_ai({card_use[1]}, ID, nil, nil, "五谷丰登")
 		ai_next_card(ID)
 		return
 	end
@@ -1843,7 +1847,7 @@ function ai_card_use(ID)
 
 		if #targets > 0 then
 			ID_mubiao = targets[1]
-			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+			if card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "过河拆桥") then
 				--  拆后处理ai_next_card --
 				timer.start(0.6)
 				return
@@ -1860,13 +1864,13 @@ function ai_card_use(ID)
 		if #targets == 2 then
 			ID1 = targets[1]
 			ID2 = targets[2]
-			if card_chupai_ai(card_use[1], ID1, ID2, ID, "铁锁连环-连环") then
+			if card_chupai_ai({card_use[1]}, ID1, ID2, ID, "铁锁连环-连环") then
 				--  连后处理ai_next_card --
 				timer.start(0.6)
 				return
 			end
 		else
-			card_chupai_ai(card_use[1], ID, nil, nil, "铁锁连环-重铸")
+			card_chupai_ai({card_use[1]}, ID, nil, nil, "铁锁连环-重铸")
 			ai_next_card(ID)
 			return
 		end
@@ -1880,7 +1884,7 @@ function ai_card_use(ID)
 
 		if #targets > 0 then
 			ID_mubiao = targets[1]
-			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+			if card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "顺手牵羊") then
 				--  顺后处理ai_next_card --
 				timer.start(0.6)
 				return
@@ -1890,7 +1894,7 @@ function ai_card_use(ID)
 
 	local card_use = ai_card_search(ID, "南蛮入侵", 1)
 	if #card_use ~= 0 and ai_judge_AOE(ID,"南蛮入侵") >= 0.5 then
-		card_chupai_ai(card_use[1], ID, nil, nil)
+		card_chupai_ai({card_use[1]}, ID, nil, nil, "南蛮入侵")
 		--  南蛮后处理ai_next_card --
 		timer.start(0.6)
 		return
@@ -1898,7 +1902,7 @@ function ai_card_use(ID)
 
 	local card_use = ai_card_search(ID, "万箭齐发", 1)
 	if #card_use ~= 0 and ai_judge_AOE(ID,"万箭齐发") >= 0.5 then
-		card_chupai_ai(card_use[1], ID, nil, nil)
+		card_chupai_ai({card_use[1]}, ID, nil, nil, "万箭齐发")
 		--  万箭后处理ai_next_card --
 		timer.start(0.6)
 		return
@@ -1913,7 +1917,7 @@ function ai_card_use(ID)
 	
 			if #targets > 0 then
 				ID_mubiao = targets[1]
-				card_chupai_ai(card_use[1], ID, ID_mubiao, nil)
+				card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "决斗")
 				--  决斗后处理ai_next_card --
 				timer.start(0.6)
 				return
@@ -1930,7 +1934,7 @@ function ai_card_use(ID)
 		if #targets == 2 then
 			ID1 = targets[1]
 			ID2 = targets[2]
-			if card_chupai_ai(card_use[1], ID1, ID2, ID, "借刀杀人") then
+			if card_chupai_ai({card_use[1]}, ID1, ID2, ID, "借刀杀人") then
 				--  借刀后处理ai_next_card --
 				timer.start(0.6)
 				return
@@ -1946,7 +1950,7 @@ function ai_card_use(ID)
 	
 		if #targets > 0 then
 			ID_mubiao = targets[1]
-			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+			if card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "火攻") then
 				--  火攻后处理ai_next_card --
 				timer.start(0.6)
 				return
@@ -1956,14 +1960,14 @@ function ai_card_use(ID)
 
 	local card_use = ai_card_search(ID, "无中生有", 1)
 	if #card_use ~= 0 then
-		card_chupai_ai(card_use[1], ID, nil, nil)
+		card_chupai_ai({card_use[1]}, ID, nil, nil, "无中生有")
 		ai_next_card(ID)
 		return
 	end
 
 	local card_use = ai_card_search(ID, "桃园结义", 1)
 	if #card_use ~= 0 and ai_judge_AOE(ID,"桃园结义") >= 0.5 then
-		card_chupai_ai(card_use[1], ID, nil, nil)
+		card_chupai_ai({card_use[1]}, ID, nil, nil, "桃园结义")
 		ai_next_card(ID)
 		return
 	end
@@ -1977,7 +1981,7 @@ function ai_card_use(ID)
 		if #targets > 0 and char_hejiu == false then
 			local card_use_jiu = ai_card_search(ID, "酒", 1)
 			if #card_use_jiu ~= 0 then
-				if card_chupai_ai(card_use_jiu[1], ID, nil, nil) then
+				if card_chupai_ai({card_use_jiu[1]}, ID, nil, nil, "酒") then
 					ai_next_card(ID)
 					return
 				end
@@ -1986,7 +1990,7 @@ function ai_card_use(ID)
 
 		if #targets > 0 then
 			ID_mubiao = targets[1]
-			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+			if card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "杀") then
 				--  杀后处理ai_next_card --
 				timer.start(0.6)
 				return
@@ -2002,7 +2006,7 @@ function ai_card_use(ID)
 	
 		if #targets > 0 then
 			ID_mubiao = targets[1]
-			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+			if card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "乐不思蜀") then
 				ai_next_card(ID)
 				return
 			end
@@ -2017,7 +2021,7 @@ function ai_card_use(ID)
 	
 		if #targets > 0 then
 			ID_mubiao = targets[1]
-			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+			if card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "兵粮寸断") then
 				ai_next_card(ID)
 				return
 			end
@@ -2026,7 +2030,7 @@ function ai_card_use(ID)
 
 	local card_use = ai_card_search(ID, "闪电", 1)
 	if #card_use ~= 0 and ai_judge_random_percent(30) == 1 then
-		if card_chupai_ai(card_use[1], ID, nil, nil) then
+		if card_chupai_ai({card_use[1]}, ID, nil, nil, "闪电") then
 			ai_next_card(ID)
 			return
 		end

@@ -64,7 +64,7 @@ function draw_opponent(gc)
 	
 	    -- 卡牌数显示 --
 	    gc:setFont("sansserif", "r", 7)
-	    gc:drawString(#char_juese[id].shoupai, x1 + 80, y1 + 48 + 9)  -- (85, 53 + 9)
+	    gc:drawString(card_shoupai_stat(id), x1 + 80, y1 + 48 + 9)  -- (85, 53 + 9)
 	    gc:setFont("sansserif", "r", 11)
 	
 	    -- 体力数 --
@@ -323,38 +323,44 @@ function draw_self(gc)
 	-- 绘制卡牌 --
     -- img_width = 28 = (167 - 81) / (n - 1)
 	if #char_juese[char_current_i].shoupai > 0 then
-	if #char_juese[char_current_i].shoupai > 3 then
-	    img_width = (167 - 81) / (#char_juese[char_current_i].shoupai - 1)
-	else
-	    img_width = 29
-	end
-	for i = 1, #char_juese[char_current_i].shoupai do
-	    if i ~= card_highlighted or (i == card_highlighted and card_selected[card_highlighted] ~= nil) then
-		    if card_selected[i] == nil then
-			    base_y = 151
-			else
-			    base_y = 146
-			end
-	        gc:drawImage(cards_img[char_juese[char_current_i].shoupai[i][1]], 81 + img_width * (i - 1), base_y)
-		    gc:drawImage(color_img[char_juese[char_current_i].shoupai[i][2]], 82 + img_width * (i - 1), base_y + 2)
-		    gc:setFont("sansserif", "r", 7)
-	        gc:drawString(char_juese[char_current_i].shoupai[i][3], 85 + img_width * (i - 1), base_y + 22)
-	        gc:setFont("sansserif", "r", 11)
+		if #char_juese[char_current_i].shoupai > 3 then
+			img_width = (167 - 81) / (#char_juese[char_current_i].shoupai - 1)
+		else
+			img_width = 29
 		end
-	end
-	if card_selected[card_highlighted] == nil and card_highlighted ~= nil then
-		if #char_juese[char_current_i].shoupai > 0 and card_highlighted > 0 then
-			if card_highlighted > #char_juese[char_current_i].shoupai then
-				card_highlighted = 1
+		for i = 1, #char_juese[char_current_i].shoupai do
+			if i ~= card_highlighted or (i == card_highlighted and card_selected[card_highlighted] ~= nil) then
+				--  如果不是技能虚拟的无色无点牌才绘制  --
+				if char_juese[char_current_i].shoupai[i][2] ~= "" then
+					if card_selected[i] == nil then
+						base_y = 151
+					else
+						base_y = 146
+					end
+					gc:drawImage(cards_img[char_juese[char_current_i].shoupai[i][1]], 81 + img_width * (i - 1), base_y)
+					gc:drawImage(color_img[char_juese[char_current_i].shoupai[i][2]], 82 + img_width * (i - 1), base_y + 2)
+					gc:setFont("sansserif", "r", 7)
+					gc:drawString(char_juese[char_current_i].shoupai[i][3], 85 + img_width * (i - 1), base_y + 22)
+					gc:setFont("sansserif", "r", 11)
+				end
 			end
-
-			gc:drawImage(cards_img[char_juese[char_current_i].shoupai[card_highlighted][1]], 81 + img_width * (card_highlighted - 1), 151)
-			gc:drawImage(color_img[char_juese[char_current_i].shoupai[card_highlighted][2]], 82 + img_width * (card_highlighted - 1), 153)
-			gc:setFont("sansserif", "r", 7)
-			gc:drawString(char_juese[char_current_i].shoupai[card_highlighted][3], 85 + img_width * (card_highlighted - 1), 173)
-			gc:setFont("sansserif", "r", 11)
 		end
-	end
+		if card_selected[card_highlighted] == nil and card_highlighted ~= nil then
+			if #char_juese[char_current_i].shoupai > 0 and card_highlighted > 0 then
+				if card_highlighted > #char_juese[char_current_i].shoupai then
+					card_highlighted = 1
+				end
+	
+				--  如果不是技能虚拟的无色无点牌才绘制  --
+				if char_juese[char_current_i].shoupai[card_highlighted][2] ~= "" then
+					gc:drawImage(cards_img[char_juese[char_current_i].shoupai[card_highlighted][1]], 81 + img_width * (card_highlighted - 1), 151)
+					gc:drawImage(color_img[char_juese[char_current_i].shoupai[card_highlighted][2]], 82 + img_width * (card_highlighted - 1), 153)
+					gc:setFont("sansserif", "r", 7)
+					gc:drawString(char_juese[char_current_i].shoupai[card_highlighted][3], 85 + img_width * (card_highlighted - 1), 173)
+					gc:setFont("sansserif", "r", 11)
+				end
+			end
+		end
 	end
 	
 	if char_juese[char_current_i].name == "" then return end
@@ -552,6 +558,8 @@ function draw_messages(gc)
 	if wugucards ~= nil then
 		card_stat = card_stat + #wugucards
 	end
+	card_stat = card_stat + #card_jiesuan[1]
+
 	gc:drawString(card_stat, 252, 150)
 	gc:setColorRGB(0, 0, 0)
 	gc:setFont("sansserif", "r", 11)

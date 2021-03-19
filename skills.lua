@@ -24,6 +24,7 @@ skills_func =
 	["缔盟"] = function() return skills_dimeng_enter() end, 
 	["天义"] = function() return skills_tianyi_enter() end, 
 	["驱虎"] = function() return skills_quhu_enter() end, 
+	["离间"] = function() return skills_lijian_enter() end
 }
 
 --  黄月英：集智  --
@@ -949,7 +950,7 @@ function skills_qixi()
 	if skills_judge_black() then
 		funcptr_queue = {}
 
-		if card_chai(card_highlighted, char_current_i, gamerun_target_selected) then
+		if card_chai({card_highlighted}, char_current_i, gamerun_target_selected) then
 			--gamerun_wuqi_out_hand(char_current_i)
 			skills_cs()
 		    consent_func_queue(0.2)
@@ -1090,7 +1091,7 @@ end
 function skills_huoji()
 	if skills_judge_red() then
 		funcptr_queue = {}
-		if card_huogong(card_highlighted, char_current_i, gamerun_target_selected) then
+		if card_huogong({card_highlighted}, char_current_i, gamerun_target_selected) then
 			skills_cs()
 		    consent_func_queue(0.6)
 		end
@@ -1181,7 +1182,7 @@ end
 function skills_wusheng()
 	if skills_judge_red() then
 		funcptr_queue = {}
-		if card_sha(card_highlighted, char_current_i, gamerun_target_selected, true) then
+		if card_sha({card_highlighted}, char_current_i, gamerun_target_selected, true) then
 			skills_cs()
 		    consent_func_queue(0.6)
 		end
@@ -1209,7 +1210,7 @@ end
 function skills_longdan()
 	funcptr_queue = {}
 	if skills_judge_card("闪") then
-		if card_sha(card_highlighted, char_current_i, gamerun_target_selected, true) then
+		if card_sha({card_highlighted}, char_current_i, gamerun_target_selected, true) then
 			skills_cs()
 		    consent_func_queue(0.6)
 		end
@@ -1387,16 +1388,9 @@ function skills_luanji()
 	
 	if skills_judge_luanji() then
 		funcptr_queue = {}
-	
-		for i, _ in pairs(card_selected) do
-			if h1 == 0 then
-				h1 = i
-			else
-				h2 = i
-			end
-		end
+		local card_i = skills_get_selected_shoupai()
 		
-		if card_wanjian({h1, h2}, char_current_i) then
+		if card_wanjian(card_i, char_current_i) then
 			skills_cs()
 		    consent_func_queue(0.6)
 		end
@@ -1809,7 +1803,6 @@ function skills_tiaoxin(ID_req, ID_d)
 	funcptr_queue = {}
 	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
-	lianhuan_va = nil
 	
 	msg = {char_juese[ID_req].name.."发动了武将技能 '挑衅' (对", char_juese[ID_d].name, "}"}
 	char_juese[ID_req].skill["挑衅"] = "locked"
@@ -2556,7 +2549,7 @@ end
 function skills_lianhuan(ID_shoupai, ID_s, ID_first, ID_second, doubl)
 	if skills_judge_huase("草花") then
 		funcptr_queue = {}
-		if card_lian_lianhuan(ID_shoupai, ID_s, ID_first, ID_second, doubl) then
+		if card_lian_lianhuan({ID_shoupai}, ID_s, ID_first, ID_second, doubl) then
 			skills_cs()
 			consent_func_queue(0.6)
 		end
@@ -3480,4 +3473,152 @@ function _haoshi_exe(va_list)
 end
 function _haoshi_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
+--  曹操：奸雄  --
+function skills_jianxiong(ID)
+	if #card_jiesuan[1] == 0 then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID == char_current_i then
+		skills_jianxiong_enter()
+	else
+		skills_jianxiong_ai(ID)
+	end
+end
+function skills_jianxiong_ai(ID)
+	_jianxiong_exe(ID)
+end
+function skills_jianxiong_enter()
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '奸雄'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		gamerun_status = old_gamerun_status
+	
+		if gamerun_OK then
+			_jianxiong_exe(char_current_i)
+	    else
+			set_hints("")
+			
+			_jianxiong_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function _jianxiong_exe(ID)
+	push_message(char_juese[ID].name .. "发动了武将技能 '奸雄'")
+
+	local msg
+	msg = char_juese[ID].name .. "获得了"
+	for i = 1, #card_jiesuan[1] do
+		local card = card_jiesuan[1][i]
+		msg = msg .. table.concat({"'", card[2], card[3], "的", card[1], "'"})
+		if i ~= #card_jiesuan[1] then
+			msg = msg .. "，"
+		end
+	end
+	add_funcptr(push_message, msg)
+
+	for i = 1, #card_jiesuan[1] do
+		table.insert(char_juese[ID].shoupai, card_jiesuan[1][i])
+	end
+	card_jiesuan[1] = {}
+
+	add_funcptr(_jianxiong_huifu)
+	timer.start(0.6)
+end
+function _jianxiong_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
+--  祝融：巨象  --
+function skills_juxiang(ID)
+	push_message(char_juese[ID].name .. "触发了武将技能 '巨象'，获得了南蛮入侵")
+end
+
+--  貂蝉：离间  --
+function skills_lijian_ai(ID_shoupai, ID_s, ID_first, ID_second)
+	if char_juese[ID_first].xingbie ~= "男" or char_juese[ID_second].xingbie ~= "男" then
+		return false
+	end
+
+	_lijian_exe(ID_shoupai, ID_s, ID_first, ID_second)
+	return true
+end
+function skills_lijian_enter()
+	if #char_juese[char_current_i].shoupai == 0 then
+		return false
+	end
+
+	local n_male = 0
+	for i = 1, 5 do
+		if i ~= char_current_i and char_juese[i].xingbie == "男" then
+			n_male = n_male + 1
+		end
+	end
+	if n_male < 2 then
+		return false
+	end
+
+	skills_enter("请选择一张牌", "请选择目标A", "决斗", "技能选择-单牌")
+	
+	gamerun_OK_ptr = function()
+		if gamerun_status == "技能选择-目标" then
+			if char_juese[gamerun_target_selected].xingbie == "男" and gamerun_OK == true then
+				--  进入阶段2  --
+				guankan_s = gamerun_target_selected
+				set_hints("请选择目标B")
+				gamerun_status = "技能选择-目标B"
+				gamerun_select_target("init")
+				platform.window:invalidate()
+			end
+			return
+		end
+		
+		if gamerun_status == "技能选择-目标B" then
+			if char_juese[gamerun_target_selected].xingbie == "男" and gamerun_OK == true then
+				_lijian_exe(card_highlighted, char_current_i, guankan_s, gamerun_target_selected)
+			end
+		end
+	end
+	
+	gamerun_tab_ptr = function()
+		if table.getn2(card_selected) == 1 then
+			skills_enter_target()
+		end
+	end
+	
+	return true
+end
+function _lijian_exe(ID_shoupai, ID_s, ID_first, ID_second)
+	funcptr_queue = {}
+
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+	card_add_qipai(card)
+	card_remove({ID_s, ID_shoupai})
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '离间'")
+	char_juese[ID_s].skill["离间"] = "locked"
+
+	--  插入虚拟无色无点牌  --
+	table.insert(char_juese[ID_first].shoupai, {"决斗", "", ""})
+
+	card_juedou({#char_juese[ID_first].shoupai}, ID_first, ID_second)
+	skills_cs()
+	consent_func_queue(0.6)
 end

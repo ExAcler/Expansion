@@ -398,8 +398,8 @@ function gamerun_huihe_panding()
 	add_funcptr(gamerun_huihe_set, "判定")
 	
 	for i = #char_juese[char_acting_i].panding, 1, -1 do
-		local card = char_juese[char_acting_i].panding[i]
-		card_wuxie(card, char_acting_i, char_acting_i, nil)
+		local card = char_juese[char_acting_i].panding[i][1]
+		card_wuxie(card, char_acting_i, char_acting_i)
 
 		funcptr_add_tag = "无懈无效结算"
 	    add_funcptr(_panding_sub1, char_acting_i)
@@ -507,17 +507,15 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 		else
 			table.remove(char_juese[char_acting_i].panding, id)
 		end
-		
-		if char_juese[char_acting_i].skill["天妒"] ~= "available" then
-			pdcard = table.copy(card_panding_card)
-			card_add_qipai(pdcard)
-		else
-			push_message(char_juese[char_acting_i].name .. "发动了武将技能 '天妒', 获得了判定牌")
-			skills_tiandu_add({char_acting_i, card_panding_card})
-		end
 	end
-	
-	msg = nil; --collectgarbage()
+		
+	if char_juese[char_acting_i].skill["天妒"] ~= "available" then
+		pdcard = table.copy(card_panding_card)
+		card_add_qipai(pdcard)
+	else
+		push_message(char_juese[char_acting_i].name .. "发动了武将技能 '天妒', 获得了判定牌")
+		skills_tiandu_add({char_acting_i, card_panding_card})
+	end
 end
 function _panding_sub3()    -- 子函数3：用于延时
 
@@ -935,26 +933,8 @@ function on.enterKey()
 			_shun_sub2()
 			card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
 		elseif string.find(gamerun_status, "拆") then
-			if lianhuan_va == nil then
-				_chai_sub2()
-			else
-				gamerun_status = "手牌生效中"
-				set_hints("")
-			end
+			_chai_sub2()
 			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-			
-			if lianhuan_va ~= nil then
-				local id, shuxing, hengzhi
-				id = lianhuan_va[2]; shuxing = lianhuan_va[4]
-				hengzhi = char_juese[id].hengzhi
-				
-				if hengzhi then
-					if shuxing == "火" or shuxing == "雷" then
-						_deduct_lianhuan(lianhuan_va)
-						consent_func_queue(0.6)
-					end
-				end
-			end
 		elseif string.find(gamerun_status, "杀") then
 			gamerun_status = "手牌生效中"
 			set_hints("")
@@ -1505,6 +1485,7 @@ function on.tabKey()
     if card_selected[card_highlighted] ~= nil then
 	    --  取消选择  --
 		card_selected[card_highlighted] = nil
+		
 		if last_status == "技能选择-多牌" then
 			if gamerun_status == "技能选择-目标" then
 				set_hints(skill_text_1)
@@ -1566,9 +1547,12 @@ function on.tabKey()
 	else
 		--  弃牌阶段  --
 	    --  选择的牌超过需弃牌数，则不能继续选择  --
-		if gamerun_huihe == "弃牌" and table.getn2(card_selected) < #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili then
-		    card_selected[card_highlighted] = 0
-			return
+		if gamerun_huihe == "弃牌" then
+			if table.getn2(card_selected) < #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili then
+		    	card_selected[card_highlighted] = 0
+				platform.window:invalidate()
+				return
+			end
 		end
 
 		--  技能选择  --
