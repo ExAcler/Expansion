@@ -214,6 +214,32 @@ function ai_judge_biyue(ID)
 	return true
 end
 
+--  AI决定是否发动困奋  --
+--  true发动，false不发动  --
+function ai_judge_kunfen(ID)
+	return false
+end
+
+--  AI决定是否发动据守  --
+--  true发动，false不发动  --
+function ai_judge_jushou(ID)
+	local live = 0
+	for i = 1, 5 do
+		if char_juese[i].siwang == false then
+			live = live + 1
+		end
+	end
+	if char_juese[ID].fanmian == true then
+		return true
+	elseif live <= 2 then
+		return true
+	elseif ai_judge_random_percent(150 - 25 * live) == 1 then
+		return true
+	else
+		return false
+	end
+end
+
 --  AI决定是否发动集智  --
 --  true发动，false不发动  --
 function ai_judge_jizhi(ID)
@@ -226,6 +252,36 @@ function ai_judge_jiang(ID)
 	return true
 end
 
+--  AI决定是否发动连营  --
+--  true发动，false不发动  --
+function ai_judge_lianying(ID)
+	return true
+end
+
+--  AI决定是否发动伤逝  --
+--  true发动，false不发动  --
+function ai_judge_shangshi(ID)
+	return true
+end
+
+--  AI决定是否发动新生  --
+--  true发动，false不发动  --
+function ai_judge_xinsheng(ID)
+	return true
+end
+
+--  AI决定是否发动天妒  --
+--  true发动，false不发动  --
+function ai_judge_tiandu(ID)
+	return true
+end
+
+--  AI决定是否发动克己  --
+--  true发动，false不发动  --
+function ai_judge_keji(ID)
+	return true
+end
+
 --  AI决定是否发动将驰  --
 --  1多摸一张，2少摸一张，3不发动  --
 function ai_judge_jiangchi(ID)
@@ -233,9 +289,15 @@ function ai_judge_jiangchi(ID)
 end
 
 --  AI决定是否发动英魂  --
---  1摸1弃x，2摸x弃1，3不发动
+--  1摸1弃x，2摸x弃1，3不发动  --
 function ai_judge_yinghun(ID)
 	return 3
+end
+
+--  AI决定是否发动观星  --
+--  true发动，false不发动  --
+function ai_judge_guanxing(ID)
+	return false
 end
 
 --  AI决定英魂的发动目标  --
@@ -560,7 +622,7 @@ function ai_judge_fangzhu_mubiao(ID_s,ID_mubiao)
 	end
 	for i = 1 ,5 do
 		if ID_mubiao ~= nil then
-			if i == ID then
+			if i == ID_s then
 				
 			elseif char_juese[i].siwang == true then
 				
@@ -578,7 +640,7 @@ function ai_judge_fangzhu_mubiao(ID_s,ID_mubiao)
 						return i
 					end
 				end
-			elseif char_juese[ID].shenfen == "反贼" then
+			elseif char_juese[ID_s].shenfen == "反贼" then
 				if char_juese[i].isantigovernment == true and char_juese[i].isblackjack ~= true then
 					if benefit == 1 then
 						return i
@@ -605,18 +667,20 @@ function ai_judge_fankui_mubiao(ID_s, ID_mubiao)
 			return ID_mubiao
 		elseif char_juese[ID_mubiao].siwang == true then
 			
-		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_s) == true) then
+		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_mubiao) == true) then
 			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
 				
 			else
 				return ID_mubiao
 			end
-		elseif char_juese[ID].shenfen == "反贼" then
+		elseif char_juese[ID_s].shenfen == "反贼" then
 			if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
 				
 			else
 				return ID_mubiao
 			end
+		elseif char_juese[ID_s].shenfen == "内奸" then
+			return ID_mubiao
 		end
 	end
 	return nil
@@ -629,18 +693,20 @@ function ai_judge_ganglie_mubiao(ID_s, ID_mubiao)
 			
 		elseif char_juese[ID_mubiao].siwang == true then
 			
-		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_s) == true) then
+		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_mubiao) == true) then
 			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
 				
 			else
 				return ID_mubiao
 			end
-		elseif char_juese[ID].shenfen == "反贼" then
+		elseif char_juese[ID_s].shenfen == "反贼" then
 			if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
 				
 			else
 				return ID_mubiao
 			end
+		elseif char_juese[ID_s].shenfen == "内奸" then
+			return ID_mubiao
 		end
 	end
 	return nil
@@ -2159,11 +2225,13 @@ function ai_stage_qipai(ID)
 		local extra = 0
 		extra = skills_judge_xueyi(char_acting_i)
 		
-		if skills_judge_keji() == true and #char_juese[ID].shoupai > char_juese[ID].tili_max then
-			add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
-		end
+		--if skills_judge_keji() == true and #char_juese[ID].shoupai > char_juese[ID].tili_max then
+			--add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
+		--end
 
-		if skills_judge_keji() == false and char_juese[ID].tili + extra < #char_juese[ID].shoupai then
+		if char_juese[ID].skill["克己"] == "available" and char_yisha == false then
+			add_funcptr(skills_keji,ID)
+		elseif char_juese[ID].tili + extra < #char_juese[ID].shoupai then
 			local qipai_id, i
 			local required = math.max(#char_juese[ID].shoupai - char_juese[ID].tili - extra, 0)
 			qipai_id, _ = ai_judge_withdraw(ID, required, false)
@@ -2171,8 +2239,10 @@ function ai_stage_qipai(ID)
 			for i = #qipai_id, 1, -1 do
 				add_funcptr(_qipai_sub1, qipai_id[i])
 			end
+			add_funcptr(gamerun_huihe_jieshu,true)
+		else
+			add_funcptr(gamerun_huihe_jieshu,true)
 		end
-		gamerun_huihe_jieshu(true)
 	end
 	timer.start(0.6)
 end

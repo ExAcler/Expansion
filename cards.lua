@@ -300,17 +300,16 @@ function card_remove(va_list)
 	end
 	
 	table.remove(char_juese[ID_juese].shoupai, ID_shoupai)
-	
+	print(#char_juese[ID_juese].shoupai < char_juese[ID_juese].tili_max-char_juese[ID_juese].tili)
+	-- 张春华在手牌不足时摸牌 --
+	if char_juese[ID_juese].skill["伤逝"] == "available" and #char_juese[ID_juese].shoupai < char_juese[ID_juese].tili_max-char_juese[ID_juese].tili then
+		skills_shangshi(ID_juese)
+	end
 	--  陆逊在失去最后手牌时摸一张牌  --
 	if char_juese[ID_juese].skill["连营"] == "available" and #char_juese[ID_juese].shoupai == 0 then
-		push_message(char_juese[ID_juese].name.."发动了武将技能 '连营'")
-		card_fenfa({ID_juese, 1, true})
+		skills_lianying(ID_juese)
 	end
-	-- 张春华在手牌不足时摸牌 --
-	if char_juese[ID_juese].skill["伤逝"] == "available" and table.maxn(char_juese[ID_juese].shoupai) < char_juese[ID_juese].tili_max-char_juese[ID_juese].tili then
-		push_message(char_juese[ID_juese].name.."发动了武将技能 '伤逝'")
-		card_fenfa({ID_juese, char_juese[ID_juese].tili_max-char_juese[ID_juese].tili-table.maxn(char_juese[ID_juese].shoupai), true})
-	end
+	--skills_losecard(ID_juese)
 end
 
 --  在弃牌堆添加手牌  --
@@ -692,11 +691,7 @@ function _napai_sub7(ID, ID_get, hide_msg, is_passive)    --  获得+1马
     local msg
 	
 	if hide_msg ~= true then
-		if is_passive then
-			msg = {char_juese[ID].name, "的+1马'", char_juese[ID].fangma[2], char_juese[ID].fangma[3], "的", char_juese[ID].fangma[1], "'被弃置"}
-		else
-			msg = {char_juese[ID_get].name, "获得了", char_juese[ID].name, "的+1马'", char_juese[ID].fangma[2], char_juese[ID].fangma[3], "的", char_juese[ID].fangma[1], "'"}
-    	end
+		msg = {char_juese[ID_get].name, "获得了", char_juese[ID].name, "的+1马'", char_juese[ID].fangma[2], char_juese[ID].fangma[3], "的", char_juese[ID].fangma[1], "'"}
 		push_message(table.concat(msg))
 		msg = nil; --collectgarbage()
 	end
@@ -769,16 +764,15 @@ end
 function card_into_pindian(ID,ID_card)
 	table.insert(pindianing,{char_juese[ID].shoupai[ID_card][1],char_juese[ID].shoupai[ID_card][2],char_juese[ID].shoupai[ID_card][3]})
 	table.remove(char_juese[ID].shoupai,ID_card)
+	-- 张春华在手牌不足时摸牌 --
+	if char_juese[ID].skill["伤逝"] == "available" and #char_juese[ID].shoupai < char_juese[ID].tili_max-char_juese[ID].tili then
+		skills_shangshi(ID)
+	end
 	--  陆逊在失去最后手牌时摸一张牌  --
 	if char_juese[ID].skill["连营"] == "available" and #char_juese[ID].shoupai == 0 then
-		push_message(char_juese[ID].name.."发动了武将技能 '连营'")
-		card_fenfa({ID, 1, true})
+		skills_lianying(ID)
 	end
-	-- 张春华在手牌不足时摸牌 --
-	if char_juese[ID].skill["伤逝"] == "available" and table.maxn(char_juese[ID].shoupai) < char_juese[ID].tili_max-char_juese[ID].tili then
-		push_message(char_juese[ID].name.."发动了武将技能 '伤逝'")
-		card_fenfa({ID, char_juese[ID].tili_max-char_juese[ID].tili-table.maxn(char_juese[ID].shoupai), true})
-	end
+	--skills_losecard(ID)
 end
 
 --  拼点结算  --
@@ -1517,8 +1511,7 @@ function _bagua_jiesuan(ID)
 	if char_juese[ID].skill["天妒"] ~= "available" then
 		card_add_qipai(card_panding_card)
 	else
-		add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '天妒'")
-		add_funcptr(skills_tiandu_add, {ID, card_panding_card})
+		skills_tiandu({ID, card_panding_card})
 	end
 
 	return success
@@ -3788,7 +3781,7 @@ function _sha_hanbing_ai(ID_s, ID_mubiao)	--  杀：AI使用寒冰剑
 end
 function _sha_hanbing_qipai_go(ID_mubiao)	--  杀：AI寒冰剑弃牌 (临时AI)
 	local c_pos = math.random(#char_juese[ID_mubiao].shoupai)
-	local card = char_juese[ID_mubiao].shoupai[c_pos]
+	local card = table.copy(char_juese[ID_mubiao].shoupai[c_pos])
 
 	card_add_qipai(card)
 	_nanman_send_msg({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"})

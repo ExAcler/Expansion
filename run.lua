@@ -62,6 +62,10 @@ skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的
 item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的选项的个数
 gamerun_dangxian = false -- 廖化当先发动与否的存储
 fenxin_pending = nil	-- 玩家当前需要决定是否发动焚心的死亡角色ID (无则为nil)，如果是，则暂时隐藏死亡角色的身份牌
+kunfen_adjusted = {}
+for i = 1, 5 do
+	kunfen_adjusted[i] = false
+end
 
 end
 
@@ -234,8 +238,8 @@ function _init_huashen()
 		funcptr_queue = {}
 		funcptr_i = 0
 
-		add_funcptr(skills_xinsheng, {char_current_i, true})
-		add_funcptr(skills_xinsheng, {char_current_i, true})
+		add_funcptr(skills_xinsheng_exe, {char_current_i, true})
+		add_funcptr(skills_xinsheng_exe, {char_current_i, true})
 		add_funcptr(skills_huashen, {char_current_i, "游戏开始"})
 		add_funcptr(_init_huifu)
 	end
@@ -293,12 +297,22 @@ function gamerun_huihe_start()
 		add_funcptr(skills_hunzi)
 	end
 	
+	if char_juese[char_acting_i].skill["志继"] == "available" and #char_juese[char_acting_i].shoupai == 0 then
+		add_funcptr(skills_hunzi)
+	end
+	
 	if char_juese[char_acting_i].skill["英魂"] == "available" and char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
 		if char_acting_i == char_current_i or ai_judge_yinghun(char_acting_i) ~= 3 then
 			add_funcptr(skills_yinghun, char_acting_i)
 		end
 	end
-
+	
+	if char_juese[char_acting_i].skill["观星"] == "available" then
+		if char_acting_i == char_current_i or ai_judge_guanxing(char_acting_i) ~= false then
+			add_funcptr(skills_guanxing, char_acting_i)
+		end
+	end
+	
 	if char_juese[char_acting_i].skill["洛神"] == "available" then
 		add_funcptr(skills_luoshen, char_acting_i)
 	end
@@ -508,13 +522,12 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			table.remove(char_juese[char_acting_i].panding, id)
 		end
 	end
-		
+	--  郭嘉天妒  --
 	if char_juese[char_acting_i].skill["天妒"] ~= "available" then
 		pdcard = table.copy(card_panding_card)
-		card_add_qipai(pdcard)
+		card_add_qipai(card_panding_card)
 	else
-		push_message(char_juese[char_acting_i].name .. "发动了武将技能 '天妒', 获得了判定牌")
-		skills_tiandu_add({char_acting_i, card_panding_card})
+		skills_tiandu({char_acting_i, card_panding_card})
 	end
 end
 function _panding_sub3()    -- 子函数3：用于延时
@@ -570,9 +583,9 @@ function gamerun_huihe_jieshu(qipai)
 	    msg = {char_juese[char_acting_i].name, "弃牌阶段"}
         add_funcptr(push_message, table.concat(msg))
 		
-		if skills_judge_keji(char_acting_i) and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
-			add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
-		end
+		--if skills_judge_keji(char_acting_i) and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
+			--add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
+		--end
 	end
 	
 	if skills_judge_xueyi(char_acting_i) > 0 and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
@@ -586,7 +599,15 @@ function gamerun_huihe_jieshu(qipai)
 	if char_juese[char_acting_i].skill["闭月"] == "available" then
 		add_funcptr(skills_biyue,char_acting_i)
 	end
-
+	
+	if char_juese[char_acting_i].skill["据守"] == "available" then
+		add_funcptr(skills_jushou,char_acting_i)
+	end
+	
+	if char_juese[char_acting_i].skill["困奋"] == "available" then
+		add_funcptr(skills_kunfen,char_acting_i)
+	end
+	
 	if char_juese[char_acting_i].skill["崩坏"] == "available" then
 		if skills_judge_benghuai(char_acting_i) then
 			add_funcptr(skills_benghuai)
@@ -918,6 +939,11 @@ function on.enterKey()
 		return
 	end
 
+	if gamerun_status == "牌堆操作" then
+		gamerun_deal()
+		return
+	end
+
 	if gamerun_status == "确认操作" or string.find(gamerun_status, "技能选择") then
 		gamerun_OK = true
 		if string.find(gamerun_status, "拼点") then
@@ -955,6 +981,8 @@ function on.enterKey()
 			set_hints("")
 			card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
 			_fankui_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
 		end
 
 		platform.window:invalidate()
@@ -965,7 +993,7 @@ function on.enterKey()
 		if string.find(gamerun_status, "无懈") then
 			if table.getn2(card_selected) ~= 0 then
 				card = char_juese[char_current_i].shoupai[card_highlighted]
-				if string.find(card[1], "无懈可击") or char_juese[char_current_i].name == "卧龙诸葛" then
+				if string.find(card[1], "无懈可击") or char_juese[char_current_i].skill["看破"] == "available" then
 					_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 					card_selected = {}
 					set_hints("")
@@ -1277,7 +1305,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end
@@ -1293,12 +1321,16 @@ function on.escapeKey()
 		
 		--  出牌阶段特有模式  --
 		if gamerun_huihe == "出牌" then
-			if gamerun_dangxian == true then
+			if lihun_target ~= nil then
+				skills_lihun_stage_2_enter()
+			elseif gamerun_dangxian == true then
 				gamerun_skills_reset()
 				set_hints("")
 				card_highlighted = 1
 				gamerun_huihe_start()    -- 正常回合开始
 				consent_func_queue(0.2)
+			elseif char_juese[char_acting_i].skill["克己"]=="available" and not char_yisha then
+				skills_keji(char_current_i)
 			else
 				--  出牌结束，进入弃牌阶段  --
 				gamerun_huihe_set("弃牌")
@@ -1309,7 +1341,7 @@ function on.escapeKey()
 				extra = skills_judge_xueyi(char_current_i)
 	
 				--  判断吕蒙克己条件  --
-				if skills_judge_keji() == false then
+				--if skills_judge_keji() == false then
 					-- 如果体力小于手牌数则需弃牌 --
 					if char_juese[char_current_i].tili + extra < #char_juese[char_current_i].shoupai then
 						msg = {char_juese[char_current_i].name, "弃牌阶段"}
@@ -1322,11 +1354,11 @@ function on.escapeKey()
 						gamerun_huihe_jieshu(false)    -- 进入回合结束
 						consent_func_queue(0.2)
 					end
-				else
-					set_hints("")
-					gamerun_huihe_jieshu(false)    -- 进入回合结束
-					consent_func_queue(0.2)
-				end
+				--else
+					--set_hints("")
+					--gamerun_huihe_jieshu(false)    -- 进入回合结束
+					--consent_func_queue(0.2)
+				--end
 			end
 		end
 
@@ -1359,7 +1391,7 @@ function on.escapeKey()
 	end
 end
 
---  左/右键 (移动高亮的牌/选择卡牌使用目标)  --
+--  方向键 (移动高亮的牌/选择卡牌使用目标)  --
 function on.arrowKey(key)
 	if (gamerun_huihe == "" or gamerun_huihe == "游戏结束") and gamerun_status ~= "选项选择" then
 		return
@@ -1382,6 +1414,18 @@ function on.arrowKey(key)
 				if gamerun_guankan_selected > 1 then
 					gamerun_guankan_selected = gamerun_guankan_selected - 1
 				end
+			end
+		elseif string.find(gamerun_status, "牌堆操作") then
+			if gamerun_guankan_selected > 1 then
+				if gamerun_guankan_selected == card_dealed_selected then
+					if card_paidui_dealed == 1 then
+						card_dealed_1[card_dealed_selected],card_dealed_1[card_dealed_selected-1] = card_dealed_1[card_dealed_selected-1],card_dealed_1[card_dealed_selected]
+					elseif card_paidui_dealed == 2 then
+						card_dealed_2[card_dealed_selected],card_dealed_2[card_dealed_selected-1] = card_dealed_2[card_dealed_selected-1],card_dealed_2[card_dealed_selected]
+					end
+					card_dealed_selected = card_dealed_selected - 1
+				end
+				gamerun_guankan_selected = gamerun_guankan_selected - 1
 			end
 		else
 		    --  选取手牌状态  --
@@ -1414,6 +1458,18 @@ function on.arrowKey(key)
 					gamerun_guankan_selected = gamerun_guankan_selected + 1
 				end
 			end
+		elseif string.find(gamerun_status, "牌堆操作") then
+			if (gamerun_guankan_selected < #card_dealed_1 and card_paidui_dealed == 1) or (gamerun_guankan_selected < #card_dealed_2 and card_paidui_dealed == 2) then
+				if gamerun_guankan_selected == card_dealed_selected then
+					if card_paidui_dealed == 1 then
+						card_dealed_1[card_dealed_selected],card_dealed_1[card_dealed_selected+1] = card_dealed_1[card_dealed_selected+1],card_dealed_1[card_dealed_selected]
+					elseif card_paidui_dealed == 2 then
+						card_dealed_2[card_dealed_selected],card_dealed_2[card_dealed_selected+1] = card_dealed_2[card_dealed_selected+1],card_dealed_2[card_dealed_selected]
+					end
+					card_dealed_selected = card_dealed_selected + 1
+				end
+				gamerun_guankan_selected = gamerun_guankan_selected + 1
+			end
 		else
 			local wuqi
 			if #char_juese[char_current_i].wuqi ~= 0 then
@@ -1438,6 +1494,14 @@ function on.arrowKey(key)
 					item_disrow = item_disrow - 1
 				end
 			end
+		elseif string.find(gamerun_status, "牌堆操作") and card_paidui_dealed == 2 and (gamerun_guankan_selected == card_dealed_selected or #card_dealed_1 > 0) then
+			if gamerun_guankan_selected == card_dealed_selected then
+				table.insert(card_dealed_1,1,card_dealed_2[card_dealed_selected])
+				table.remove(card_dealed_2,card_dealed_selected)
+				card_dealed_selected = 1
+			end
+			gamerun_guankan_selected = 1
+			card_paidui_dealed = 1
 		elseif #char_juese[char_current_i].skillname > 4 and skill_disrow > 0 then
 			skill_disrow = skill_disrow - 1
 		end
@@ -1451,6 +1515,14 @@ function on.arrowKey(key)
 					item_disrow = item_disrow + 1
 				end
 			end
+		elseif string.find(gamerun_status, "牌堆操作") and card_paidui_dealed == 1 and (gamerun_guankan_selected == card_dealed_selected or #card_dealed_2 > 0) then
+			if gamerun_guankan_selected == card_dealed_selected then
+				table.insert(card_dealed_2,1,card_dealed_1[card_dealed_selected])
+				table.remove(card_dealed_1,card_dealed_selected)
+				card_dealed_selected = 1
+			end
+			gamerun_guankan_selected = 1
+			card_paidui_dealed = 2
 		elseif #char_juese[char_current_i].skillname > 4 and math.ceil(#char_juese[char_current_i].skillname / 2) - 2 > skill_disrow then
 			skill_disrow = skill_disrow + 1
 		end
@@ -1475,6 +1547,16 @@ function on.tabKey()
 	end
 
     if string.find(gamerun_status, "确认操作") or string.find(gamerun_status, "选项选择") or string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then
+		return
+	end
+	
+	if string.find(gamerun_status, "牌堆操作") then
+		if gamerun_guankan_selected ~= card_dealed_selected then
+			card_dealed_selected = gamerun_guankan_selected
+		else
+			card_dealed_selected = 0
+		end
+		platform.window:invalidate()
 		return
 	end
 	
