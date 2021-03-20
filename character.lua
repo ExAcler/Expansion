@@ -62,7 +62,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["贾诩"] = {{3,3}, "群", false, {"完杀", "乱武", "帷幕"}, "男", {"锁定", "限定", "锁定"}, true},	
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离间","奸雄","制衡","直谏","当先","火计","化身","新生","英魂","突袭","结姻","仁德"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离间","奸雄","天香","直谏","当先","火计","化身","新生","英魂","突袭","结姻","仁德"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -735,19 +735,35 @@ function char_tili_deduct(va_list)
 	id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]; fp = va_list[6]; AOE = va_list[7]
 	tili = char_juese[id].tili - _deduct_count(va_list)
 	
+	--  设置函数队列为体力扣减结算部分  --
+	local old_add_tag = funcptr_add_tag
+	if funcptr_add_tag == nil then
+		funcptr_add_tag = "体力扣减"
+	elseif string.find(funcptr_add_tag, "体力扣减") then
+
+	else
+		funcptr_add_tag = funcptr_add_tag .. "/体力扣减"
+	end
+
 	if laiyuan ~= nil then
 		if char_juese[laiyuan].skill["绝情"] == "available" and shuxing ~= "流失" then
 			add_funcptr(push_message, char_juese[laiyuan].name .. "触发了武将技能 '绝情'")
 			cansellblood, shuxing = false, "流失"
 		end
 	end
-
-	add_funcptr(_char_tili_deduct, va_list)
 	if shuxing ~= "流失" then
 		cansellblood = true
 	else
 		cansellblood = false
 	end
+
+	--  小乔天香  --
+	if char_juese[id].skill["天香"] == "available" and cansellblood == true then
+		add_funcptr(skills_tianxiang, {id, _deduct_count(va_list), shuxing, va_list})
+	end
+
+	--  扣减体力  --
+	add_funcptr(_char_tili_deduct, va_list)
 	
 	if laiyuan ~= nil then
 		--  魏延对距离1以内的玩家造成伤害，回复1点体力  --
@@ -755,7 +771,8 @@ function char_tili_deduct(va_list)
 			skills_kuanggu(laiyuan)
 		end
 	end
-		
+	
+	--  重置连环状态  --
 	hengzhi = char_juese[id].hengzhi
 	if shuxing == "火" or shuxing == "雷" then
 		if hengzhi == true then
@@ -769,12 +786,8 @@ function char_tili_deduct(va_list)
 	end
 
 	--  设置函数队列卖血标志  --
-	old_add_tag = funcptr_add_tag
-	if funcptr_add_tag == nil then
-		funcptr_add_tag = "卖血"
-	else
-		funcptr_add_tag = funcptr_add_tag .. "/卖血"
-	end
+	local old_add_tag_2 = funcptr_add_tag
+	funcptr_add_tag = funcptr_add_tag .. "/卖血"
 	if cansellblood then
 		char_skills_sellblood(va_list)
 	elseif tili <= 0 then
@@ -789,7 +802,7 @@ function char_tili_deduct(va_list)
 			end
 		end
 	end
-	funcptr_add_tag = old_add_tag
+	funcptr_add_tag = old_add_tag_2
 			
 	--  连环状态，下一个受到传导伤害  --
 	if hengzhi == true then
@@ -797,16 +810,8 @@ function char_tili_deduct(va_list)
 			_deduct_lianhuan(va_list)
 		end
 	end
-end
-function _deduct_find_cutin_position()	--  体力扣减：寻找插入伤害函数的位置（闪电）
-	for i = 1, #funcptr_queue do
-		if funcptr_queue[i].tag ~= nil then
-			if string.find(funcptr_queue[i].tag, "伤害插队") then
-				return i + 1
-			end
-		end
-	end
-	return nil
+
+	funcptr_add_tag = old_add_tag
 end
 function _deduct_chongzhi(ID)    --  体力扣减：横置状态重置
 	local msg

@@ -243,6 +243,11 @@ function ai_judge_yinghun_mubiao(ID, yinghun_choice)
 	return 1
 end
 
+--  AI决定天香的发动目标  --
+function ai_judge_tianxiang(ID, dianshu, shuxing)
+	return false, 0, 0
+end
+
 --  基本AI技能作用目标决定，完全依照身份  --
 function ai_basic_judge_mubiao(ID, required, is_help, target_list)
 	local possible_target

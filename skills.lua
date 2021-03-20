@@ -1816,7 +1816,7 @@ function skills_tiaoxin(ID_req, ID_d)
 		c_pos = card_chazhao(ID_d, "火杀")
 	end
 	if c_pos > -1 then
-	    card_sha(c_pos, ID_d, ID_req, false)
+	    card_sha({c_pos}, ID_d, ID_req, false)
 	else
 	    add_funcptr(_nanman_send_msg, {char_juese[ID_d].name, "放弃"})
 		add_funcptr(_chai_sub1, {true, ID_req, ID_d})
@@ -2495,7 +2495,7 @@ function _tuxi_sub1(va_list)
 	
 	t = math.random(#char_juese[ID_mubiao].shoupai)
 	card = char_juese[ID_mubiao].shoupai[t]
-	card_shanchu({ID_mubiao, t})
+	card_remove({ID_mubiao, t})
 	table.insert(char_juese[ID_s].shoupai, card)
 end
 function _tuxi_huifu()
@@ -3620,4 +3620,162 @@ function _lijian_exe(ID_shoupai, ID_s, ID_first, ID_second)
 	card_juedou({#char_juese[ID_first].shoupai}, ID_first, ID_second)
 	skills_cs()
 	consent_func_queue(0.6)
+end
+
+--  小乔：天香  --
+function skills_tianxiang(va_list)
+	local ID, dianshu, shuxing, deduct_va
+	ID = va_list[1]; dianshu = va_list[2]; shuxing = va_list[3]; deduct_va = va_list[4]
+
+	if ID == char_current_i then
+		skills_tianxiang_enter(dianshu, shuxing, deduct_va)
+	else
+		skills_tianxiang_ai(ID, dianshu, shuxing, deduct_va)
+	end
+end
+function skills_tianxiang_ai(ID, dianshu, shuxing, deduct_va)
+	local fadong, ID_shoupai, ID_mubiao
+	fadong, ID_shoupai, ID_mubiao = ai_judge_tianxiang(ID, dianshu, shuxing)
+
+	if fadong == false then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	_tianxiang_exe(ID_shoupai, ID, ID_mubiao, dianshu, deduct_va)
+end
+function skills_tianxiang_enter(dianshu, shuxing, deduct_va)
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local old_gamerun_status = gamerun_status
+
+	gamerun_status = "选项选择"
+	choose_name = "天香"
+	jiaohu_text = table.concat({"是否发动 '天香' 转移", dianshu, "点", shuxing, "属性伤害?"})
+	choose_option = {"是", "否"}
+
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		set_hints("")
+
+		if i == 1 then
+			_tianxiang_select_target(dianshu, shuxing, deduct_va, old_gamerun_status)
+		else
+			gamerun_status = old_gamerun_status
+			_tianxiang_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+	end
+
+	platform.window:invalidate()
+end
+function _tianxiang_select_target(dianshu, shuxing, deduct_va, old_gamerun_status)
+	skills_enter("请选择红桃牌", "请选择目标", "天香", "技能选择-单牌")
+	
+	gamerun_OK_ptr = function()
+		if gamerun_status == "技能选择-目标" then
+			if gamerun_OK == true then
+				if table.getn2(card_selected) == 1 and char_juese[char_current_i].shoupai[card_highlighted][2] == "红桃" then
+					_tianxiang_exe(card_highlighted, char_current_i, gamerun_target_selected, dianshu, deduct_va)
+				end
+			end
+			return
+		end
+		
+		if gamerun_status == "技能选择-单牌" then
+			if gamerun_OK == false then
+				gamerun_status = old_gamerun_status
+				set_hints("")
+				_tianxiang_huifu()
+				funcptr_i = funcptr_i + 1
+				timer.start(0.6)
+			end
+			return
+		end
+	end
+	
+	gamerun_tab_ptr = function()
+		if table.getn2(card_selected) == 1 and char_juese[char_current_i].shoupai[card_highlighted][2] == "红桃" then
+			skills_enter_target()
+		end
+	end
+end
+function _tianxiang_exe(ID_shoupai, ID, ID_mubiao, dianshu, deduct_va)
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	
+	add_funcptr(_tianxiang_sub1, {ID_shoupai, ID})
+	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '天香' (对" .. char_juese[ID_mubiao].name .. ")")
+
+	deduct_va[1] = dianshu
+	deduct_va[2] = ID_mubiao
+	deduct_va[5] = ID_mubiao
+	char_tili_deduct(deduct_va)
+
+	add_funcptr(_tianxiang_mopai, ID_mubiao)
+	timer.start(0.6)
+end
+function _tianxiang_sub1(va_list)
+	local ID_shoupai, ID
+	ID_shoupai = va_list[1]; ID = va_list[2]
+
+	local card = char_juese[ID].shoupai[ID_shoupai]
+	card_add_qipai(card)
+	card_remove({ID, ID_shoupai})
+	push_message(table.concat({char_juese[ID].name, "弃掉了", card[2], card[3], "的", card[1]}))
+end
+function _tianxiang_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+function _tianxiang_remove_last_deduct()		--  天香：从函数队列中删除上一个伤害队列
+	local v_funcptr_queue, v_funcptr_i
+	v_funcptr_queue, v_funcptr_i = pop_zhudong_queue()
+
+	local items_to_remove = {}
+	local keep_after = false
+	for i = 1, #v_funcptr_queue do
+		local tag = v_funcptr_queue[i].tag
+
+		if tag ~= nil then
+			if string.find(tag, "体力扣减") and keep_after == false then
+				keep_after = true
+			end
+
+			if string.find(tag, "体力扣减") or keep_after == false then
+				table.insert(items_to_remove, i)
+			else
+				break
+			end
+		else
+			if keep_after == false then
+				table.insert(items_to_remove, i)
+			else
+				break
+			end
+		end
+	end
+
+	for i = #items_to_remove, 1, -1 do
+		table.remove(v_funcptr_queue, items_to_remove[i])
+	end
+
+	funcptr_queue = v_funcptr_queue
+	funcptr_i = 0
+end
+function _tianxiang_mopai(ID_mubiao)
+	local lost_tili = char_juese[ID_mubiao].tili_max - char_juese[ID_mubiao].tili
+	card_fenfa({ID_mubiao, lost_tili, true})
+	_tianxiang_remove_last_deduct()
 end
