@@ -927,6 +927,157 @@ function _fankui_huifu()
 	timer.start(0.6)
 end
 
+--  夏侯惇：刚烈  --
+function skills_ganglie(va_list)
+	local ID, laiyuan
+	ID = va_list[1]
+	laiyuan = va_list[2]
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID == char_current_i then
+		add_funcptr(skills_ganglie_enter,laiyuan)
+		timer.start(0.6)
+	else
+		skills_ganglie_ai(ID,laiyuan)
+	end
+end
+
+function skills_ganglie_enter(laiyuan)
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '刚烈'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+	
+		if gamerun_OK then
+			gamerun_status = old_gamerun_status; set_hints("")
+			funcptr_queue = {}
+			add_funcptr(_ganglie_exe,{char_current_i, laiyuan})
+			consent_func_queue(0.6)
+	    else
+			set_hints("")
+			gamerun_status = old_gamerun_status
+			
+			_ganglie_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	platform.window:invalidate()
+end
+
+function skills_ganglie_ai(ID,ID_mubiao)
+	local fanmian_mubiao = ai_judge_ganglie_mubiao(ID,ID_mubiao)
+	
+	if fanmian_mubiao ~= nil then
+		_ganglie_exe({ID, fanmian_mubiao})
+	end
+	add_funcptr(_ganglie_huifu)
+	timer.start(0.6)
+end
+
+function _ganglie_exe(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+	ganglie_gamerun_status = gamerun_status
+	--[[push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0]]
+
+    push_message(table.concat({char_juese[ID_s].name .. "发动了武将技能 '刚烈'"}))
+	add_funcptr(_ganglie_fan_panding, ID_s)
+
+	--  如场上有司马懿或张角，询问其改判技能  --
+	skills_guicai_guidao_ask(ID_s, ID_mubiao, ID_s, "刚烈")
+	
+	add_funcptr(_ganglie_jiesuan, {ID_s, ID_mubiao})
+	timer.start(0.6)
+end
+function skills_enter_ganglie(ID_s)
+	funcptr_queue = {}
+	push_message(char_juese[ID_s].name .. "的 '刚烈' 判定成功")
+	gamerun_status = "主动出牌-刚烈"
+	set_hints("'确定': 弃两张牌 '取消': 失去1体力")
+end
+function _ganglie_fan_panding(ID_s)		--  刚烈：翻开判定牌
+	--  翻开判定牌  --
+	if #card_yixi == 0 then
+	    card_xipai(true)
+	end
+    card_panding_card = card_yixi[1]
+	table.remove(card_yixi, 1)
+	push_message(table.concat({char_juese[ID_s].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
+end
+function _ganglie_jiesuan(va_list)		--  刚烈：结算判定牌
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	if card_panding_card[2] ~= "红桃" then
+		if ID_mubiao == char_current_i then
+			skills_enter_ganglie(ID_s)
+			guankan_s = ID_s
+			guankan_d = ID_mubiao
+		else
+			_ganglie_exe_ai(ID_s, ID_mubiao)
+		end
+		card_add_qipai(card_panding_card)
+	else
+		push_message(char_juese[ID_s].name .. "的 '刚烈' 判定失败")
+		card_add_qipai(card_panding_card)
+		_ganglie_huifu()
+	end
+end
+function _ganglie_huifu()	--  刚烈：恢复己方中断前函数队列
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+	timer.start(0.6)
+end
+function _ganglie_exe_ai(ID_s, ID_mubiao)	--  刚烈：AI做出决定
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	push_message(char_juese[ID_s].name .. "的 '刚烈' 判定成功")
+	gamerun_status = ganglie_gamerun_status
+	char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
+	add_funcptr(_ganglie_huifu)
+
+	timer.start(0.6)
+end
+function _ganglie_exe_1()    --  刚烈：弃置两张牌
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	card_highlighted = 1
+	
+	card_qipai_go()
+	gamerun_status = ganglie_gamerun_status
+	add_funcptr(_ganglie_huifu)
+end
+function _ganglie_exe_2()    --  刚烈：失去1点体力
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	card_selected = {}; card_highlighted = 1
+	gamerun_status = ganglie_gamerun_status
+	char_tili_deduct({1, guankan_d, guankan_s, "普通", guankan_d})
+	add_funcptr(_ganglie_huifu)
+end
+function _ganglie_sub()
+	funcptr_queue = {}
+	card_selected = {}
+	card_highlighted = 1
+	set_hints("请您出牌")
+	gamerun_status = ""
+	guankan_s = 0
+	guankan_d = 0
+end
+
 --  甘宁：奇袭  --
 function skills_qixi_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
@@ -2287,101 +2438,6 @@ function _leiji_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
---  夏侯惇：刚烈  --
-function skills_ganglie(va_list)
-	local ID_s, ID_mubiao
-	ID_s = va_list[1]; ID_mubiao = va_list[2]
-
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
-
-    push_message(table.concat({char_juese[ID_s].name .. "发动了武将技能 '刚烈'"}))
-	add_funcptr(_ganglie_fan_panding, ID_s)
-
-	--  如场上有司马懿或张角，询问其改判技能  --
-	skills_guicai_guidao_ask(ID_s, ID_mubiao, ID_s, "刚烈")
-	
-	add_funcptr(_ganglie_jiesuan, {ID_s, ID_mubiao})
-	timer.start(0.6)
-end
-function skills_enter_ganglie(ID_s)
-	funcptr_queue = {}
-	push_message(char_juese[ID_s].name .. "的 '刚烈' 判定成功")
-	gamerun_status = "主动出牌-刚烈"
-	set_hints("'确定': 弃两张牌 '取消': 失去1体力")
-end
-function _ganglie_fan_panding(ID_s)		--  刚烈：翻开判定牌
-	--  翻开判定牌  --
-	if #card_yixi == 0 then
-	    card_xipai(true)
-	end
-    card_panding_card = card_yixi[1]
-	table.remove(card_yixi, 1)
-	push_message(table.concat({char_juese[ID_s].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
-end
-function _ganglie_jiesuan(va_list)		--  刚烈：结算判定牌
-	local ID_s, ID_mubiao
-	ID_s = va_list[1]; ID_mubiao = va_list[2]
-
-	if card_panding_card[2] ~= "红桃" then
-		if ID_mubiao == char_current_i then
-			skills_enter_ganglie(ID_s)
-			guankan_s = ID_s
-			guankan_d = ID_mubiao
-		else
-			_ganglie_exe_ai(ID_s, ID_mubiao)
-		end
-		card_add_qipai(card_panding_card)
-	else
-		push_message(char_juese[ID_s].name .. "的 '刚烈' 判定失败")
-		card_add_qipai(card_panding_card)
-		_ganglie_huifu()
-	end
-end
-function _ganglie_huifu()	--  刚烈：恢复己方中断前函数队列
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
-	timer.start(0.6)
-end
-function _ganglie_exe_ai(ID_s, ID_mubiao)	--  刚烈：AI做出决定
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
-
-	push_message(char_juese[ID_s].name .. "的 '刚烈' 判定成功")
-
-	char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
-	add_funcptr(_ganglie_huifu)
-
-	timer.start(0.6)
-end
-function _ganglie_exe_1()    --  刚烈：弃置两张牌
-	gamerun_status = "手牌生效中"
-	set_hints("")
-	card_highlighted = 1
-	
-	card_qipai_go()
-	add_funcptr(_ganglie_huifu)
-end
-function _ganglie_exe_2()    --  刚烈：失去1点体力
-	gamerun_status = "手牌生效中"
-	set_hints("")
-	card_selected = {}; card_highlighted = 1
-	
-	char_tili_deduct({1, guankan_d, guankan_s, "普通", guankan_d})
-	add_funcptr(_ganglie_huifu)
-end
-function _ganglie_sub()
-	funcptr_queue = {}
-	card_selected = {}
-	card_highlighted = 1
-	set_hints("请您出牌")
-	gamerun_status = ""
-	guankan_s = 0
-	guankan_d = 0
-end
-
 --  张辽：突袭  --
 function skills_tuxi(ID)
 	if game_skip_mopai == true then
@@ -3078,6 +3134,7 @@ function skills_yiji_fenfa(old_gamerun_status)
 	end
 	txt_messages:setVisible(false)
 	gamerun_status = "选项选择"
+	choose_name = "遗计"
 	msg = table.concat({"牌堆顶的'",card_yixi[1][2],card_yixi[1][3],"的",card_yixi[1][1],"'"})
 	jiaohu_text = "是否把"..msg.."给别人"
 	choose_option = {"是","否"}
@@ -3089,9 +3146,11 @@ function skills_yiji_fenfa(old_gamerun_status)
 		if i == 2 then
 			txt_messages:setVisible(true)
 			_yiji_exe({char_current_i,char_current_i})
-			gamerun_status = old_gamerun_status
+			gamerun_status = yiji_gamerun_status
+			platform.window:invalidate()
 		else
 			skills_yiji_choose_mubiao(old_gamerun_status)
+			platform.window:invalidate()
 		end
 		--[[gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -3115,10 +3174,12 @@ function skills_yiji_choose_mubiao(old_gamerun_status)
 		if gamerun_OK == true then
 			set_hints("")
 			gamerun_status = old_gamerun_status
-
+			jiaohu_text = ""
 			_yiji_exe({id, gamerun_target_selected})
+			platform.window:invalidate()
 		end
 	end
+	platform.window:invalidate()
 end
 function skills_yiji_ai(ID)
 	local bupai_mubiao = ai_judge_yiji_mubiao(ID)
@@ -3136,7 +3197,8 @@ function _yiji_exe(va_list)
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
 	push_message(table.concat({char_juese[ID_s].name, "令", char_juese[ID_mubiao].name, "获得牌堆顶的一张牌"}))
-	card_fenfa({ID_mubiao, 1, true})
+    table.insert(char_juese[ID].shoupai, card_yixi[1])
+	table.remove(card_yixi, 1)
 	if yiji_first_time == false then
 		funcptr_queue = {}
 		add_funcptr(_yiji_huifu)

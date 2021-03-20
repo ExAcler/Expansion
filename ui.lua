@@ -662,6 +662,8 @@ function draw_others(gc)
 		gc:setPen("medium")
 	    gc:setColorRGB(255, 0, 0)
 	    gc:drawRect(83 + 18 * gamerun_guankan_selected, 117 - 10 - 27, 41, 57)
+	elseif string.find(gamerun_status, "牌堆操作") then
+		
 	elseif string.find(gamerun_status, "选项选择") then
 		gc:setColorRGB(255, 255, 255)
 		gc:fillRect(20, 15, 280, 190)

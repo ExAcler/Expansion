@@ -296,6 +296,7 @@ function char_choose_wujiang()
 		wujiang_number = 2
 	end
 	math.randomseed(timer.getMilliSecCounter())
+	table.insert(wujiang_choose,{char_juese_jineng[char_wujiang_f[9]][2], char_wujiang_f[9], char_juese_jineng[char_wujiang_f[9]][1][1], char_juese_jineng[char_wujiang_f[9]][1][2], char_juese_jineng[char_wujiang_f[9]][5]})
 	while wujiang_number > 0 do
 		local t = math.random(#char_wujiang_f)
 		if char_juese_jineng[char_wujiang_f[t]][7] == true then

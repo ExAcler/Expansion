@@ -4470,7 +4470,7 @@ function card_jiedao(ID_shoupai, ID_req, ID_s, ID_d)
 			c_pos = card_chazhao(ID_s, "火杀")
 		end
 		if c_pos > -1 then
-	    	card_sha(c_pos, ID_s, ID_d, false)
+	    	card_sha({c_pos}, ID_s, ID_d, false)
 		else	
 	    	add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "放弃"})
 			add_funcptr(_jiedao_swap, {ID_req, ID_s})
@@ -4499,7 +4499,7 @@ function _jiedao_beidong_chu(c_pos, va_list)	--  借刀杀人：己方出杀
 	card_highlighted = 1
 	card_selected = {}
 
-	card_sha(c_pos, ID_s, ID_d, false)
+	card_sha({c_pos}, ID_s, ID_d, false)
 	add_funcptr(_jiedao_sub2)
 end
 function _jiedao_beidong_fangqi(va_list)	--  借刀杀人：己方放弃
