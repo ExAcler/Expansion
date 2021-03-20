@@ -1491,6 +1491,7 @@ function on.tabKey()
 				set_hints(skill_text_1)
 				gamerun_status = last_status
 				gamerun_target_selected = 0
+				platform.window:invalidate()
 				return
 			end
 			
@@ -1498,6 +1499,7 @@ function on.tabKey()
 				if gamerun_tab_ptr ~= nil then
 					gamerun_tab_ptr()
 				end
+				platform.window:invalidate()
 				return
 			end
 		end
@@ -1507,6 +1509,7 @@ function on.tabKey()
 			    set_hints("请您出牌")
 			    gamerun_status = ""
 			    gamerun_target_selected = 0
+				platform.window:invalidate()
 				return
 			end
 			
@@ -1515,6 +1518,7 @@ function on.tabKey()
 					set_hints(skill_text_1)
 					gamerun_status = last_status
 					gamerun_target_selected = 0
+					platform.window:invalidate()
 				end
 				return
 			end
@@ -1523,6 +1527,7 @@ function on.tabKey()
 				if gamerun_tab_ptr ~= nil then
 					gamerun_tab_ptr()
 				end
+				platform.window:invalidate()
 				return
 			end
 		end
@@ -1540,6 +1545,7 @@ function on.tabKey()
 				set_hints(card_tishi[card2])
 			    gamerun_status = ""
 			    gamerun_target_selected = 0
+				platform.window:invalidate()
 			end
 
 			return

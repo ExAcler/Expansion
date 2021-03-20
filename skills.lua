@@ -3504,12 +3504,11 @@ function skills_jianxiong_enter()
 	gamerun_OK_ptr = function()
 		funcptr_queue = {}
 		gamerun_status = old_gamerun_status
-	
+		set_hints("")
+
 		if gamerun_OK then
 			_jianxiong_exe(char_current_i)
 	    else
-			set_hints("")
-			
 			_jianxiong_huifu()
 			funcptr_i = funcptr_i + 1
 			timer.start(0.6)

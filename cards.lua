@@ -4143,7 +4143,7 @@ function _sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)    --  杀：扣
 	
 	if #card_shoupai == 1 then
 		if card_shoupai[1][1] == "杀" or card_shoupai[1][1] == "火杀" or card_shoupai[1][1] == "雷杀" then
-			hint_1 = card_shoupai[1]
+			hint_1 = card_shoupai[1][1]
 		else
 			hint_1 = "杀"
 		end
