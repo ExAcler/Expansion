@@ -596,8 +596,32 @@ end
 -- AI决定是否反馈 --
 function ai_judge_fankui_mubiao(ID_s, ID_mubiao)
 	if ID_mubiao ~= nil then
-		if i == ID then
+		if ID_s == ID_mubiao then
 			return ID_mubiao
+		elseif char_juese[ID_mubiao].siwang == true then
+			
+		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_s) == true) then
+			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
+				
+			else
+				return ID_mubiao
+			end
+		elseif char_juese[ID].shenfen == "反贼" then
+			if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
+				
+			else
+				return ID_mubiao
+			end
+		end
+	end
+	return nil
+end
+
+-- AI决定是否刚烈 --
+function ai_judge_ganglie_mubiao(ID_s, ID_mubiao)
+	if ID_mubiao ~= nil then
+		if ID_s == ID_mubiao then
+			
 		elseif char_juese[ID_mubiao].siwang == true then
 			
 		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_s) == true) then
@@ -821,12 +845,22 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 				table.remove(possible_target,i)
 			end
 		elseif char_juese[ID].shenfen == "内奸" then
-			if ai_judge_blackjack(ID)==true then
-				if char_juese[possible_target[i]].isantigovernment == false then
+			local pk = true
+			for i = 1, 5 do
+				if char_juese[i].shenfen ~= "主公" and char_juese[i].shenfen ~= "内奸" and char_juese[i].siwang == false then
+					pk = false
+				end
+			end
+			if pk == true then
+				
+			elseif char_juese[i].shenfen == "主公" and char_juese[i].tili == 1 then
+				table.remove(possible_target,i)
+			elseif ai_judge_blackjack(ID) == true then
+				if char_juese[possible_target[i]].isantigovernment ~= false then
 					table.remove(possible_target,i)
 				end
 			else
-				if char_juese[possible_target[i]].isantigovernment ~= false then
+				if char_juese[possible_target[i]].isantigovernment == false or char_juese[possible_target[i]].shenfen == "主公" then
 					table.remove(possible_target,i)
 				end
 			end
@@ -982,6 +1016,7 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 			if char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[ID].wuqi[1] ~= "青钢剑" then
 				table.remove(possible_target,i)
 			end
+			
 		end
 		--剔除能流离给队友的角色
 		for i=#possible_target,1,-1 do
@@ -1019,6 +1054,30 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 				end
 			end
 		end
+	end
+	local judge_time = 1
+	while #possible_target > target_number and judge_time <= 10 do
+		local delete_target = math.random(#possible_target)
+		if (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[delete_target].isblackjack == true then
+			local znz = true
+			for i = 1, 5 do
+				if char_juese[i].shenfen == "反贼" and char_juese[i].siwang == false then
+					znz = false
+				end
+			end
+			if znz then
+				
+			else
+				if ai_judge_random_percent(60) == 1 then
+					table.remove(possible_target,delete_target)
+				end
+			end
+		elseif char_juese[ID].shenfen == "反贼" and char_juese[ID].shenfen == "主公" then
+			
+		else
+			table.remove(possible_target,delete_target)
+		end
+		judge_time = judge_time + 1
 	end
 	while #possible_target > target_number do
 		table.remove(possible_target,math.random(#possible_target))
@@ -1157,7 +1216,7 @@ function ai_judge_AOE(ID,card)
 				end
 			end
 		elseif char_juese[ID].shenfen == "内奸" then
-				local pk = true
+			local pk = true
 			for i = 1, 5 do
 				if char_juese[i].shenfen ~= "主公" and char_juese[i].shenfen ~= "内奸" and char_juese[i].siwang == false then
 					pk = false
@@ -1701,7 +1760,13 @@ function ai_judge_withdraw_other(ID,ID_s,is_zhuangbei_included,is_panding_includ
 				_qipai_sub3({ID,1,true})
 			end
 		else
-			if #char_juese[ID].shoupai ~= 0 then
+			if char_juese[ID].fangju[1] == "白银狮" and char_juese[ID].tili < char_juese[ID].tili_max then
+				if is_gain then
+					_napai_sub5(ID,ID_s,nil,true)
+				else
+					_qipai_sub5(ID,nil,true)
+				end
+			elseif #char_juese[ID].shoupai ~= 0 then
 				if is_gain then
 					_napai_sub2({ID,ID_s,math.random(#char_juese[ID].shoupai),true})
 				else
@@ -1801,7 +1866,7 @@ function ai_card_use(ID)
 		end
 	end
 
-	if #char_juese[ID].fangju == 0 or char_juese[ID].skill["枭姬"] == "available" then
+	if (#char_juese[ID].fangju == 0 and char_juese[ID].skill["八阵"] ~= "available") or char_juese[ID].skill["枭姬"] == "available" then
 		local card_use = ai_card_search(ID, "防具", 1)
 		if #card_use ~= 0 then
 			card_chupai_ai(card_use[1], ID, nil, nil)
@@ -1912,11 +1977,13 @@ function ai_card_use(ID)
 			targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 	
 			if #targets > 0 then
-				ID_mubiao = targets[1]
-				card_chupai_ai(card_use[1], ID, ID_mubiao, nil)
-				--  决斗后处理ai_next_card --
-				timer.start(0.6)
-				return
+				if ai_judge_random_percent(20*(#char_juese[ID].shoupai - #char_juese[targets[1]].shoupai) + 60) == 1 or #char_juese[targets[1]].shoupai == 0 then
+					ID_mubiao = targets[1]
+					card_chupai_ai(card_use[1], ID, ID_mubiao, nil)
+					--  决斗后处理ai_next_card --
+					timer.start(0.6)
+					return
+				end
 			end
 		end
 	end
@@ -1946,10 +2013,12 @@ function ai_card_use(ID)
 	
 		if #targets > 0 then
 			ID_mubiao = targets[1]
-			if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
-				--  火攻后处理ai_next_card --
-				timer.start(0.6)
-				return
+			if ai_judge_random_percent(30*(#char_juese[ID].shoupai - #char_juese[targets[1]].shoupai)) == 1 then
+				if card_chupai_ai(card_use[1], ID, ID_mubiao, nil) then
+					--  火攻后处理ai_next_card --
+					timer.start(0.6)
+					return
+				end
 			end
 		end
 	end
@@ -1975,11 +2044,13 @@ function ai_card_use(ID)
 		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
 
 		if #targets > 0 and char_hejiu == false then
-			local card_use_jiu = ai_card_search(ID, "酒", 1)
-			if #card_use_jiu ~= 0 then
-				if card_chupai_ai(card_use_jiu[1], ID, nil, nil) then
-					ai_next_card(ID)
-					return
+			if char_juese[targets[1]].fangju ~= "白银狮" then
+				local card_use_jiu = ai_card_search(ID, "酒", 1)
+				if #card_use_jiu ~= 0 and (char_sha_time > 0 or char_juese[ID].wuqi[1] == "诸葛弩" ) and char_sha_able == true then
+					if card_chupai_ai(card_use_jiu[1], ID, nil, nil) then
+						ai_next_card(ID)
+						return
+					end
 				end
 			end
 		end

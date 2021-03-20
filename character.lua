@@ -62,7 +62,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["贾诩"] = {{3,3}, "群", false, {"完杀", "乱武", "帷幕"}, "男", {"锁定", "限定", "锁定"}, true},	
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","节命","好施","制衡","直谏","当先","火计","化身","新生","英魂","突袭","结姻","仁德"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","节命","好施","制衡","直谏","当先","火计","化身","新生","英魂","突袭","遗计","仁德"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -296,6 +296,7 @@ function char_choose_wujiang()
 		wujiang_number = 2
 	end
 	math.randomseed(timer.getMilliSecCounter())
+	table.insert(wujiang_choose,{char_juese_jineng[char_wujiang_f[9]][2], char_wujiang_f[9], char_juese_jineng[char_wujiang_f[9]][1][1], char_juese_jineng[char_wujiang_f[9]][1][2], char_juese_jineng[char_wujiang_f[9]][5]})
 	while wujiang_number > 0 do
 		local t = math.random(#char_wujiang_f)
 		if char_juese_jineng[char_wujiang_f[t]][7] == true then

@@ -323,38 +323,38 @@ function draw_self(gc)
 	-- 绘制卡牌 --
     -- img_width = 28 = (167 - 81) / (n - 1)
 	if #char_juese[char_current_i].shoupai > 0 then
-	if #char_juese[char_current_i].shoupai > 3 then
-	    img_width = (167 - 81) / (#char_juese[char_current_i].shoupai - 1)
-	else
-	    img_width = 29
-	end
-	for i = 1, #char_juese[char_current_i].shoupai do
-	    if i ~= card_highlighted or (i == card_highlighted and card_selected[card_highlighted] ~= nil) then
-		    if card_selected[i] == nil then
-			    base_y = 151
-			else
-			    base_y = 146
-			end
-	        gc:drawImage(cards_img[char_juese[char_current_i].shoupai[i][1]], 81 + img_width * (i - 1), base_y)
-		    gc:drawImage(color_img[char_juese[char_current_i].shoupai[i][2]], 82 + img_width * (i - 1), base_y + 2)
-		    gc:setFont("sansserif", "r", 7)
-	        gc:drawString(char_juese[char_current_i].shoupai[i][3], 85 + img_width * (i - 1), base_y + 22)
-	        gc:setFont("sansserif", "r", 11)
+		if #char_juese[char_current_i].shoupai > 3 then
+			img_width = (167 - 81) / (#char_juese[char_current_i].shoupai - 1)
+		else
+			img_width = 29
 		end
-	end
-	if card_selected[card_highlighted] == nil and card_highlighted ~= nil then
-		if #char_juese[char_current_i].shoupai > 0 and card_highlighted > 0 then
-			if card_highlighted > #char_juese[char_current_i].shoupai then
-				card_highlighted = 1
+		for i = 1, #char_juese[char_current_i].shoupai do
+			if i ~= card_highlighted or (i == card_highlighted and card_selected[card_highlighted] ~= nil) then
+				if card_selected[i] == nil then
+					base_y = 151
+				else
+					base_y = 146
+				end
+				gc:drawImage(cards_img[char_juese[char_current_i].shoupai[i][1]], 81 + img_width * (i - 1), base_y)
+				gc:drawImage(color_img[char_juese[char_current_i].shoupai[i][2]], 82 + img_width * (i - 1), base_y + 2)
+				gc:setFont("sansserif", "r", 7)
+				gc:drawString(char_juese[char_current_i].shoupai[i][3], 85 + img_width * (i - 1), base_y + 22)
+				gc:setFont("sansserif", "r", 11)
 			end
+		end
+		if card_selected[card_highlighted] == nil and card_highlighted ~= nil then
+			if #char_juese[char_current_i].shoupai > 0 and card_highlighted > 0 then
+				if card_highlighted > #char_juese[char_current_i].shoupai then
+					card_highlighted = 1
+				end
 
-			gc:drawImage(cards_img[char_juese[char_current_i].shoupai[card_highlighted][1]], 81 + img_width * (card_highlighted - 1), 151)
-			gc:drawImage(color_img[char_juese[char_current_i].shoupai[card_highlighted][2]], 82 + img_width * (card_highlighted - 1), 153)
-			gc:setFont("sansserif", "r", 7)
-			gc:drawString(char_juese[char_current_i].shoupai[card_highlighted][3], 85 + img_width * (card_highlighted - 1), 173)
-			gc:setFont("sansserif", "r", 11)
+				gc:drawImage(cards_img[char_juese[char_current_i].shoupai[card_highlighted][1]], 81 + img_width * (card_highlighted - 1), 151)
+				gc:drawImage(color_img[char_juese[char_current_i].shoupai[card_highlighted][2]], 82 + img_width * (card_highlighted - 1), 153)
+				gc:setFont("sansserif", "r", 7)
+				gc:drawString(char_juese[char_current_i].shoupai[card_highlighted][3], 85 + img_width * (card_highlighted - 1), 173)
+				gc:setFont("sansserif", "r", 11)
+			end
 		end
-	end
 	end
 	
 	if char_juese[char_current_i].name == "" then return end
@@ -654,6 +654,8 @@ function draw_others(gc)
 		gc:setPen("medium")
 	    gc:setColorRGB(255, 0, 0)
 	    gc:drawRect(83 + 18 * gamerun_guankan_selected, 117 - 10 - 27, 41, 57)
+	elseif string.find(gamerun_status, "牌堆操作") then
+		
 	elseif string.find(gamerun_status, "选项选择") then
 		gc:setColorRGB(255, 255, 255)
 		gc:fillRect(20, 15, 280, 190)
