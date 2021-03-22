@@ -319,6 +319,11 @@ function ai_judge_tianxiang(ID, dianshu, shuxing)
 	return false, 0, 0
 end
 
+--  AI决定是否发动固政，以及要返还的手牌  --
+function ai_judge_guzheng(ID_s, ID_mubiao)
+	return false, 0
+end
+
 --  基本AI技能作用目标决定，完全依照身份  --
 function ai_basic_judge_mubiao(ID, required, is_help, target_list)
 	local possible_target
@@ -2241,8 +2246,8 @@ function ai_stage_qipai(ID)
 		set_hints("")
 		gamerun_huihe_start()    -- 正常回合开始
 	else
-		gamerun_huihe_set("弃牌")
-		add_funcptr(push_message, table.concat({char_juese[ID].name, "弃牌阶段"}))
+		add_funcptr(_qipai_huihe_set)
+		wugucards = {}
 
 		local extra = 0
 		extra = skills_judge_xueyi(char_acting_i)
@@ -2255,7 +2260,7 @@ function ai_stage_qipai(ID)
 			gamerun_huihe_jieshu(true)
 		end
 	end
-	timer.start(0.6)
+	timer.start(0.2)
 end
 function _ai_qipai_exe(ID)
 	local extra = 0
@@ -2268,7 +2273,13 @@ function _ai_qipai_exe(ID)
 	for i = #qipai_id, 1, -1 do
 		add_funcptr(_qipai_sub1, qipai_id[i])
 	end
+	skills_losecard(ID, #qipai_id, true)
+
 	gamerun_huihe_jieshu(true)
+end
+function _qipai_huihe_set()
+	gamerun_huihe_set("弃牌")
+	push_message(table.concat({char_juese[char_acting_i].name, "弃牌阶段"}))
 end
 
 --  AI身份判定 --

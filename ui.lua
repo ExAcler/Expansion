@@ -646,7 +646,7 @@ function draw_others(gc)
 		gc:fillRect(50, 15, 220, 190)
         gc:setColorRGB(0, 0, 0)
         gc:drawRect(50, 15, 220, 190)
-		gc:drawString("五谷丰登", 130, 45)
+		gc:drawString(jiaohu_text, 159 - 1/2*gc:getStringWidth(jiaohu_text), 45)
 		for i = 1,#wugucards do
 			gc:drawImage(cards_img[wugucards[i][1]], 83 + 18 * i, 117 - 10 - 27)
 			gc:drawImage(color_img[wugucards[i][2]], 84 + 18 * i, 119 - 10 - 27)

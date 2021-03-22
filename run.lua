@@ -405,11 +405,7 @@ end
 
 --  判定阶段  --
 function gamerun_huihe_panding()
-    local msg
-
-    msg = {char_juese[char_acting_i].name, "判定阶段"}
-    add_funcptr(push_message, table.concat(msg))
-	add_funcptr(gamerun_huihe_set, "判定")
+    add_funcptr(_panding_huihe_set)
 	
 	for i = #char_juese[char_acting_i].panding, 1, -1 do
 		local card = char_juese[char_acting_i].panding[i][1]
@@ -433,6 +429,13 @@ function gamerun_huihe_panding()
 	funcptr_add_tag = "无懈执行完毕"
 	add_funcptr(_panding_sub3)
 	funcptr_add_tag = nil
+end
+function _panding_huihe_set()
+	local msg
+
+    msg = {char_juese[char_acting_i].name, "判定阶段"}
+	push_message(table.concat(msg))
+	gamerun_huihe_set("判定")
 end
 function _panding_get_leixing(id, panding_id)		--  判定阶段：获取判定牌的类型
 	local leixing = char_juese[id].panding[panding_id][1]
@@ -461,6 +464,11 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	local id, p
 	id = va_list[1]; p = va_list[2]
 	
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
 	card = _panding_get_leixing(char_acting_i, id)
     pass = false
 	
@@ -474,6 +482,8 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 		    msg = {char_juese[char_acting_i].name, "的'乐不思蜀'判定失败"}
 			push_message(table.concat(msg))
 		end
+
+		skills_card_qi_panding(char_acting_i)
 	end
 	
 	if card == "兵粮寸断" then
@@ -486,6 +496,8 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 		    msg = {char_juese[char_acting_i].name, "的'兵粮寸断'判定失败"}
 			push_message(table.concat(msg))
 		end
+
+		skills_card_qi_panding(char_acting_i)
 	end
 	
 	if card == "闪电" then
@@ -494,18 +506,14 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 		    msg = {char_juese[char_acting_i].name, "的'闪电'判定成功"}
 			push_message(table.concat(msg))
 
-			push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-			timer.stop()
-			funcptr_queue = {}
-			funcptr_i = 0
-
+			skills_card_qi_panding(char_acting_i)
 			char_tili_deduct({3, char_acting_i, nil, "雷", char_acting_i})
-			add_funcptr(_panding_huifu)
-			timer.start(0.6)
 		else
 		    msg = {char_juese[char_acting_i].name, "的'闪电'判定失败"}
 			push_message(table.concat(msg))
 			pass = true
+
+			skills_card_qi_panding(char_acting_i)
 		end
 	end
 	
@@ -522,13 +530,9 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			table.remove(char_juese[char_acting_i].panding, id)
 		end
 	end
-	--  郭嘉天妒  --
-	if char_juese[char_acting_i].skill["天妒"] ~= "available" then
-		pdcard = table.copy(card_panding_card)
-		card_add_qipai(card_panding_card)
-	else
-		skills_tiandu({char_acting_i, card_panding_card})
-	end
+	
+	add_funcptr(_panding_huifu)
+	timer.start(0.2)
 end
 function _panding_sub3()    -- 子函数3：用于延时
 
@@ -575,20 +579,23 @@ end
 --  当前玩家/AI回合结束 (弃牌阶段~回合结束阶段)
 function gamerun_huihe_jieshu(qipai)
     local msg
-	
 	if not qipai then
-	    funcptr_queue = {}
-		
-		--  弃牌阶段  --
-	    msg = {char_juese[char_acting_i].name, "弃牌阶段"}
-        add_funcptr(push_message, table.concat(msg))
+		funcptr_queue = {}
 	end
+
+	--  弃牌阶段技能  --
+	for i = 1, 5 do
+		if i ~= char_acting_i and char_juese[i].skill["固政"] == "available" then
+			add_funcptr(skills_guzheng, {i, char_acting_i})
+		end
+	end
+	
+	--  回合结束  --
+	add_funcptr(_jieshu_huihe_set, qipai)
 	
 	if skills_judge_xueyi(char_acting_i) > 0 and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
 		add_funcptr(push_message, char_juese[char_acting_i].name .. "触发了武将技能 '血裔'")
 	end
-	
-	--  回合结束  --
 	
 	--  回合结束阶段技能  --
 	--  貂蝉闭月：可在回合结束阶段摸一张牌  --
@@ -626,8 +633,17 @@ function gamerun_huihe_jieshu(qipai)
     add_funcptr(push_message, table.concat(msg))
 	
 	add_funcptr(_jieshu_sub1, nil)
-	
-	msg = nil; --collectgarbage()
+end
+function _jieshu_huihe_set(qipai)
+	local msg
+
+	gamerun_huihe_set("结束")
+	card_huihe_cards_into_qipai()
+
+	if not qipai then
+	    msg = {char_juese[char_acting_i].name, "弃牌阶段"}
+        push_message(table.concat(msg))
+	end
 end
 function _jieshu_sub1()
 	gamerun_status = ""
@@ -1150,7 +1166,14 @@ function on.enterKey()
 	if string.find(gamerun_status, "牌堆选择") then
 		if string.find(gamerun_status, "五谷") then
 			_wugu_get_card_zhudong(char_current_i, gamerun_guankan_selected)
+			return
 		end
+
+		if string.find(gamerun_status, "固政") then
+			_guzheng_exe({gamerun_guankan_selected, char_current_i, guankan_s})
+			return
+		end
+
 		return
 	end
 	
@@ -1218,7 +1241,12 @@ function on.enterKey()
 		if table.getn2(card_selected) == #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili - extra then
 		    set_hints("")
 			funcptr_queue = {}; card_highlighted = 1
+			wugucards = {}
+
+			local n_qipai = table.getn2(card_selected)
 			card_qipai_go()    -- 执行弃牌
+			skills_losecard(char_current_i, n_qipai, true)
+
 	        gamerun_huihe_jieshu(true)    -- 进入回合结束阶段
 		    consent_func_queue(0.2)
 		end
