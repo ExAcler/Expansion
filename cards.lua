@@ -3405,7 +3405,7 @@ function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
 	ai_judge_shenfen()
 	
 	for i = 1, #ID_shoupai do
-		table.insert(card_shoupai, char_juese[ID_s].shoupai[ID_shoupai[1]])
+		table.insert(card_shoupai, char_juese[ID_s].shoupai[ID_shoupai[i]])
 	end
 
 	if #card_shoupai == 1 then
@@ -3422,30 +3422,28 @@ function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
 		end
 	end
 	
-	if #char_juese[ID_s].wuqi ~= 0 then
-		--  ai_judge_liegong如ID_s为己方则始终返回true  --
-		if char_juese[ID_s].skill["烈弓"] == "available" and skills_judge_liegong(ID_s, ID_mubiao) and ai_judge_liegong(ID_s) and iscur then
-			if ID_s == char_current_i then
-				skills_liegong_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-			else
-				skills_liegong(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-			end
+	--  ai_judge_liegong如ID_s为己方则始终返回true  --
+	if char_juese[ID_s].skill["烈弓"] == "available" and skills_judge_liegong(ID_s, ID_mubiao) and ai_judge_liegong(ID_s) and iscur then
+		if ID_s == char_current_i then
+			skills_liegong_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
 		else
+			skills_liegong(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+		end
+	elseif char_juese[ID_s].skill["铁骑"] == "available" and ai_judge_tieqi(ID_s, ID_mubiao) and iscur then
+		if ID_s == char_current_i then
+			skills_tieqi_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+		else
+			skills_tieqi(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+		end
+	else
+		if #char_juese[ID_s].wuqi ~= 0 then
 			if _sha_judge_zhuque_cixiong(ID_shoupai, card_shoupai, ID_s, ID_mubiao) == false then
 				_sha_go(ID_shoupai, card_shoupai, ID_s, ID_mubiao, iscur)
 			end
-		end
-	else
-		if char_juese[ID_s].skill["烈弓"] == "available" and skills_judge_liegong(ID_s, ID_mubiao) and ai_judge_liegong(ID_s) and iscur then
-			if ID_s == char_current_i then
-				skills_liegong_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-			else
-				skills_liegong(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-			end
-	    else
+		else
 			_sha_go(ID_shoupai, card_shoupai, ID_s, ID_mubiao, iscur)
 		end
-    end
+	end
 	return true
 end
 function _sha_judge_zhuque_cixiong(ID_shoupai, card_shoupai, ID_s, ID_mubiao)		--  杀：判断是否符合朱雀羽扇、雌雄双股剑发动条件
@@ -3584,6 +3582,9 @@ function _sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)	--  
 		return
 	end
 
+	_sha_exe_ai_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
+end
+function _sha_exe_ai_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
 	if #card ~= 0 then
 		if not char_wushi then        
 		    if card[1] == "八卦阵" then
@@ -3916,6 +3917,9 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 		return
 	end
 
+	_sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
+end
+function _sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
 	if #card ~= 0 then
 	    if not char_wushi then
 		    if card[1] == "八卦阵" then

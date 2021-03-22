@@ -47,6 +47,15 @@ function ai_judge_liegong(ID_s)
 	return true
 end
 
+--  AI决定是否发动铁骑  --
+function ai_judge_tieqi(ID_s, ID_mubiao)
+	if ID_s == char_current_i then
+		return true
+	end
+
+	return true
+end
+
 --  AI决定是否发动贯石斧  --
 function ai_judge_guanshi(ID_s)
 	if #char_juese[ID_s].shoupai > 2 then
@@ -539,6 +548,19 @@ function ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
 				card_id = card_chazhao_with_huase(id, "方块")
 			end
 
+			if card_id < 0 then
+				return nil
+			else
+				return card_id
+			end
+		end
+
+		--  被马超铁骑，改判使其失效  --
+		if panding_leixing == "铁骑" and (card_panding_card[2] == "红桃" or card_panding_card[2] == "方块") then
+			local card_id = card_chazhao_with_huase(id, "草花")
+			if card_id < 0 then
+				card_id = card_chazhao_with_huase(id, "黑桃")
+			end
 			if card_id < 0 then
 				return nil
 			else
@@ -2225,26 +2247,28 @@ function ai_stage_qipai(ID)
 		local extra = 0
 		extra = skills_judge_xueyi(char_acting_i)
 		
-		--if skills_judge_keji() == true and #char_juese[ID].shoupai > char_juese[ID].tili_max then
-			--add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
-		--end
-
 		if char_juese[ID].skill["克己"] == "available" and char_yisha == false then
 			add_funcptr(skills_keji,ID)
 		elseif char_juese[ID].tili + extra < #char_juese[ID].shoupai then
-			local qipai_id, i
-			local required = math.max(#char_juese[ID].shoupai - char_juese[ID].tili - extra, 0)
-			qipai_id, _ = ai_judge_withdraw(ID, required, false)
-
-			for i = #qipai_id, 1, -1 do
-				add_funcptr(_qipai_sub1, qipai_id[i])
-			end
-			add_funcptr(gamerun_huihe_jieshu,true)
+			_ai_qipai_exe(ID)
 		else
-			add_funcptr(gamerun_huihe_jieshu,true)
+			gamerun_huihe_jieshu(true)
 		end
 	end
 	timer.start(0.6)
+end
+function _ai_qipai_exe(ID)
+	local extra = 0
+	extra = skills_judge_xueyi(char_acting_i)
+
+	local qipai_id, i
+	local required = math.max(#char_juese[ID].shoupai - char_juese[ID].tili - extra, 0)
+	qipai_id, _ = ai_judge_withdraw(ID, required, false)
+
+	for i = #qipai_id, 1, -1 do
+		add_funcptr(_qipai_sub1, qipai_id[i])
+	end
+	gamerun_huihe_jieshu(true)
 end
 
 --  AI身份判定 --

@@ -582,10 +582,6 @@ function gamerun_huihe_jieshu(qipai)
 		--  弃牌阶段  --
 	    msg = {char_juese[char_acting_i].name, "弃牌阶段"}
         add_funcptr(push_message, table.concat(msg))
-		
-		--if skills_judge_keji(char_acting_i) and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
-			--add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '克己'")
-		--end
 	end
 	
 	if skills_judge_xueyi(char_acting_i) > 0 and #char_juese[char_acting_i].shoupai > char_juese[char_acting_i].tili_max then
@@ -637,6 +633,28 @@ function _jieshu_sub1()
 	gamerun_status = ""
     gamerun_huihe_set("结束")
 	set_hints("请按'确定'继续")
+end
+
+--  己方进入弃牌阶段  --
+function gamerun_enter_qipai()
+	gamerun_huihe_set("弃牌")
+	gamerun_status = ""
+	
+	--  袁绍作为主公，若有一个群雄势力角色存活，其手牌上限+2  --
+	local extra = 0
+	extra = skills_judge_xueyi(char_current_i)
+	
+	-- 如果体力小于手牌数则需弃牌 --
+	if char_juese[char_current_i].tili + extra < #char_juese[char_current_i].shoupai then
+		local msg = {char_juese[char_current_i].name, "弃牌阶段"}
+		push_message(table.concat(msg))
+		msg = {"您须弃", #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili - extra, "张牌"}
+		set_hints(table.concat(msg))
+	else
+		set_hints("")
+		gamerun_huihe_jieshu(false)    -- 进入回合结束
+		consent_func_queue(0.2)
+	end
 end
 
 --  移动选取卡牌使用目标  --
@@ -1305,7 +1323,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end
@@ -1332,33 +1350,8 @@ function on.escapeKey()
 			elseif char_juese[char_acting_i].skill["克己"]=="available" and not char_yisha then
 				skills_keji(char_current_i)
 			else
-				--  出牌结束，进入弃牌阶段  --
-				gamerun_huihe_set("弃牌")
-				gamerun_status = ""
-	
-				--  袁绍作为主公，若有一个群雄势力角色存活，其手牌上限+2  --
-				local extra = 0
-				extra = skills_judge_xueyi(char_current_i)
-	
-				--  判断吕蒙克己条件  --
-				--if skills_judge_keji() == false then
-					-- 如果体力小于手牌数则需弃牌 --
-					if char_juese[char_current_i].tili + extra < #char_juese[char_current_i].shoupai then
-						msg = {char_juese[char_current_i].name, "弃牌阶段"}
-						push_message(table.concat(msg))
-						msg = {"您须弃", #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili - extra, "张牌"}
-						set_hints(table.concat(msg))
-						msg = nil; --collectgarbage()
-					else
-						set_hints("")
-						gamerun_huihe_jieshu(false)    -- 进入回合结束
-						consent_func_queue(0.2)
-					end
-				--else
-					--set_hints("")
-					--gamerun_huihe_jieshu(false)    -- 进入回合结束
-					--consent_func_queue(0.2)
-				--end
+				--  出牌阶段结束，进入弃牌阶段  --
+				gamerun_enter_qipai()
 			end
 		end
 
