@@ -655,6 +655,7 @@ end
 function gamerun_enter_qipai()
 	gamerun_huihe_set("弃牌")
 	gamerun_status = ""
+	wugucards = {}
 	
 	--  袁绍作为主公，若有一个群雄势力角色存活，其手牌上限+2  --
 	local extra = 0
@@ -989,35 +990,41 @@ function on.enterKey()
 	end
 
 	if string.find(gamerun_status, "观看手牌") then
+		funcptr_queue = {}
+		funcptr_i = 0
 		if string.find(gamerun_status, "顺") then
-			_shun_sub2()
-			card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
+			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
+			skills_losecard(guankan_d, 9999, true)
+			add_funcptr(_shun_sub2)
 		elseif string.find(gamerun_status, "拆") then
-			_chai_sub2()
-			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
+			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
+			skills_losecard(guankan_d, 9999, true)
+			add_funcptr(_chai_sub2)
 		elseif string.find(gamerun_status, "杀") then
-			gamerun_status = "手牌生效中"
-			set_hints("")
-			
-			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-			_sha_qilin_huifu()
+			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
+			add_funcptr(_sha_qilin_huifu)
 		elseif string.find(gamerun_status, "寒") then
-			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-			_sha_sub3()
+			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
+			skills_losecard(guankan_d, 9999, true)
+			add_funcptr(_sha_sub3)
 		elseif string.find(gamerun_status, "寒2") then
-			card_chai_shun_exe(true, gamerun_guankan_selected, guankan_s, guankan_d)
-			_sha_sub2()
+			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
+			skills_losecard(guankan_d, 9999, true)
+			add_funcptr(_sha_sub2)
 		elseif string.find(gamerun_status, "归心") then
-			card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
-			_guixin_sub2({gamerun_guankan_selected, guankan_s, guankan_d})
+			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
+			skills_losecard(guankan_d, 9999, true)
+			add_funcptr(_guixin_sub2, {gamerun_guankan_selected, guankan_s, guankan_d})
 		elseif string.find(gamerun_status, "反馈") then
-			gamerun_status = fankui_gamerun_status
-			set_hints("")
-			card_chai_shun_exe(false, gamerun_guankan_selected, guankan_s, guankan_d)
-			_fankui_huifu()
-			funcptr_i = funcptr_i + 1
-			timer.start(0.6)
+			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
+			skills_losecard(guankan_d, 9999, true)
+			add_funcptr(_fankui_status_restore)
+		elseif string.find(gamerun_status, "猛进") then
+			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
+			skills_losecard(guankan_d, 9999, true)
+			add_funcptr(_fankui_status_restore)
 		end
+		timer.start(0.6)
 
 		platform.window:invalidate()
 		return

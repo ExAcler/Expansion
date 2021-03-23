@@ -2412,8 +2412,13 @@ function _shun_sub2()
 end
 
 --  执行过河拆桥/顺手牵羊动作  --
-function card_chai_shun_exe(leixing, ID_selected, ID_s, ID_d)
+function card_chai_shun_exe(va_list)
+	local leixing, ID_selected, ID_s, ID_d
+	leixing = va_list[1]; ID_selected = va_list[2]; ID_s = va_list[3]; ID_d = va_list[4]
+
     local id, msg, card
+	gamerun_status = "手牌生效中"
+	set_hints("")
 
     if gamerun_guankan_type[ID_selected][1] == "手牌" then
 		--  随机抽出一张牌  --
@@ -2424,7 +2429,6 @@ function card_chai_shun_exe(leixing, ID_selected, ID_s, ID_d)
 		    card = char_juese[ID_d].shoupai[id]
 		    card_add_qipai(card)
 			card_remove({ID_d, id})
-			skills_losecard(ID_d, 0, false)
 			
 			msg = {char_juese[ID_s].name, "弃掉", char_juese[ID_d].name, "的'", card[2], card[3], "的", card[1], "'"}
 			push_message(table.concat(msg))
@@ -2432,7 +2436,6 @@ function card_chai_shun_exe(leixing, ID_selected, ID_s, ID_d)
 		else    -- 顺
 		    table.insert(char_juese[ID_s].shoupai, char_juese[ID_d].shoupai[id])
 			card_remove({ID_d, id})
-			skills_losecard(ID_d, 0, false)
 			
 			msg = {char_juese[ID_s].name, "获得", char_juese[ID_d].name, "的一张牌"}
 			push_message(table.concat(msg))
@@ -2542,7 +2545,9 @@ function card_chai_shun_exe(leixing, ID_selected, ID_s, ID_d)
 			msg = nil; card = nil; --collectgarbage()
 		end
 	end
+
 	txt_messages:setVisible(true)
+	platform.window:invalidate()
 end
 
 --  使用南蛮入侵  --
@@ -3505,18 +3510,18 @@ function _sha_judge_zhuque_cixiong(ID_shoupai, card_shoupai, ID_s, ID_mubiao)		-
 
 	if ID_s == char_current_i then
 		--  己方杀AI  --
-		if char_juese[ID_s].wuqi[1] == "朱雀扇" and card_shoupai[1][1] == "杀" then
+		if char_juese[ID_s].wuqi[1] == "朱雀扇" then
 			guankan_s = card_shoupai
 			_sha_zhuque()
 			return true
-		elseif xingbie_diff and char_juese[ID_s].wuqi[1] == "雌雄剑" and card_shoupai[1][1] == "杀" then
+		elseif xingbie_diff and char_juese[ID_s].wuqi[1] == "雌雄剑" then
 			guankan_s = card_shoupai
 			_sha_cixiong()
 			return true
 		end
 	else
 		--  AI杀己方或其他AI  --
-		if char_juese[ID_s].wuqi[1] == "朱雀扇" and ai_judge_zhuque() and card_shoupai[1][1] == "杀" then
+		if char_juese[ID_s].wuqi[1] == "朱雀扇" and ai_judge_zhuque() then
 			_sha_zhuque_ai(ID_shoupai, ID_s, ID_mubiao)
 			return true
 		elseif xingbie_diff and char_juese[ID_s].wuqi[1] == "雌雄剑" and ai_judge_cixiong() then
@@ -3674,6 +3679,11 @@ function _sha_zhudong_xiangying(va_list)
 					if wushuang_flag == true then
 						_sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, false)
 					else
+						--  庞德猛进  --
+						if char_juese[ID_s].skill["猛进"] == "available" then
+							add_funcptr(skills_mengjin, {ID_s, ID_mubiao})
+						end
+
 						_sha_shan_post_ai(card_shoupai, ID_s, ID_mubiao, iscur)
 					end
 
@@ -3724,6 +3734,11 @@ function _sha_zhudong_chu(va_list)	--  杀：己方出闪
 	end
 
 	if char_xiangying_2 == false then
+		--  庞德猛进  --
+		if char_juese[ID_s].skill["猛进"] == "available" then
+			add_funcptr(skills_mengjin, {ID_s, ID_mubiao})
+		end
+
 		_sha_shan_post_ai(card_shoupai, ID_s, ID_mubiao, iscur)
 	else
 		_sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, false)
@@ -3740,7 +3755,7 @@ function _sha_zhudong_fangqi(va_list, is_from_zhudong)	--  杀：杀的来源是
 
 	add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
 	if #char_juese[ID_s].wuqi ~= 0 and #card_shoupai == 1 and iscur then
-		if ai_judge_hanbing(ID_mubiao) and char_juese[ID_s].wuqi[1] == "寒冰剑" then
+		if char_juese[ID_s].wuqi[1] == "寒冰剑" then
 			add_funcptr(_sha_hanbing_ai_judge, {card_shoupai, ID_s, ID_mubiao, iscur})
 		else
 			_sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)
@@ -3823,6 +3838,7 @@ function _sha_hanbing_ai_judge(va_list)		--  杀：判断寒冰剑发动条件�
 
 	timer.stop()
 	funcptr_queue = {}
+	funcptr_i = 0
 
 	if ai_judge_hanbing(ID_mubiao) and char_juese[ID_s].wuqi[1] == "寒冰剑" then
 		_sha_hanbing_ai(ID_s, ID_mubiao)
@@ -3830,7 +3846,7 @@ function _sha_hanbing_ai_judge(va_list)		--  杀：判断寒冰剑发动条件�
 		_sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)
 	end
 
-	consent_func_queue(0.6)
+	timer.start(0.6)
 end
 function _sha_hanbing_ai(ID_s, ID_mubiao)	--  杀：AI使用寒冰剑
 	add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "发动了'寒冰剑'效果"})
@@ -3847,7 +3863,7 @@ function _sha_hanbing_qipai_go(ID_mubiao)	--  杀：AI寒冰剑弃牌 (临时AI)
 	local card = table.copy(char_juese[ID_mubiao].shoupai[c_pos])
 
 	card_add_qipai(card)
-	_nanman_send_msg({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"})
+	_nanman_send_msg({char_juese[ID_mubiao].name, "的'", card[2], card[3], "的", card[1], "'", "被弃置"})
 	card_remove({ID_mubiao, c_pos})
 end
 function _sha_qinglong_ai_judge(va_list)	--  杀：判断青龙刀发动条件，如不发动直接结束结算
@@ -3957,6 +3973,9 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 		card[1] = "八卦阵"
 	end
 
+	_sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
+end
+function _sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
 	if #card ~= 0 then
 		if not char_wushi then
 			if _sha_judge_fangju_ying(card, card_shoupai, hint_1, ID_s, ID_mubiao) then
@@ -4018,6 +4037,11 @@ function _sha_ai_xiangying(va_list)
 					if wushuang_flag == true then
 						_sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, false)
 					else
+						--  庞德猛进  --
+						if char_juese[ID_s].skill["猛进"] == "available" then
+							add_funcptr(skills_mengjin, {ID_s, ID_mubiao})
+						end
+
 						if ID_s == char_current_i then
 							--  杀的来源是己方  --
 							_sha_shan_post(ID_s, card_shoupai, iscur)
@@ -4053,6 +4077,11 @@ function _sha_ai_xiangying(va_list)
 		end
 			
 		if wushuang_flag == false then
+			--  庞德猛进  --
+			if char_juese[ID_s].skill["猛进"] == "available" then
+				add_funcptr(skills_mengjin, {ID_s, ID_mubiao})
+			end
+
 			if ID_s == char_current_i then
 				--  杀的来源是己方  --
 				_sha_shan_post(ID_s, card_shoupai, iscur)
@@ -4323,9 +4352,7 @@ function _sha_zhuque()    --  杀：朱雀羽扇状态设置
 end
 function _sha_qilin(ID)		--  杀：麒麟弓状态设置
 	if #char_juese[ID].gongma > 0 or #char_juese[ID].fangma > 0 then
-		zhudong_queue = table.copy(funcptr_queue)
-		zhudong_queue_i = funcptr_i + 1
-
+		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 		timer.stop()
 		funcptr_queue = {}
 		funcptr_i = 0
@@ -4347,14 +4374,14 @@ function _sha_qilin_enter(ID)    --  杀：麒麟弓进入选牌界面
 		    consent_func_queue(0.6)
 	    else
 		    _sha_qilin_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
 		end
 	end
 	platform.window:invalidate()
 end
 function _sha_qilin_huifu()	--  杀：(麒麟弓) 恢复己方中断前函数队列
-	funcptr_queue = zhudong_queue
-	funcptr_i = zhudong_queue_i
-	timer.start(0.6)
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 function _sha_cixiong()    --  杀：雌雄双股剑状态设置
     gamerun_status = "确认操作"
@@ -4486,7 +4513,6 @@ function _sha_sub3()    --  杀：寒冰剑第二轮状态设置
 	end
 	
 	funcptr_queue = {}
-	add_funcptr(_sha_sub4)
 	add_funcptr(_sha_exe_5, {true, char_current_i, gamerun_target_selected, false})
 	consent_func_queue(0.6)
 end

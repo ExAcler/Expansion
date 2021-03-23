@@ -165,6 +165,9 @@ end
 --  张春华：伤逝  --
 function skills_shangshi(ID, not_in_queue)
 	if #char_juese[ID].shoupai >= char_juese[ID].tili_max - char_juese[ID].tili then
+		if char_juese[ID].skill["连营"] == "available" and #char_juese[ID].shoupai == 0 then
+			skills_lianying(ID, true)
+		end
 		return
 	end
 
@@ -1243,8 +1246,6 @@ end
 
 function _guixin_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
-	--funcptr_i = funcptr_i + 1
-	--timer.start(0.6)
 end
 
 --  司马懿：反馈  --
@@ -1252,6 +1253,11 @@ function skills_fankui(va_list)
 	local ID, laiyuan
 	ID = va_list[1]
 	laiyuan = va_list[2]
+
+	if ai_card_stat(laiyuan, true, false) == 0 then
+		return
+	end
+
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
 	funcptr_queue = {}
@@ -1259,13 +1265,11 @@ function skills_fankui(va_list)
 
 	if ID == char_current_i then
 		fankui_gamerun_status = gamerun_status
-		add_funcptr(skills_fankui_enter,laiyuan)
-		timer.start(0.6)
+		skills_fankui_enter(laiyuan)
 	else
 		skills_fankui_ai(ID,laiyuan)
 	end
 end
-
 function skills_fankui_enter(laiyuan)
 	local old_gamerun_status = gamerun_status
 	gamerun_status = "确认操作"
@@ -1273,17 +1277,12 @@ function skills_fankui_enter(laiyuan)
 	gamerun_OK = false
 	
 	gamerun_OK_ptr = function()
+		gamerun_status = old_gamerun_status; set_hints("")
 		funcptr_queue = {}
 	
 		if gamerun_OK then
-			gamerun_status = old_gamerun_status; set_hints("")
-			funcptr_queue = {}
-			add_funcptr(_fankui_exe,{char_current_i, laiyuan})
-			consent_func_queue(0.6)
+			_fankui_exe({char_current_i, laiyuan})
 	    else
-			set_hints("")
-			gamerun_status = old_gamerun_status
-			
 			_fankui_huifu()
 			funcptr_i = funcptr_i + 1
 			timer.start(0.6)
@@ -1292,15 +1291,15 @@ function skills_fankui_enter(laiyuan)
 	end
 	platform.window:invalidate()
 end
-
 function skills_fankui_ai(ID,ID_mubiao)
 	local fanmian_mubiao = ai_judge_fankui_mubiao(ID,ID_mubiao)
 	
 	if fanmian_mubiao ~= nil then
 		push_message(char_juese[ID].name .. "发动了武将技能 '反馈'")
-		_fankui_exe({ID, fanmian_mubiao})
+		add_funcptr(_fankui_exe, {ID, fanmian_mubiao})
+		skills_losecard(fanmian_mubiao, 9999, true)
 	end
-	_fankui_huifu()
+	add_funcptr(_fankui_huifu)
 	timer.start(0.6)
 end
 function _fankui_exe(va_list)
@@ -1346,9 +1345,13 @@ function _fankui_exe_2(va_list)    --  反馈效果初始化
 	txt_messages:setVisible(false)
 	platform.window:invalidate()
 end
+function _fankui_status_restore()
+	gamerun_status = fankui_gamerun_status
+	set_hints("")
+	_fankui_huifu()
+end
 function _fankui_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
-	--timer.start(0.6)
 end
 
 --  夏侯惇：刚烈  --
@@ -2971,12 +2974,62 @@ end
 function skills_leiji(va_list)
 	local ID_s, _ID_mubiao
 	ID_s = va_list[1]; _ID_mubiao = va_list[2]
-	local ID_mubiao
 
+	if ID == char_current_i then
+		skills_leiji_enter()
+	else
+		skills_leiji_ai(va_list)
+	end
+end
+function skills_leiji_enter()
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
 	funcptr_queue = {}
 	funcptr_i = 0
+
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '雷击'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+	
+		if gamerun_OK then
+			skills_leiji_choose_mubiao(old_gamerun_status)
+	    else
+			set_hints("")
+			gamerun_status = old_gamerun_status
+			
+			_leiji_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function skills_leiji_choose_mubiao(old_gamerun_status)
+	funcptr_queue = {}
+	id = char_current_i
+	skills_enter("请选择目标", "", "雷击", "技能选择-目标")
+	gamerun_OK = false
+	gamerun_select_target("init")
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			set_hints("")
+			gamerun_status = old_gamerun_status
+
+			_leiji_exe(char_current_i, gamerun_target_selected)
+		end
+	end
+end
+function skills_leiji_ai(va_list)
+	local ID_s, _ID_mubiao
+	ID_s = va_list[1]; _ID_mubiao = va_list[2]
+	local ID_mubiao
 
 	if char_juese[ID_s].shenfen == "主公" then
 		ID_mubiao = ai_judge_leiji_mubiao(_ID_mubiao)
@@ -2984,8 +3037,16 @@ function skills_leiji(va_list)
 	else
 		ID_mubiao = _ID_mubiao
 	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
 	
-    push_message(table.concat({char_juese[ID_s].name .. "发动了武将技能 '雷击' (对", char_juese[ID_mubiao].name, ")"}))
+    _leiji_exe(ID_s, ID_mubiao)
+end
+function _leiji_exe(ID_s, ID_mubiao)
+	push_message(table.concat({char_juese[ID_s].name .. "发动了武将技能 '雷击' (对", char_juese[ID_mubiao].name, ")"}))
 	add_funcptr(_leiji_fan_panding, ID_mubiao)
 
 	--  如场上有司马懿或张角，询问其改判技能  --
@@ -4413,7 +4474,7 @@ function skills_lihun_stage_2_enter()
 		funcptr_queue = {}
 		funcptr_i = 0
 
-		local n_geipai = math.min(char_juese[lihun_target].tili,ai_card_stat(char_acting_i, false, true))
+		local n_geipai = math.min(char_juese[lihun_target].tili,ai_card_stat(char_acting_i, true, false))
 
 		skills_enter("您需给出" .. tostring(n_geipai) .. "张牌", "", "离魂", "技能选择-多牌")
 		gamerun_OK = false
@@ -4780,4 +4841,102 @@ function _guzheng_get_cards(va_list)
 end
 function _guzheng_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
+--  庞德：猛进  --
+function skills_mengjin(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	if char_juese[ID_s].siwang == true or char_juese[ID_mubiao].siwang == true or ai_card_stat(ID_mubiao, true, false) == 0 then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID == char_current_i then
+		fankui_gamerun_status = gamerun_status
+		skills_mengjin_enter(ID_mubiao)
+	else
+		skills_mengjin_ai(ID_s, ID_mubiao)
+	end
+end
+function skills_mengjin_enter(ID_mubiao)
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '猛进'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		gamerun_status = old_gamerun_status; set_hints("")
+	
+		if gamerun_OK then
+			_mengjin_exe({char_current_i, ID_mubiao})
+	    else
+			set_hints("")
+			gamerun_status = old_gamerun_status
+			
+			_fankui_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	platform.window:invalidate()
+end
+function skills_mengjin_ai(ID, ID_mubiao)
+	if ai_card_stat(ID_mubiao, true, false) > 0 then
+		push_message(char_juese[ID].name .. "发动了武将技能 '猛进'")
+		add_funcptr(_mengjin_exe, {ID, ID_mubiao})
+		skills_losecard(ID_mubiao, 9999, true)
+	end
+	add_funcptr(_fankui_huifu)
+	timer.start(0.6)
+end
+function _mengjin_exe(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	if ID_s == char_current_i then
+		_mengjin_exe_2({ID_s, ID_mubiao})
+	else
+		_chai_ai({ID_s, ID_mubiao, true})
+	end
+end
+function _mengjin_exe_2(va_list)
+    local i
+	local ID_s, ID_d
+	ID_s = va_list[1]; ID_d = va_list[2]
+	fankui_gamerun_status = gamerun_status
+	gamerun_status = "观看手牌-猛进"
+	gamerun_guankan_type = {}
+	
+	--  往观看牌堆添加牌  --
+	if #char_juese[ID_d].shoupai > 0 then
+	    table.insert(gamerun_guankan_type, {"手牌", 0})
+	end
+	if #char_juese[ID_d].fangma > 0 then
+	    table.insert(gamerun_guankan_type, {"防御马", 0})
+	end
+	if #char_juese[ID_d].gongma > 0 then
+	    table.insert(gamerun_guankan_type, {"攻击马", 0})
+	end
+	if #char_juese[ID_d].wuqi > 0 then
+	    table.insert(gamerun_guankan_type, {"武器", 0})
+	end
+	if #char_juese[ID_d].fangju > 0 then
+	    table.insert(gamerun_guankan_type, {"防具", 0})
+	end
+	
+	--  设置状态信息  --
+	gamerun_guankan_selected = 1
+	guankan_s = ID_s
+	guankan_d = ID_d
+	
+	txt_messages:setVisible(false)
+	platform.window:invalidate()
 end
