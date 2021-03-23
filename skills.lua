@@ -41,7 +41,6 @@ function skills_jizhi(ID)
 	end
 end
 function skills_jizhi_enter(ID)
-
 	gamerun_status = "确认操作"
 	jiaohu_text = "是否发动 '集智'?"
 	gamerun_OK = false
@@ -61,6 +60,52 @@ function skills_jizhi_set(ID,gamerun_OK)
 	if gamerun_OK then
 		push_message(char_juese[ID].name .. "发动了武将技能 '集智'")
 		card_fenfa({ID, 1, true})
+	end
+	jiaohu_text = ""
+end
+
+--  孙尚香：枭姬  --
+function skills_xiaoji(ID)
+	local n_arm = ai_arm_stat(ID)
+	local last_n_arm = char_juese[ID].last_n_arm
+	char_juese[ID].last_n_arm = n_arm
+
+	if n_arm < last_n_arm then
+		n_arm = last_n_arm - n_arm
+	else
+		return
+	end
+
+	if ID == char_current_i then
+		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+		timer.stop()
+		funcptr_queue = {}
+		funcptr_i = 0
+		skills_xiaoji_enter(ID, n_arm)
+	else
+		skills_xiaoji_set(ID, n_arm, ai_judge_xiaoji(ID))
+	end
+end
+function skills_xiaoji_enter(ID, n_arm)
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '枭姬'?"
+	gamerun_OK = false
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		skills_xiaoji_set(char_current_i, n_arm, gamerun_OK)
+		
+		gamerun_status = ""
+		funcptr_queue, funcptr_i = pop_zhudong_queue()
+		funcptr_i = funcptr_i + 1
+		timer.start(0.2)
+	end
+	
+	platform.window:invalidate()
+end
+function skills_xiaoji_set(ID, n_arm, gamerun_OK)
+	if gamerun_OK then
+		push_message(char_juese[ID].name .. "发动了武将技能 '枭姬'")
+		card_fenfa({ID, 2 * n_arm, true})
 	end
 	jiaohu_text = ""
 end
@@ -616,6 +661,7 @@ function _yinghun_exe(is_drawx, ID_s, ID_mubiao)
 		qipai_id, qi_zhuangbei_id = ai_judge_withdraw(ID_mubiao, char_juese[ID_s].tili_max - char_juese[ID_s].tili, true)
 	end
 	ai_withdraw(ID_mubiao, qipai_id, qi_zhuangbei_id, true)
+	skills_losecard(ID_mubiao, 9999, true)
 
 	is_drawx = nil
 	set_hints("")
@@ -901,7 +947,7 @@ function skills_kunfen_ai()
 		--add_funcptr(_kunfen_reduce_max, char_acting_i)
 	--else
 		if kunfen_adjusted[char_acting_i] == false then
-			char_tili_deduct({1, char_acting_i, nil, "流失", char_acting_i})
+			char_tili_deduct({1, char_acting_i, -1, "流失", char_acting_i})
 			add_funcptr(card_fenfa,{char_acting_i,2,true})
 		end
 	--end
@@ -924,7 +970,7 @@ function skills_kunfen_enter()    --  进入困奋
 				set_hints("")
 				
 				add_funcptr(push_message, char_juese[char_current_i].name .. "触发了武将技能 '困奋'")
-				char_tili_deduct({1, char_current_i, nil, "流失", char_current_i})
+				char_tili_deduct({1, char_current_i, -1, "流失", char_current_i})
 				add_funcptr(card_fenfa,{char_acting_i,2,true})
 				add_funcptr(_skills_kunfen_huifu)
 				timer.start(0.6)
@@ -1049,7 +1095,7 @@ function skills_benghuai_ai()
 	if ai_judge_benghuai(char_acting_i) == false then
 		add_funcptr(_benghuai_reduce_max, char_acting_i)
 	else
-		char_tili_deduct({1, char_acting_i, nil, "流失", char_acting_i})
+		char_tili_deduct({1, char_acting_i, -1, "流失", char_acting_i})
 	end
 
 	add_funcptr(_skills_benghuai_huifu)
@@ -1079,7 +1125,7 @@ function skills_benghuai_enter()    --  进入崩坏状态
 			set_hints("")
 			
 			add_funcptr(push_message, char_juese[char_current_i].name .. "触发了武将技能 '崩坏'")
-			char_tili_deduct({1, char_current_i, nil, "流失", char_current_i})
+			char_tili_deduct({1, char_current_i, -1, "流失", char_current_i})
 
 			add_funcptr(_skills_benghuai_huifu)
 			timer.start(0.6)
@@ -2682,7 +2728,7 @@ function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	
 	add_funcptr(_qiangxi_sub1, {ID_s, card_highlighted})
 	if last_OK == false then
-		char_tili_deduct({1, ID_s, nil, "普通", ID_s})
+		char_tili_deduct({1, ID_s, -1, "流失", ID_s})
 	end
 	char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
 	add_funcptr(_qiangxi_sub2)
@@ -3909,7 +3955,7 @@ function _yiji_exe(va_list)
 	gamerun_status = "手牌生效中"
 	set_hints("")
 	push_message(table.concat({char_juese[ID_s].name, "令", char_juese[ID_mubiao].name, "获得牌堆顶的一张牌"}))
-    table.insert(char_juese[ID].shoupai, card_yixi[1])
+    table.insert(char_juese[ID_mubiao].shoupai, card_yixi[1])
 	table.remove(card_yixi, 1)
 	if yiji_first_time == false then
 		funcptr_queue = {}
@@ -4737,6 +4783,13 @@ function skills_losecard(ID_juese, n_card, in_queue)
 			skills_lianying(ID_juese)
 		end
 	end
+
+	--  孙尚香在失去武器时摸两张牌  --
+	if char_juese[ID_juese].skill["枭姬"] == "available" then
+		if in_queue then
+			add_funcptr(skills_xiaoji, ID_juese)
+		end
+	end
 end
 
 --  张昭张纮：固政  --
@@ -4857,7 +4910,7 @@ function skills_mengjin(va_list)
 	funcptr_queue = {}
 	funcptr_i = 0
 
-	if ID == char_current_i then
+	if ID_s == char_current_i then
 		fankui_gamerun_status = gamerun_status
 		skills_mengjin_enter(ID_mubiao)
 	else

@@ -507,7 +507,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 			push_message(table.concat(msg))
 
 			skills_card_qi_panding(char_acting_i)
-			char_tili_deduct({3, char_acting_i, nil, "雷", char_acting_i})
+			char_tili_deduct({3, char_acting_i, -1, "雷", char_acting_i})
 		else
 		    msg = {char_juese[char_acting_i].name, "的'闪电'判定失败"}
 			push_message(table.concat(msg))
@@ -1107,7 +1107,7 @@ function on.enterKey()
 				card = char_juese[char_current_i].shoupai[card_highlighted]
 				if card_judge_if_sha(char_current_i, card_highlighted) then
 					funcptr_queue = {}
-					_jiedao_beidong_chu(char_current_i, wuxie_va)
+					_jiedao_beidong_chu(card_highlighted, wuxie_va)
 					consent_func_queue(0.6)
 				end
 			end
