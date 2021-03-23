@@ -347,6 +347,11 @@ function card_mopai()
 	
 	local draw_number = 2
 	
+	if char_yongsi ~= nil then
+		draw_number = draw_number + char_yongsi
+		char_yongsi = nil
+	end
+	
 	if char_yingzi == true then
 		draw_number = draw_number + 1
 		char_yingzi = false

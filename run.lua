@@ -221,6 +221,11 @@ function gamerun_huihe_set(jieduan)
     gamerun_huihe = jieduan
 end
 
+--  设置游戏状态  --
+function gamerun_status_set(jieduan)
+    gamerun_status = jieduan
+end
+
 --  游戏开始阶段初始化  --
 function gamerun_init()
 	add_funcptr(card_xipai, false)    -- 重置牌堆
@@ -324,6 +329,10 @@ function gamerun_huihe_start()
 	--  摸牌阶段技能  --
 	if char_juese[char_acting_i].skill["英姿"] == "available" then
 		add_funcptr(skills_yingzi, char_acting_i)
+	end
+
+	if char_juese[char_acting_i].skill["庸肆"] == "available" then
+		add_funcptr(skills_yongsi, char_acting_i)
 	end
 
 	if char_juese[char_acting_i].skill["裸衣"] == "available" then
@@ -656,6 +665,8 @@ function gamerun_enter_qipai()
 	gamerun_huihe_set("弃牌")
 	gamerun_status = ""
 	wugucards = {}
+
+	char_yongsi_withdraw = nil
 	
 	--  袁绍作为主公，若有一个群雄势力角色存活，其手牌上限+2  --
 	local extra = 0
@@ -678,8 +689,12 @@ end
 function gamerun_select_target(dir)
     local card
 
-	if #char_juese[char_current_i].shoupai[card_highlighted] > 0 then
-		card = char_juese[char_current_i].shoupai[card_highlighted][1]
+	if card_highlighted ~= nil then
+		if char_juese[char_current_i].shoupai[card_highlighted] ~= nil then
+			if #char_juese[char_current_i].shoupai[card_highlighted] > 0 then
+				card = char_juese[char_current_i].shoupai[card_highlighted][1]
+			end
+		end
 	end
 	
 	if dir == "init" then
@@ -1384,6 +1399,33 @@ function on.escapeKey()
 				consent_func_queue(0.2)
 			elseif char_juese[char_acting_i].skill["克己"]=="available" and not char_yisha then
 				skills_keji(char_current_i)
+			elseif char_juese[char_acting_i].skill["庸肆"]=="available" and char_yongsi_withdraw == nil then
+				local shili = {}
+				for i = 1, 5 do
+					if char_juese[i].siwang ~= true then
+						shili[char_juese[i].shili] = 1
+					end
+				end
+
+				gamerun_wuqi_into_hand(char_current_i)
+				skills_enter("您须弃"..math.min(table.getn2(shili),table.getn2(char_juese[char_current_i].shoupai)).."张牌", "", "庸肆", "技能选择-多牌")
+					gamerun_OK_ptr = function()
+					if table.getn2(card_selected) == math.min(table.getn2(shili),table.getn2(char_juese[char_current_i].shoupai)) then
+						gamerun_status = "手牌生效中"
+						funcptr_queue = {}
+						push_message(char_juese[char_acting_i].name.."触发了武将技能 '庸肆'")
+
+						card_qipai_go()
+						add_funcptr(gamerun_wuqi_out_hand, char_acting_i)
+						char_yongsi_withdraw = true
+						
+						add_funcptr(gamerun_status_set, "")
+						add_funcptr(on.escapeKey, nil)
+						consent_func_queue(0.2)
+					end
+				end
+	
+				gamerun_tab_ptr = function() end
 			else
 				--  出牌阶段结束，进入弃牌阶段  --
 				gamerun_enter_qipai()
