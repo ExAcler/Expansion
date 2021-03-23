@@ -65,7 +65,8 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["袁术"] = {{4,4}, "群", false, {"庸肆", "伪帝"}, "男", {"锁定","禁止"}, true}, 
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离魂","奸雄","天香","鬼道","当先","火计","化身","新生","逢亮","困奋","制衡","庸肆"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","锁定","",""}, true},
+	--["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离魂","奸雄","天香","鬼道","当先","火计","化身","新生","逢亮","困奋","制衡","庸肆"}, "男", {"","","","","","","锁定","","禁止","禁止","觉醒","锁定","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"武圣","强袭","断粮","奇袭","国色","缔盟","离间","急救","鬼道"}, "男", {"","","","","","","","",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -797,7 +798,7 @@ function char_tili_deduct(va_list, original_dianshu)
 
 	--  设置函数队列卖血标志  --
 	local old_add_tag_2 = funcptr_add_tag
-	funcptr_add_tag = funcptr_add_tag .. "/卖血"
+	funcptr_add_tag = table.concat({funcptr_add_tag, "/卖血-", id})
 	if cansellblood then
 		char_skills_sellblood(va_list, original_dianshu)
 	elseif tili <= 0 then
@@ -1069,7 +1070,7 @@ function _binsi_judge_tao(ID_s, tao_needed)		--  濒死结算：判断选择的�
 	local shoupai = char_juese[char_current_i].shoupai
 
 	if table.getn2(card_selected) <= tao_needed then
-		for i = #shoupai, 1, -1 do
+		for i = #shoupai, -4, -1 do
 			if card_selected[i] ~= nil then
 				local qualified = false
 				--  华佗在他人的回合可以使用急救，可使用红色牌  --
@@ -1124,6 +1125,10 @@ function _binsi_zhudong(ID_s)	--  濒死结算：己方做出决定
 		msg = {"您可出", tao_needed, "张桃"}
 	end
 
+	if ID_s ~= char_current_i and char_juese[char_current_i].skill["急救"] == "available" then
+		gamerun_wuqi_into_hand(char_current_i)
+	end
+
 	skills_enter(table.concat(msg), "", "濒死", "技能选择-多牌")
 	gamerun_OK = false
 
@@ -1162,12 +1167,15 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 		card_remove({char_current_i, i})
 		char_juese[ID_s].tili = char_juese[ID_s].tili + 1
 	end
+	gamerun_wuqi_out_hand(char_current_i)
 
 	msg = _binsi_create_msg(n_tao, n_jiu, char_current_i)
 	add_funcptr(push_message, table.concat(msg))
 	add_funcptr(_binsi_zhudong_huifu)
 end
 function _binsi_zhudong_fangqi(ID_s)	--  濒死结算：己方放弃
+	gamerun_wuqi_out_hand(char_current_i)
+
 	gamerun_status = "手牌生效中"
 	set_hints("")
 	card_selected = {}
@@ -1261,11 +1269,11 @@ function _binsi_remove_sellblood(va_list)	--  濒死结算：角色已死亡，�
 		local tag = v_funcptr_queue[i].tag
 
 		if tag ~= nil then
-			if string.find(tag, "卖血") and keep_after == false then
+			if string.find(tag, table.concat("卖血-", siwang_id)) and keep_after == false then
 				keep_after = true
 			end
 
-			if string.find(tag, "卖血") or keep_after == false then
+			if string.find(tag, table.concat("卖血-", siwang_id)) or keep_after == false then
 				table.insert(items_to_remove, i)
 			else
 				break
@@ -1303,6 +1311,7 @@ function char_judge_siwang_skip_all_stages(ID)
 		timer.stop()
 		funcptr_queue = {}
 
+		gamerun_wuqi_out_hand(char_acting_i)
 		gamerun_huihe_set("结束")
 		gamerun_status = ""
 		set_hints("请按'确定'继续")

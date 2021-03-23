@@ -4182,8 +4182,7 @@ function _sha_shan_post(ID_s, card_shoupai, iscur)		--  杀：杀的来源是己
 		if char_juese[ID_s].wuqi[1] == "青龙刀" then    --  青龙刀，可再出杀追杀
 			add_funcptr(_sha_qinglong, nil)
 		elseif char_juese[ID_s].wuqi[1] == "贯石斧" then
-			add_funcptr(_sha_guanshi, nil)
-			guankan_s = card_shoupai
+			add_funcptr(_sha_guanshi, card_shoupai)
 		else
 			add_funcptr(_sha_sub2, nil)
 		end
@@ -4391,9 +4390,11 @@ function _sha_qinglong()    --  杀：青龙刀追杀状态设置
 	jiaohu_text = "您可再出杀"
 	platform.window:invalidate()
 end
-function _sha_guanshi()    --  杀：贯石斧状态设置
+function _sha_guanshi(card_shoupai)    --  杀：贯石斧状态设置
     gamerun_status = "主动出牌-贯石"
 	jiaohu_text = "您可弃2张牌强制命中"
+	guankan_s = card_shoupai
+
 	platform.window:invalidate()
 end
 function _sha_zhuque()    --  杀：朱雀羽扇状态设置
@@ -4550,9 +4551,11 @@ function _sha_sub1(va_list)
 	push_message(msg)
 	
 	card_into_jiesuan(ID_s, ID_shoupai, hint_1)
+	gamerun_wuqi_out_hand(ID_s)
 end
 function _sha_sub2()
 	card_out_jiesuan()
+	gamerun_wuqi_out_hand(char_acting_i)
 
     char_yisha = true
 	char_sha_time = char_sha_time - 1
