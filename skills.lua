@@ -673,6 +673,117 @@ function _yinghun_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
+--  吴国太：补益  --
+function skills_buyi(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]
+	ID_mubiao = va_list[2]
+	
+	if char_juese[ID_mubiao].tili > 0 then
+		return
+	end
+	
+	if ai_card_stat(ID_mubiao, true, true) == 0 then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID_s == char_current_i then
+		buyi_gamerun_status = gamerun_status
+		
+		skills_buyi_enter(ID_mubiao)
+	else
+		skills_buyi_ai(ID_s,ID_mubiao)
+	end
+end
+function skills_buyi_enter(ID_mubiao)
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '补益'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		gamerun_status = old_gamerun_status; set_hints("")
+		funcptr_queue = {}
+	
+		if gamerun_OK then
+			push_message(char_juese[ID].name .. "发动了武将技能 '补益'")
+			if char_current_i ~= ID_mubiao then
+				local card_number = math.random(#char_juese[ID_mubiao].shoupai)
+				_buyi_exe({char_current_i, ID_mubiao, card_number})
+				add_funcptr(_buyi_huifu_2, nil)
+				timer.start(0.6)
+			else
+				gamerun_status = "主动出牌-补益"
+				jiaohu_text = "请展示一张手牌"
+				platform.window:invalidate()
+			end
+	    else
+			_buyi_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	platform.window:invalidate()
+end
+function skills_buyi_ai(ID,ID_mubiao)
+	local fanmian_mubiao = ai_judge_buyi_mubiao(ID,ID_mubiao)
+	
+	if fanmian_mubiao ~= nil then
+		push_message(char_juese[ID].name .. "发动了武将技能 '补益'")
+		local card_searched, card_chosen = {}
+		if ID ~= ID_mubiao then
+			card_chosen = math.random(#char_juese[ID_mubiao].shoupai)
+		else
+			card_searched = ai_card_search(ID, "装备", 1)
+			if #card_searched == 0 then
+				card_searched = ai_card_search(ID, "锦囊", 1)
+			end
+			if #card_searched == 0 then
+				card_chosen = math.random(#char_juese[ID_mubiao].shoupai)
+			else
+				card_chosen = card_searched[1]
+			end
+		end
+		_buyi_exe({ID, fanmian_mubiao, card_chosen})
+	end
+	add_funcptr(_buyi_huifu)
+	timer.start(0.6)
+end
+function _buyi_exe(va_list)
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	local ID_s, ID_mubiao, ID_card
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; ID_card = va_list[3]
+	local card = table.copy(char_juese[ID_mubiao].shoupai[ID_card])
+	add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "展示了'", card[2], card[3], "的", card[1], "'"})
+	if card[1] ~= "杀" and card[1] ~= "火杀" and card[1] ~= "雷杀" and card[1] ~= "闪" and card[1] ~= "桃" and card[1] ~= "酒" then
+		add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "弃置了'", card[2], card[3], "的", card[1], "'"})
+		add_funcptr(card_shanchu, {ID_mubiao, ID_card})
+		add_funcptr(buyi_tili_huifu, ID_mubiao)
+	end
+end
+function _buyi_status_restore()
+	gamerun_status = buyi_gamerun_status
+	set_hints("")
+	_buyi_huifu_2()
+end
+function _buyi_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+function _buyi_huifu_2()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+	funcptr_i = funcptr_i + 1
+end
+function buyi_tili_huifu(ID)
+	char_juese[ID].tili = char_juese[ID].tili + 1
+	push_message(char_juese[ID].name .. "回复了一点体力")
+end
 --  诸葛亮：观星  --
 function skills_guanxing(ID)
 	if ID == char_current_i then
@@ -3039,6 +3150,30 @@ function skills_xinsheng_exe(va_list)
 	end
 end
 
+function skills_weidi(ID)
+	if char_juese[ID].shenfen ~= "主公" then
+		local weidi_worked = false
+		local weidi_get ={}
+		for i = 1,5 do
+			if i ~= ID and char_juese[i].shenfen == "主公" then
+				for j = 1, #char_juese[i].skillname do
+					if char_juese[i].skillname[j] == "激将" or char_juese[i].skillname[j] == "护驾" or char_juese[i].skillname[j] == "救援" or char_juese[i].skillname[j] == "黄天" or char_juese[i].skillname[j] == "血裔" or char_juese[i].skillname[j] == "暴虐" or char_juese[i].skillname[j] == "行殇" or char_juese[i].skillname[j] == "制霸" or char_juese[i].skillname[j] == "若愚" then
+						weidi_worked = true
+						table.insert(weidi_get, char_juese[i].skillname[j])
+					end
+				end
+			end
+		end
+		if weidi_worked == true then
+			push_message(char_juese[ID].name.."触发了技能 '伪帝' ")
+			for i = 1, #weidi_get do
+				table.insert(char_juese[ID].skillname, weidi_get[i])
+				char_juese[ID].skill[weidi_get[i]] = "available"
+			end
+		end
+	end
+end
+
 --  张角：雷击  --
 function skills_leiji(va_list)
 	local ID_s, _ID_mubiao
@@ -4840,12 +4975,19 @@ function skills_losecard(ID_juese, n_card, in_queue)
 		end
 	end
 
-	--  孙尚香在失去武器时摸两张牌  --
+	--  孙尚香在失去装备时摸两张牌  --
 	if char_juese[ID_juese].skill["枭姬"] == "available" then
 		if in_queue then
 			add_funcptr(skills_xiaoji, ID_juese)
 		end
 	end
+
+	--[[--  凌统在失去装备时弃别人两张牌  --
+	if char_juese[ID_juese].skill["旋风"] == "available" then
+		if in_queue then
+			add_funcptr(skills_xuanfeng, ID_juese)
+		end
+	end]]
 end
 
 --  张昭张纮：固政  --

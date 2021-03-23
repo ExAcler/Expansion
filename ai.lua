@@ -719,6 +719,46 @@ function ai_judge_fankui_mubiao(ID_s, ID_mubiao)
 	return nil
 end
 
+-- AI决定是否补益 --
+function ai_judge_buyi_mubiao(ID_s, ID_mubiao)
+	if #char_juese[ID_mubiao].shoupai == 0 then
+		return nil
+	elseif ID_mubiao ~= nil then
+		if ID_s == ID_mubiao then
+			return ID_mubiao
+		elseif char_juese[ID_mubiao].siwang == true then
+			
+		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_mubiao) == true) then
+			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
+				return ID_mubiao
+			else
+				
+			end
+		elseif char_juese[ID_s].shenfen == "反贼" then
+			if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
+				return ID_mubiao
+			else
+				
+			end
+		elseif char_juese[ID_s].shenfen == "内奸" then
+			local pk = true
+			for i = 1, 5 do
+				if char_juese[i].shenfen ~= "主公" and char_juese[i].shenfen ~= "内奸" and char_juese[i].siwang == false then
+					pk = false
+				end
+			end
+			if pk == true then
+				return nil
+			elseif char_juese[ID_mubiao].shenfen == "主公" then
+				return ID_mubiao
+			else
+				
+			end
+		end
+	end
+	return nil
+end
+
 -- AI决定是否刚烈 --
 function ai_judge_ganglie_mubiao(ID_s, ID_mubiao)
 	if ID_mubiao ~= nil then

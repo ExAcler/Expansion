@@ -234,6 +234,7 @@ function gamerun_init()
 	add_funcptr(ai_init_shenfen)
 	add_funcptr(card_fenfa_init, nil)  -- 初始发牌
 	add_funcptr(_init_huashen)
+	add_funcptr(_init_weidi)
 	add_funcptr(_init_sub1, nil)
 end
 function _init_huashen()
@@ -246,6 +247,23 @@ function _init_huashen()
 		add_funcptr(skills_xinsheng_exe, {char_current_i, true})
 		add_funcptr(skills_xinsheng_exe, {char_current_i, true})
 		add_funcptr(skills_huashen, {char_current_i, "游戏开始"})
+		add_funcptr(_init_huifu)
+	end
+end
+function _init_weidi()
+	local had_weidi = {}
+	for i = 1, 5 do
+		if char_juese[i].skill["伪帝"] == "available" then
+			table.insert(had_weidi, i)
+		end
+	end
+	if #had_weidi ~= 0 then
+		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+		funcptr_queue = {}
+		funcptr_i = 0
+		for i = 1, #had_weidi do
+			add_funcptr(skills_weidi, had_weidi[i])
+		end
 		add_funcptr(_init_huifu)
 	end
 end
@@ -1088,6 +1106,16 @@ function on.enterKey()
 				local shoupai = char_juese[wuxie_va[1]].shoupai
 				funcptr_queue = {}
 				_huogong_beidong_exe_2(wuxie_va[1], wuxie_va[2], shoupai, card_highlighted)
+				consent_func_queue(0.6)
+			end
+			return
+		end
+
+		if string.find(gamerun_status, "补益") then
+			if table.getn2(card_selected) ~= 0 then
+				funcptr_queue = {}
+				_buyi_exe({char_current_i, char_current_i, card_highlighted})
+				add_funcptr(_buyi_huifu_2, nil)
 				consent_func_queue(0.6)
 			end
 			return
