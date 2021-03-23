@@ -238,7 +238,7 @@ end
 function skills_hunzi()
 	push_message(char_juese[char_acting_i].name.."触发了武将技能 '魂姿'")
 	char_juese[char_acting_i].tili_max = char_juese[char_acting_i].tili_max - 1
-	push_message(char_juese[ID].name .. "失去一点体力上限")
+	push_message(char_juese[char_acting_i].name .. "失去一点体力上限")
 	if char_juese[char_acting_i].skill["英魂"] ~= nil then
 		skill_double = true
 	else
@@ -753,6 +753,21 @@ function _xingshang_card_transfer(ID_s, ID_siwang, panding)    --  行殇：将�
 	char_juese[ID_siwang].fangma = {}
 end
 
+--  袁术：庸肆  --
+function skills_yongsi(ID)
+	if game_skip_mopai == true then
+		return
+	end
+	local shili = {}
+	for i = 1, 5 do
+		if char_juese[i].siwang ~= true then
+			shili[char_juese[i].shili] = 1
+		end
+	end
+	push_message(char_juese[ID].name .. "触发了武将技能 '庸肆' 多摸了"..(table.getn2(shili)).."张牌")
+	char_yongsi = table.getn2(shili)
+end
+
 --  周瑜：英姿  --
 function skills_yingzi(ID)
 	if game_skip_mopai == true then
@@ -862,23 +877,20 @@ end
 function skills_kunfen_enter()    --  进入困奋
 	gamerun_huihe = "结束"
     gamerun_status = "确认操作"
-	--if char_juese[char_current_i].tili_max > 1 then
-		jiaohu_text = "'确定': 发动"
-	--else
-		--jiaohu_text = "'取消': 减体力"
-	--end
+	jiaohu_text = "是否发动 '困奋'?"
 	
 	gamerun_OK_ptr = function()    -- 如果确认发动，执行的函数
 		if gamerun_OK == true then
-			if char_juese[char_current_i].tili_max > 1 then
-				set_hints("")
-				
-				add_funcptr(push_message, char_juese[char_current_i].name .. "触发了武将技能 '困奋'")
-				char_tili_deduct({1, char_current_i, nil, "流失", char_current_i})
-				add_funcptr(card_fenfa,{char_acting_i,2,true})
-				add_funcptr(_skills_kunfen_huifu)
-				timer.start(0.6)
+			set_hints("")
+			if kunfen_adjusted[char_acting_i] == false then
+				add_funcptr(push_message, char_juese[char_acting_i].name .. "触发了武将技能 '困奋'")
+			else
+				add_funcptr(push_message, char_juese[char_acting_i].name .. "发动了武将技能 '困奋'")
 			end
+			char_tili_deduct({1, char_acting_i, nil, "流失", char_acting_i})
+			add_funcptr(card_fenfa,{char_acting_i,2,true})
+			add_funcptr(_skills_kunfen_huifu)
+			timer.start(0.6)
 		else
 			set_hints("")
 			add_funcptr(_skills_kunfen_huifu)
@@ -3457,7 +3469,7 @@ end
 
 -- SP姜维：逢亮  --
 function skills_fengliang(id)
-	if char_juese[char_current_i].siwang == true then
+	if char_juese[id].siwang == true then
 		return
 	end
 
@@ -3490,17 +3502,17 @@ function _fengliang_lock(id)
 	char_juese[id].skill["逢亮"] = "locked_whole_game"
 end
 function _fengliang_sub(id) 
-	push_message(char_juese[ID].name .. "失去一点体力上限")
-	char_juese[char_acting_i].tili_max = char_juese[char_acting_i].tili_max - 1
-	char_juese[char_acting_i].tili = math.min(char_juese[char_acting_i].tili, char_juese[char_acting_i].tili_max)
+	push_message(char_juese[id].name .. "失去一点体力上限")
+	char_juese[id].tili_max = char_juese[id].tili_max - 1
+	char_juese[id].tili = math.min(char_juese[id].tili, char_juese[id].tili_max)
 	char_juese[id].tili = math.min(2,char_juese[id].tili_max)
-	if char_juese[char_acting_i].skill["挑衅"] ~= nil then
+	if char_juese[id].skill["挑衅"] ~= nil then
 		skill_double = true
 	else
-		char_juese[char_acting_i].skill["挑衅"] = "available"
+		char_juese[id].skill["挑衅"] = 1
 	end
 	kunfen_adjusted[id] = true
-	table.insert(char_juese[char_acting_i].skillname,"挑衅")
+	table.insert(char_juese[id].skillname,"挑衅")
 end
 function _fengliang_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
