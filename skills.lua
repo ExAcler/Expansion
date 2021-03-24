@@ -4582,6 +4582,118 @@ function skills_juxiang(ID)
 	push_message(char_juese[ID].name .. "触发了武将技能 '巨象'，获得了南蛮入侵")
 end
 
+--  夏侯渊：神速  --
+function skills_shensu(va_list)
+	local ID = va_list[1]
+	is_panding = va_list[2]
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID == char_current_i then
+		skills_shensu_enter(is_panding)
+	else
+		skills_shensu_ai(ID,is_panding)
+	end
+end
+function skills_shensu_enter(is_panding)
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	if is_panding == true then
+		jiaohu_text = "是否发动 '神速'跳过判定摸牌?"
+	else
+		jiaohu_text = "是否发动 '神速'弃装备跳出牌?"
+	end
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		gamerun_status = old_gamerun_status
+		set_hints("")
+
+		if gamerun_OK then
+			skills_shensu_choose_mubiao(is_panding)
+	    else
+			_shensu_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function skills_shensu_ai(ID, is_panding)
+	local ID_shoupai, ID_zhuangbei, ID_mubiao = ai_judge_shensu(ID, is_panding)
+	if #ID_mubiao ~= 0 then
+		_shensu_exe(ID_shoupai, ID_s, ID_mubiao[1], ID_zhuangbei, is_panding)
+	end
+	return true
+end
+function skills_shensu_choose_mubiao(is_panding)
+	gamerun_wuqi_into_hand(char_current_i)
+	skills_enter("请选择一张装备牌", "请选择目标A", "杀", "技能选择-单牌")
+	if is_panding then
+		skills_enter_target()
+	end
+	
+	gamerun_OK_ptr = function()
+		if gamerun_status == "技能选择-目标" then
+			if  gamerun_OK == true then
+				_shensu_exe(card_highlighted, char_current_i, gamerun_target_selected, nil, is_panding)
+			end
+			return
+		end
+	end
+	
+	gamerun_tab_ptr = function()
+		if (table.getn2(card_selected) == 1 and (card_get_leixing(char_juese[char_current_i].shoupai[card_highlighted][1]) == "武器" or card_get_leixing(char_juese[char_current_i].shoupai[card_highlighted][1]) == "防具" or card_get_leixing(char_juese[char_current_i].shoupai[card_highlighted][1]) == "+1马" or card_get_leixing(char_juese[char_current_i].shoupai[card_highlighted][1]) == "-1马")) and is_panding ~= true then
+			skills_enter_target()
+		end
+	end
+	
+	return true
+end
+function _shensu_exe(ID_shoupai, ID_s, ID_mubiao, ai_qi_zhuangbei_id, is_panding)
+	funcptr_queue = {}
+	
+	if not is_panding then
+		if ID_s == char_current_i then
+			local card = char_juese[ID_s].shoupai[ID_shoupai]
+			card_add_qipai(card)
+			card_remove({ID_s, ID_shoupai})
+			gamerun_wuqi_out_hand(char_current_i)
+
+			push_message(table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+			skills_losecard(ID_s, 0, true)
+		else
+			ai_withdraw(ID_s, {ID_shoupai}, ai_qi_zhuangbei_id, true)
+			skills_losecard(ID_s, 9999, true)
+		end
+		game_skip_chupai = true
+	else
+		game_skip_panding = true
+		game_skip_mopai = true
+	end
+	push_message(char_juese[ID_s].name .. "发动了武将技能 '神速'")
+	--  插入虚拟无色无点牌  --
+	table.insert(char_juese[ID_s].shoupai, {"杀", "", ""})
+	if card_sha({#char_juese[ID_s].shoupai}, ID_s, {ID_mubiao}, false) then
+		--add_funcptr(_shensu_huifu, nil)
+		skills_cs()
+		consent_func_queue(0.6)
+	end
+end
+function _shensu_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+function _shensu_huifu_2()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+	funcptr_i = funcptr_i + 1
+	timer.start(0.6)
+end
+
 --  貂蝉：离间  --
 function skills_lijian_ai(ID_shoupai, ID_s, ID_first, ID_second, ai_qi_zhuangbei_id)
 	if char_juese[ID_first].xingbie ~= "男" or char_juese[ID_second].xingbie ~= "男" then
@@ -4639,10 +4751,9 @@ function skills_lijian_enter()
 end
 function _lijian_exe(ID_shoupai, ID_s, ID_first, ID_second, ai_qi_zhuangbei_id)
 	funcptr_queue = {}
-
-	local card = char_juese[ID_s].shoupai[ID_shoupai]
 	
 	if ID_s == char_current_i then
+		local card = char_juese[ID_s].shoupai[ID_shoupai]
 		card_add_qipai(card)
 		card_remove({ID_s, ID_shoupai})
 		gamerun_wuqi_out_hand(char_current_i)

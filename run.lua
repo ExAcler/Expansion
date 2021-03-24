@@ -342,6 +342,9 @@ function gamerun_huihe_start()
 	end
 	
 	--  判定阶段  --
+	if char_juese[char_acting_i].skill["神速"] == "available" then
+		add_funcptr(skills_shensu, {char_acting_i, true})
+	end
 	add_funcptr(gamerun_huihe_panding)
 	
 	--  摸牌阶段  --
@@ -382,7 +385,9 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["好施"] == "available" then
 		add_funcptr(skills_haoshi_stage_2, char_acting_i)
 	end
-	
+	if char_juese[char_acting_i].skill["神速"] == "available" and game_skip_chupai == false then
+		add_funcptr(skills_shensu, {char_acting_i, false})
+	end
 	--  出牌阶段  --
 	if char_acting_i == char_current_i then
 		add_funcptr(_start_sub1, nil)
@@ -431,42 +436,47 @@ end
 
 --  判定阶段  --
 function gamerun_huihe_panding()
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	if game_panding_skip ~= true then
+		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+		timer.stop()
+		funcptr_queue = {}
+		funcptr_i = 0
 
-    _panding_huihe_set()
-	
-	for i = #char_juese[char_acting_i].panding, 1, -1 do
-		local card = _panding_get_leixing(char_acting_i, i)
+		_panding_huihe_set()
+		
+		for i = #char_juese[char_acting_i].panding, 1, -1 do
+			local card = _panding_get_leixing(char_acting_i, i)
 
-		funcptr_add_tag = "无懈执行前"
-    	add_funcptr(_nanman_send_msg, {char_juese[char_acting_i].name, "的'", card, "'即将生效"})
+			funcptr_add_tag = "无懈执行前"
+			add_funcptr(_nanman_send_msg, {char_juese[char_acting_i].name, "的'", card, "'即将生效"})
+			funcptr_add_tag = nil
+
+			card_wuxie(card, char_acting_i, char_acting_i)
+
+			funcptr_add_tag = "无懈无效结算"
+			add_funcptr(_panding_sub1, char_acting_i)
+
+			--  如场上有司马懿或张角，询问其改判技能  --
+			skills_guicai_guidao_ask(char_acting_i, nil, char_acting_i, _panding_get_leixing(char_acting_i, i))
+
+			funcptr_add_tag = "无懈无效结算/伤害插队"
+			add_funcptr(_panding_sub2, {i, nil})
+			funcptr_add_tag = nil
+
+			funcptr_add_tag = "无懈有效结算"
+			add_funcptr(_panding_wuxie)
+			funcptr_add_tag = nil
+		end
+
+		funcptr_add_tag = "无懈执行完毕"
+		add_funcptr(_panding_sub3)
 		funcptr_add_tag = nil
 
-		card_wuxie(card, char_acting_i, char_acting_i)
-
-		funcptr_add_tag = "无懈无效结算"
-	    add_funcptr(_panding_sub1, char_acting_i)
-
-		--  如场上有司马懿或张角，询问其改判技能  --
-		skills_guicai_guidao_ask(char_acting_i, nil, char_acting_i, _panding_get_leixing(char_acting_i, i))
-
-		funcptr_add_tag = "无懈无效结算/伤害插队"
-		add_funcptr(_panding_sub2, {i, nil})
-		funcptr_add_tag = nil
-
-		funcptr_add_tag = "无懈有效结算"
-		add_funcptr(_panding_wuxie)
-		funcptr_add_tag = nil
+		timer.start(0.2)
+	else
+		game_panding_skip = false
+		push_message(char_juese[char_acting_i].name.."的判定阶段被跳过")
 	end
-
-	funcptr_add_tag = "无懈执行完毕"
-	add_funcptr(_panding_sub3)
-	funcptr_add_tag = nil
-
-	timer.start(0.2)
 end
 function _panding_huihe_set()
 	local msg

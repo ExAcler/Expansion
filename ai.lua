@@ -374,6 +374,87 @@ function ai_basic_judge_mubiao(ID, required, is_help, target_list)
 	return possible_target
 end
 
+--  AI决定是否发动神速  --
+function ai_judge_shensu(ID, is_panding)
+	local ID_shoupai, ID_zhuangbei, ID_mubiao ={}, {}, {}
+	if is_panding then
+		if #char_juese[ID].panding ~= 0 then
+			local leed, binged, shaned = false, false, false
+			for i = 1, #char_juese[ID].panding do
+				if char_juese[ID].panding[1] == "乐不思蜀" then
+					leed = true
+				elseif char_juese[ID].panding[1] == "兵粮寸断" then
+					binged = true
+				elseif char_juese[ID].panding[1] == "闪电" then
+					shaned = true
+				elseif char_juese[ID].panding[2] == "方块" then
+					leed = true
+				else
+					binged = true
+				end
+			end
+			if leed == true then
+				if #char_juese[ID].shoupai + 2 < char_juese[ID].tili then
+					if ai_judge_random_percent(80) == 1 then
+						return {},0,nil
+					end
+				else
+					if ai_judge_random_percent(30) == 1 then
+						return {},0,nil
+					end
+				end
+			elseif binged == true then
+				if ai_judge_random_percent(60) == 1 then
+					return {},0,nil
+				end
+			else
+				if ai_judge_random_percent(80) == 1 then
+					return {},0,nil
+				end
+			end
+		else
+			if ai_judge_random_percent(90) == 1 then
+				return {},0,nil
+			end
+		end
+	else
+		ID_shoupai = ai_card_search(ID, "装备", 1)
+		if #ID_shoupai == 0 then
+			if #char_juese[ID].wuqi ~= 0 then
+				ID_zhuangbei[1] = 1
+			elseif #char_juese[ID].gongma ~= 0 then
+				ID_zhuangbei[3] = 1
+			elseif #char_juese[ID].fangma ~= 0 then
+				ID_zhuangbei[4] = 1
+			elseif #char_juese[ID].fangju ~= 0 then
+				ID_zhuangbei[2] = 1
+			end
+		end
+	end
+	if not is_panding and game_skip_chupai == true then
+		return {},0,nil
+	elseif #ID_shoupai == 0 and ID_zhuangbei == nil and not is_panding then
+		return {},0,nil
+	end
+	ID_mubiao = ai_basic_judge_mubiao(ID, 4, false)
+	for i = #ID_mubiao, 1, -1 do
+		if char_juese[ID_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青钢剑" then
+			table.remove(ID_mubiao, i)
+		end
+	end
+	for i = #ID_mubiao, 1, -1 do
+		if char_juese[ID_mubiao[i]].skill["空城"] == true then
+			table.remove(ID_mubiao, i)
+		end
+	end
+	for i = #ID_mubiao, 1, -1 do
+		if char_juese[ID_mubiao[i]].skill["雷击"] == "available" and #char_juese[ID_mubiao[i]].shoupai >= 3 then
+			table.remove(ID_mubiao, i)
+		end
+	end
+	return ID_shoupai, ID_zhuangbei, {ID_mubiao[1]}
+end
+
 --  AI决定是否发动好施  --
 --  1发动，2不发动  --
 function ai_judge_haoshi(ID)
@@ -1155,12 +1236,11 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 				table.remove(possible_target,i)
 			end
 		end
-		--剔除黑杀仁王
+		--剔除黑杀仁王、于禁毅重
 		for i=#possible_target,1,-1 do
-			if char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[ID].wuqi[1] ~= "青钢剑" then
+			if (char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[ID].wuqi[1] ~= "青钢剑") or (#char_juese[possible_target[i]].fangju == 0 and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["毅重"] == "available") then
 				table.remove(possible_target,i)
 			end
-			
 		end
 		--剔除能流离给队友的角色
 		for i=#possible_target,1,-1 do
