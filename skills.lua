@@ -413,49 +413,53 @@ function skills_zhiji_set(ID, option)
 end
 
 --  太史慈：天义  --
---  暂时不能增加出杀目标 --
 function skills_tianyi_ai(ID_s, ID_mubiao)	--  AI发动天义
 	if #char_juese[ID_s].shoupai == 0 or #char_juese[ID_mubiao].shoupai == 0 then
 		return false
 	end
 
-	local win = function(win)
-		funcptr_queue = {}
-		funcptr_i = 0
-		
-		if ID_mubiao == char_current_i then
+	local win = function(s_win, mubiao_win)
+		if ID_s == char_current_i or ID_mubiao == char_current_i then
 			skills_cs()
 		end
 		char_juese[ID_s].skill["天义"] = "locked"
-
-		skills_tianyi_set(win)
-		add_funcptr(_quhu_sub2)
-		timer.start(0.6)
+		skills_tianyi_set(s_win)
 	end
 
-	add_funcptr(push_message, char_juese[ID_s] .. "发动了武将技能 '天义'")
-	add_funcptr(push_message, table.concat({char_juese[ID_s], "与", char_juese[ID_mubiao], "进行拼点"}))
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '天义'")
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "与", char_juese[ID_mubiao].name, "进行拼点"}))
 	add_funcptr(card_pindian, {ID_s, ID_mubiao, win})
+	add_funcptr(_quhu_sub2)
+	timer.start(0.6)
 
 	return true
 end
 function skills_tianyi_enter()	--  己方发动天义
 	if #char_juese[char_current_i].shoupai == 0 then return false end
-	timer.stop()
-	funcptr_queue = {}
+
 	skills_enter("请选择目标", "", "天义", "技能选择-目标")
 	gamerun_select_target("init")
 	gamerun_OK_ptr = function()
 		if #char_juese[gamerun_target_selected].shoupai == 0 then return false end
 
-		local win_fp = function(win)
+		gamerun_status = "手牌生效中"
+		set_hints("")
+		skills_cs()
+
+		local win_fp = function(s_win, mubiao_win)
 			char_juese[char_current_i].skill["天义"] = "locked"
-			skills_tianyi_set(win)
+			skills_tianyi_set(s_win)
 			skills_cs()
-			_quhu_sub2()
 		end
 
-		card_pindian({char_current_i, gamerun_target_selected, win_fp})
+		funcptr_queue = {}
+		funcptr_i = 0
+
+		add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '天义'")
+		add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "与", char_juese[gamerun_target_selected].name, "进行拼点"}))
+		add_funcptr(card_pindian, {char_current_i, gamerun_target_selected, win_fp})
+		add_funcptr(_quhu_sub2)
+		timer.start(0.6)
 	end
 	return true
 end
@@ -463,6 +467,8 @@ function skills_tianyi_set(win)
 	if win then
 		char_sha_time = char_sha_time + 1
 		char_distance_infinity = true
+		char_sha_add_target_able = true
+		char_sha_additional_target = 1
 	else
 		char_sha_able = false
 	end
@@ -475,16 +481,16 @@ function skills_quhu_ai(ID_s, ID_mubiao, ID_to_shanghai)	--  AI发动驱虎
 	end
 
 	--  ID_mubiao: 要拼点的目标; ID_to_shanghai: 拼点胜利后，要对方伤害的目标  --
-	local win = function(win)
+	local win = function(s_win, mubiao_win)
 		funcptr_queue = {}
 		funcptr_i = 0
 		
-		if ID_mubiao == char_current_i then
+		if ID_s == char_current_i or ID_mubiao == char_current_i then
 			skills_cs()
 		end
 		char_juese[ID_s].skill["驱虎"] = "locked"
 
-		if win then
+		if s_win then
 			if #ai_judge_in_range(ID_mubiao) > 0 then
 				char_tili_deduct({1, ID_to_shanghai, ID_mubiao, "普通", ID_to_shanghai, nil, true})
 			end
@@ -492,13 +498,15 @@ function skills_quhu_ai(ID_s, ID_mubiao, ID_to_shanghai)	--  AI发动驱虎
 			char_tili_deduct({1, ID_s, ID_mubiao, "普通", ID_s, nil, true})
 		end
 
-		add_funcptr(_quhu_sub2)
+		add_funcptr(_pindian_huifu)
 		timer.start(0.6)
 	end
 
-	add_funcptr(push_message, char_juese[ID_s] .. "发动了武将技能 '驱虎'")
-	add_funcptr(push_message, table.concat({char_juese[ID_s], "与", char_juese[ID_mubiao], "进行拼点"}))
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '驱虎'")
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "与", char_juese[ID_mubiao].name, "进行拼点"}))
 	add_funcptr(card_pindian, {ID_s, ID_mubiao, win})
+	add_funcptr(_quhu_sub2)
+	timer.start(0.6)
 
 	return true
 end
@@ -511,30 +519,46 @@ function skills_quhu_enter()	--  己方发动驱虎
 	gamerun_OK_ptr = function()
 		if #char_juese[gamerun_target_selected].shoupai == 0 then return false end
 
-		local win_fp = function(win)
-			if win then
+		gamerun_status = "手牌生效中"
+		set_hints("")
+		skills_cs()
+
+		local win_fp = function(s_win, mubiao_win)
+			if s_win then
 				char_juese[char_current_i].skill["驱虎"] = "locked"
 				if #ai_judge_in_range(gamerun_target_selected) > 0 then
 					guankan_s = gamerun_target_selected
 					_quhu_sub1()
 				else
 					skills_cs()
-					_quhu_sub2()
 				end
 			else
+				timer.stop()
+				funcptr_queue = {}
+				funcptr_i = 0
+
 				skills_cs()
 				char_juese[char_current_i].skill["驱虎"] = "locked"
+
 				char_tili_deduct({1, char_current_i, gamerun_target_selected, "普通", char_current_i, nil, true})
-				add_funcptr(_quhu_sub2)
-				consent_func_queue(0.6)
+				add_funcptr(_pindian_huifu)
+				timer.start(0.6)
 			end
 		end
 
-		card_pindian({char_current_i, gamerun_target_selected, win_fp})
+		add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '驱虎'")
+		add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "与", char_juese[gamerun_target_selected].name, "进行拼点"}))
+		add_funcptr(card_pindian, {char_current_i, gamerun_target_selected, win_fp})
+		add_funcptr(_quhu_sub2)
+		timer.start(0.6)
 	end
 	return true
 end
 function _quhu_sub1()
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
 	skills_enter("请选择伤害的目标", "", "驱虎2", "技能选择-目标B")
 	gamerun_select_target("init")
 	
@@ -545,8 +569,8 @@ function _quhu_sub1()
 
 			skills_cs()
 			char_tili_deduct({1, gamerun_target_selected, guankan_s, "普通", gamerun_target_selected, nil, true})
-			add_funcptr(_quhu_sub2)
-			consent_func_queue(0.6)
+			add_funcptr(_pindian_huifu)
+			timer.start(0.6)
 		end
 	end
 end
@@ -605,7 +629,7 @@ function skills_yinghun_enter(ID)
 
 	gamerun_status = "选项选择"
 	choose_name = "英魂"
-	jiaohu_text = "是否使用 '英魂' 令其他角色摸牌弃牌?"
+	jiaohu_text = "是否发动 '英魂' 令其他角色摸牌弃牌?"
 	choose_option = {"摸1弃"..(char_juese[char_current_i].tili_max-char_juese[char_current_i].tili),"摸"..(char_juese[char_current_i].tili_max-char_juese[char_current_i].tili).."弃1","不发动"}
 
 	txt_messages:setVisible(false)
@@ -784,6 +808,7 @@ function buyi_tili_huifu(ID)
 	char_juese[ID].tili = char_juese[ID].tili + 1
 	push_message(char_juese[ID].name .. "回复了一点体力")
 end
+
 --  诸葛亮：观星  --
 function skills_guanxing(ID)
 	if ID == char_current_i then
@@ -804,7 +829,8 @@ function skills_guanxing_ai(ID)
 
 	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '观星'")
 
-	_guanxing_exe(is_drawx, ID, guanxing_mubiao)
+	--_guanxing_exe(is_drawx, ID, guanxing_mubiao)
+	_guanxing_exe()
 	timer.start(0.6)
 end
 function skills_guanxing_enter(ID)
@@ -2061,8 +2087,13 @@ function skills_judge_liegong(ID_s, ID_mubiao)    --  判断烈弓发动条件�
 	return false
 end
 function skills_liegong(va_list)
-	local ID_s, ID_mubiao
-	ID_s = va_list[1]; ID_mubiao = va_list[2]
+	local ID_s, ID_mubiao, sha_mubiao_i
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; sha_mubiao_i = va_list[3]
+
+	--  如果大乔流离了此杀  --
+	if char_sha_mubiao[sha_mubiao_i] ~= ID_mubiao then
+		ID_mubiao = char_sha_mubiao[sha_mubiao_i]
+	end
 
 	if ID_s ~= char_current_i and ai_judge_liegong(ID_s) == false then
 		return
@@ -2108,8 +2139,13 @@ end
 
 --  马超：铁骑  --
 function skills_tieqi(va_list)
-	local card_shoupai, ID_shoupai, ID_s, ID_mubiao
-	card_shoupai = va_list[1]; ID_shoupai = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]
+	local card_shoupai, ID_shoupai, ID_s, ID_mubiao, sha_mubiao_i
+	card_shoupai = va_list[1]; ID_shoupai = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]; sha_mubiao_i = va_list[5]
+
+	--  如果大乔流离了此杀  --
+	if char_sha_mubiao[sha_mubiao_i] ~= ID_mubiao then
+		ID_mubiao = char_sha_mubiao[sha_mubiao_i]
+	end
 
 	if ID_s ~= char_current_i and ai_judge_tieqi(ID_s, ID_mubiao) == false then
 		return
@@ -5220,4 +5256,127 @@ function _mengjin_exe_2(va_list)
 	
 	txt_messages:setVisible(false)
 	platform.window:invalidate()
+end
+
+--  大乔：流离  --
+function skills_liuli(va_list)
+	local card_shoupai, ID_sha, ID_sha_mubiao, sha_mubiao_i
+	card_shoupai = va_list[1]; ID_sha = va_list[2]; ID_sha_mubiao = va_list[3]; sha_mubiao_i = va_list[4]
+
+	if ID_sha_mubiao == char_current_i then
+		skills_liuli_enter(card_shoupai, ID_sha, sha_mubiao_i)
+	else
+		skills_liuli_ai(ID_sha, ID_sha_mubiao, sha_mubiao_i)
+	end
+end
+function skills_liuli_ai(ID_sha, ID_sha_mubiao, sha_mubiao_i)
+	local fadong, ID_shoupai, ID_transfer
+	fadong, ID_shoupai, ID_transfer = ai_judge_liuli(ID_sha, ID_sha_mubiao)
+
+	if fadong == false then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	_liuli_exe(ID_shoupai, ID_sha, ID_sha_mubiao, ID_transfer, sha_mubiao_i)
+end
+function skills_liuli_enter(card_shoupai, ID_sha, sha_mubiao_i)
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local old_gamerun_status = gamerun_status
+	local sha_type = _sha_get_leixing(card_shoupai)
+	
+	gamerun_status = "选项选择"
+	choose_name = table.concat({char_juese[ID_sha].name, "对您使用了'", sha_type, "'"})
+	jiaohu_text = table.concat({"是否发动 '流离' 转移此杀?"})
+	choose_option = {"是", "否"}
+
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		set_hints("")
+
+		if i == 1 then
+			_liuli_select_target(ID_sha, sha_mubiao_i, old_gamerun_status)
+		else
+			gamerun_status = old_gamerun_status
+			_liuli_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+	end
+
+	platform.window:invalidate()
+end
+function _liuli_select_target(ID_sha, sha_mubiao_i, old_gamerun_status)
+	gamerun_wuqi_into_hand(char_current_i)
+	skills_enter("请选择一张牌", "请选择目标", "流离", "技能选择-单牌")
+
+	gamerun_OK_ptr = function()
+		if gamerun_status == "技能选择-目标" then
+			if gamerun_OK == true then
+				if table.getn2(card_selected) == 1 and card_if_d_limit("流离", char_current_i, gamerun_target_selected) then
+					_liuli_exe(card_highlighted, ID_sha, char_current_i, gamerun_target_selected, sha_mubiao_i)
+				end
+			end
+			return
+		end
+		
+		if gamerun_status == "技能选择-单牌" then
+			if gamerun_OK == false then
+				gamerun_status = old_gamerun_status
+				set_hints("")
+				_liuli_huifu()
+				funcptr_i = funcptr_i + 1
+				timer.start(0.6)
+			end
+			return
+		end
+	end
+	
+	gamerun_tab_ptr = function()
+		if table.getn2(card_selected) == 1 then
+			skills_enter_target()
+		end
+	end
+end
+function _liuli_exe(ID_shoupai, ID_sha, ID_sha_mubiao, ID_transfer, sha_mubiao_i)
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	card_selected = {}
+
+	add_funcptr(_liuli_sub1, {ID_shoupai, ID_sha_mubiao})
+	skills_losecard(ID_sha_mubiao, 1, true)
+	
+	add_funcptr(push_message, char_juese[ID_sha_mubiao].name .. "发动了武将技能 '流离'")
+	add_funcptr(push_message, table.concat({char_juese[ID_sha_mubiao].name .. "将", char_juese[ID_sha].name, "的'杀'转移给", char_juese[ID_transfer].name}))
+
+	char_sha_mubiao[sha_mubiao_i] = ID_transfer
+
+	add_funcptr(_liuli_huifu)
+	timer.start(0.6)
+end
+function _liuli_sub1(va_list)
+	local ID_shoupai, ID
+	ID_shoupai = va_list[1]; ID = va_list[2]
+
+	local card = char_juese[ID].shoupai[ID_shoupai]
+	card_add_qipai(card)
+	card_remove({ID, ID_shoupai})
+	push_message(table.concat({char_juese[ID].name, "弃掉了", card[2], card[3], "的", card[1]}))
+
+	gamerun_wuqi_out_hand(ID)
+end
+function _liuli_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end

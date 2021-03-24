@@ -320,6 +320,11 @@ function ai_judge_yinghun_mubiao(ID, yinghun_choice)
 	return 1
 end
 
+--  AI决定流离的发动目标  --
+function ai_judge_liuli(ID_sha, ID_sha_mubiao)
+	return false, 0, 0
+end
+
 --  AI决定天香的发动目标  --
 function ai_judge_tianxiang(ID, dianshu, shuxing)
 	return false, 0, 0

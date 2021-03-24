@@ -288,6 +288,8 @@ function gamerun_huihe_start()
 	char_sha_time = 1
 	char_jiu_time = 1
 	char_distance_infinity = false
+	char_sha_add_target_able = false
+	char_sha_additional_target = 0
 	char_sha_able = true
 	char_hejiu = false
 
@@ -1080,33 +1082,41 @@ function on.enterKey()
 			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_shun_sub2)
+
 		elseif string.find(gamerun_status, "拆") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_chai_sub2)
+
 		elseif string.find(gamerun_status, "杀") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
 			add_funcptr(_sha_qilin_huifu)
+
 		elseif string.find(gamerun_status, "寒") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_sha_sub3)
+
 		elseif string.find(gamerun_status, "寒2") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_sha_sub2)
+
 		elseif string.find(gamerun_status, "归心") then
 			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_guixin_sub2, {gamerun_guankan_selected, guankan_s, guankan_d})
+
 		elseif string.find(gamerun_status, "反馈") then
 			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_fankui_status_restore)
+
 		elseif string.find(gamerun_status, "猛进") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_fankui_status_restore)
+
 		end
 		timer.start(0.6)
 
@@ -1283,12 +1293,18 @@ function on.enterKey()
 		if table.getn2(card_selected) == 1 and card_selected[card_highlighted] ~= nil then
 			local carda = char_juese[char_current_i].shoupai[card_highlighted][1]
 			local fangtian = false
-			local n_sha_mubiao = 0
+			local n_sha_mubiao = 1
 			
 			--  判断是否符合方天画戟发动条件  --
 			if gamerun_judge_fangtian() == true then
 				fangtian = true
 				n_sha_mubiao = 3
+			end
+
+			--  判断是否通过技能增加了出杀目标  --
+			if char_sha_add_target_able == true and (carda == "杀" or carda == "火杀" or carda == "雷杀") then
+				fangtian = true
+				n_sha_mubiao = n_sha_mubiao + char_sha_additional_target
 			end
 
 			if gamerun_status == "" then
@@ -1311,8 +1327,8 @@ function on.enterKey()
 							set_hints("'确定'：选择B '取消'：仅A")
 						elseif fangtian == true then
 							--  若只有两人存活，方天画戟只能指定一个目标  --
-							if char_alive_stat() == 2 then
-								if card_fangtian(1) then
+							if char_alive_stat() == 2 or n_sha_mubiao == 1 then
+								if card_fangtian(1, false) then
 									card_selected = {}
 									card_highlighted = 1
 									platform.window:invalidate()
@@ -1353,7 +1369,7 @@ function on.enterKey()
 
 				elseif fangtian == true then
 					if char_alive_stat() == 3 or n_sha_mubiao == 2 then
-						if card_fangtian(2) then
+						if card_fangtian(2, false) then
 							card_selected = {}
 							card_highlighted = 1
 							platform.window:invalidate()
@@ -1361,7 +1377,7 @@ function on.enterKey()
 						return
 					end
 
-					--  方天画戟第二目标  --
+					--  杀第二目标  --
 					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
 						set_hints("请选择目标C或'取消'出杀")
 						selected_target_b = gamerun_target_selected
@@ -1375,8 +1391,30 @@ function on.enterKey()
 			end
 
 			if gamerun_status == "选择目标-C" then
-				--  方天画戟第三目标  --
-				if card_fangtian(3) then
+				if char_alive_stat() == 4 or n_sha_mubiao == 3 then
+					if card_fangtian(3, false) then
+						card_selected = {}
+						card_highlighted = 1
+						platform.window:invalidate()
+					end
+					return
+				end
+
+				--  杀第三目标  --
+				if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
+					set_hints("请选择目标D或'取消'出杀")
+					selected_target_c = gamerun_target_selected
+					gamerun_status = "选择目标-D"
+					gamerun_select_target("init")
+					platform.window:invalidate()
+				end
+
+				return
+			end
+
+			if gamerun_status == "选择目标-D" then
+				--  杀第四目标  --
+				if card_fangtian(4, false) then
 					card_selected = {}
 					card_highlighted = 1
 					platform.window:invalidate()
@@ -1521,7 +1559,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end
@@ -1586,14 +1624,17 @@ function on.escapeKey()
 	--  已选取至少一张牌时  --
 	if table.getn2(card_selected) > 0 then
 		local fangtian = false
-		local n_sha_mubiao = 0
 
 		card = char_juese[char_current_i].shoupai[card_highlighted][1]
 
 		--  判断是否符合方天画戟发动条件  --
 		if gamerun_judge_fangtian() == true then
 			fangtian = true
-			n_sha_mubiao = 3
+		end
+
+		--  判断是否通过技能增加了出杀目标  --
+		if char_sha_add_target_able == true and (card == "杀" or card == "火杀" or card == "雷杀") then
+			fangtian = true
 		end
 
 		if table.getn2(card_selected) == 1 then
@@ -1619,8 +1660,8 @@ function on.escapeKey()
 						platform.window:invalidate()
 					end
 				elseif fangtian == true then
-					--  方天画戟仅选择一个目标  --
-					if card_fangtian(1) then
+					--  杀仅选择一个目标  --
+					if card_fangtian(1, true) then
 						card_selected = {}
 						card_highlighted = 1
 						platform.window:invalidate()
@@ -1630,8 +1671,18 @@ function on.escapeKey()
 			end
 
 			if gamerun_status == "选择目标-C" then
-				--  方天画戟仅选择两个目标  --
-				if card_fangtian(2) then
+				--  杀仅选择两个目标  --
+				if card_fangtian(2, true) then
+					card_selected = {}
+					card_highlighted = 1
+					platform.window:invalidate()
+				end
+				return
+			end
+
+			if gamerun_status == "选择目标-D" then
+				--  杀仅选择三个目标  --
+				if card_fangtian(3, true) then
 					card_selected = {}
 					card_highlighted = 1
 					platform.window:invalidate()
@@ -1910,12 +1961,15 @@ function on.tabKey()
 		card = char_juese[char_current_i].shoupai[card_highlighted][1]
 		local flag = true
 		local fangtian = false
-		local n_sha_mubiao = 0
 
 		--  判断是否符合方天画戟发动条件  --
 		if gamerun_judge_fangtian() == true then
 			fangtian = true
-			n_sha_mubiao = 3
+		end
+
+		--  判断是否通过技能增加了出杀目标  --
+		if char_sha_add_target_able == true and (card == "杀" or card == "火杀" or card == "雷杀") then
+			fangtian = true
 		end
 
 		if gamerun_huihe == "出牌" and gamerun_status == "" then
