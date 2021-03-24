@@ -3638,7 +3638,6 @@ function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
 			end
 		end
 	end
-
 	--  杀第一个目标  --
 	_sha_judge_and_go(ID_shoupai, card_shoupai, ID_s, ID_mubiao[1], iscur)
 	return true
@@ -3788,8 +3787,12 @@ function _sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)	--  
 		card[1] = "八卦阵"
 	end
 
-	if #card ~= 0 then
-		if not char_wushi then
+	if #card ~= 0 or (char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0) then
+		if char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0 and (card_shoupai[1][2] == "黑桃" or card_shoupai[1][2] == "草花") then
+			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了技能'毅重'"})
+			add_funcptr(_sha_sub2, nil)
+			return
+		elseif not char_wushi then
 			if _sha_judge_fangju_ying(card, card_shoupai, hint_1, ID_s, ID_mubiao) then
 				add_funcptr(_sha_sub2, nil)
 			    return
@@ -4153,8 +4156,12 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 		card[1] = "八卦阵"
 	end
 
-	if #card ~= 0 then
-		if not char_wushi then
+	if #card ~= 0 or (char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0) then
+		if char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0 and (card_shoupai[1][2] == "黑桃" or card_shoupai[1][2] == "草花") then
+			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了技能'毅重'"})
+			add_funcptr(_sha_sub2, nil)
+			return
+		elseif not char_wushi then
 			if _sha_judge_fangju_ying(card, card_shoupai, hint_1, ID_s, ID_mubiao) then
 				add_funcptr(_sha_sub2, nil)
 			    return
