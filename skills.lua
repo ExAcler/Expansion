@@ -1936,7 +1936,7 @@ end
 function skills_wusheng()
 	if skills_judge_red() then
 		funcptr_queue = {}
-		if card_sha({card_highlighted}, char_current_i, gamerun_target_selected, true) then
+		if card_sha({card_highlighted}, char_current_i, {gamerun_target_selected}, true) then
 			skills_cs()
 		    consent_func_queue(0.6)
 		end
@@ -1964,7 +1964,7 @@ end
 function skills_longdan()
 	funcptr_queue = {}
 	if skills_judge_card("闪") then
-		if card_sha({card_highlighted}, char_current_i, gamerun_target_selected, true) then
+		if card_sha({card_highlighted}, char_current_i, {gamerun_target_selected}, true) then
 			skills_cs()
 		    consent_func_queue(0.6)
 		end
@@ -2060,68 +2060,97 @@ function skills_judge_liegong(ID_s, ID_mubiao)    --  判断烈弓发动条件�
 	
 	return false
 end
-function skills_liegong_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+function skills_liegong(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	if ID_s ~= char_current_i and ai_judge_liegong(ID_s) == false then
+		return
+	end
+
+	if ID_s == char_current_i then
+		skills_liegong_enter(ID_mubiao)
+	else
+		_liegong_exe(ID_s, ID_mubiao)
+	end
+end
+function skills_liegong_enter(ID_mubiao)
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
     gamerun_status = "确认操作"
-	jiaohu_text = "是否发动 '烈弓'?"
+	jiaohu_text = table.concat({"是否对", char_juese[ID_mubiao].name, "发动 '烈弓'?"})
 	gamerun_OK = false
 	
 	gamerun_OK_ptr = function()
-	    gamerun_status = "手牌生效中"; set_hints("")
+	    gamerun_status = "手牌生效中"
+		set_hints("")
+		
 		if gamerun_OK then
-	        funcptr_queue = {}
-			skills_liegong(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-		    consent_func_queue(0.6)
-	    else
-			funcptr_queue = {}
-			_liegong_sha(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-			consent_func_queue(0.6)
+	    	_liegong_exe(char_current_i, ID_mubiao)
 		end
+		_liegong_huifu()
+		funcptr_i = funcptr_i + 1
+		timer.start(0.6)
 	end
 	
 	platform.window:invalidate()
 end
-function skills_liegong(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '烈弓'")
-	char_liegong = true
-	_liegong_sha(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+function _liegong_exe(ID_s, ID_mubiao)
+	push_message(table.concat({char_juese[ID_s].name, "发动了武将技能 '烈弓' (对", char_juese[ID_mubiao].name, ")"}))
+	char_liegong[ID_mubiao] = true
 end
-function _liegong_sha(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-	if #char_juese[ID_s].wuqi ~= 0 then
-		if _sha_judge_zhuque_cixiong(ID_shoupai, card_shoupai, ID_s, ID_mubiao) == false then
-			_sha_go(ID_shoupai, card_shoupai, ID_s, ID_mubiao, true)
-		end
-	else
-		_sha_go(ID_shoupai, card_shoupai, ID_s, ID_mubiao, true)
-	end
+function _liegong_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  马超：铁骑  --
+function skills_tieqi(va_list)
+	local card_shoupai, ID_shoupai, ID_s, ID_mubiao
+	card_shoupai = va_list[1]; ID_shoupai = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]
+
+	if ID_s ~= char_current_i and ai_judge_tieqi(ID_s, ID_mubiao) == false then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID_s == char_current_i then
+		skills_tieqi_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+	else
+		_tieqi_exe(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+		timer.start(0.6)
+	end
+end
 function skills_tieqi_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
 	card_selected = {}
 	card_highlighted = 1
 
     gamerun_status = "确认操作"
-	jiaohu_text = "是否发动 '铁骑'?"
+	jiaohu_text = table.concat({"是否对", char_juese[ID_mubiao].name, "发动 '铁骑'?"})
 	gamerun_OK = false
 	
 	gamerun_OK_ptr = function()
 	    gamerun_status = "手牌生效中"; set_hints("")
 		if gamerun_OK then
-	        funcptr_queue = {}
-			skills_tieqi(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-		    consent_func_queue(0.6)
+			_tieqi_exe(card_shoupai, ID_shoupai, char_current_i, ID_mubiao)
 	    else
-			funcptr_queue = {}
-			_liegong_sha(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-			consent_func_queue(0.6)
+			_liegong_huifu()
+			funcptr_i = funcptr_i + 1
 		end
+		timer.start(0.6)
 	end
 	
 	platform.window:invalidate()
 end
-function skills_tieqi(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
-	_tieqi_temporary_remove_sha(ID_shoupai, ID_s)
-	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "发动了武将技能 '铁骑' (对", char_juese[ID_mubiao].name, ")"}))
+function _tieqi_exe(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+	--_tieqi_temporary_remove_sha(ID_shoupai, ID_s)
+	push_message(table.concat({char_juese[ID_s].name, "发动了武将技能 '铁骑' (对", char_juese[ID_mubiao].name, ")"}))
 	add_funcptr(_tieqi_fan_panding, ID_s)
 
 	--  如场上有司马懿或张角，询问其改判技能  --
@@ -2158,10 +2187,10 @@ function _tieqi_jiesuan(va_list)
 
 	if card_panding_card[2] == "红桃" or card_panding_card[2] == "方块" then
 		push_message(char_juese[ID_s].name .. "的 '铁骑' 判定成功")
-		char_liegong = true
+		char_liegong[ID_mubiao] = true
 	else
 		push_message(char_juese[ID_s].name .. "的 '铁骑' 判定失败")
-		char_liegong = false
+		char_liegong[ID_mubiao] = false
 	end
 	skills_card_qi_panding(ID_s)
 
@@ -2172,16 +2201,16 @@ function _tieqi_insert_sha_exe(va_list)
 	local card_shoupai, ID_shoupai, ID_s, ID_mubiao
 	card_shoupai = va_list[1]; ID_shoupai = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]
 
-	funcptr_queue = {}
-	funcptr_i = 0
-
+	--[[
 	_tieqi_insert_sha(card_shoupai, ID_s)
 	ID_shoupai = {}
 	for i = #char_juese[ID_s].shoupai - #card_shoupai + 1, #char_juese[ID_s].shoupai do
 		table.insert(ID_shoupai, i)
 	end
+	]]
 
-	_liegong_sha(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
+	timer.stop()
+	_liegong_huifu()
 	timer.start(0.6)
 end
 
@@ -2669,7 +2698,7 @@ function skills_tiaoxin(ID_req, ID_d)
 		c_pos = card_chazhao(ID_d, "火杀")
 	end
 	if c_pos > -1 then
-	    card_sha({c_pos}, ID_d, ID_req, false)
+	    card_sha({c_pos}, ID_d, {ID_req}, false)
 	else
 	    add_funcptr(_nanman_send_msg, {char_juese[ID_d].name, "放弃"})
 		add_funcptr(_chai_sub1, {true, ID_req, ID_d})
@@ -2811,7 +2840,7 @@ function skills_qiangxi_enter()
 	if #char_juese[char_current_i].shoupai == 0 and ai_arm_stat(char_current_i) == 0 then return false end
 	
 	gamerun_wuqi_into_hand(char_current_i)
-	skills_enter("选择装备牌并'确定',或'取消'扣减体力", "请选择目标", "强袭", "技能选择-单牌")
+	skills_enter("请选择装备牌或'取消'减体力", "请选择目标", "强袭", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
 		if gamerun_OK == true then
@@ -2839,7 +2868,7 @@ end
 function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	if gamerun_status == "技能选择-单牌" then return false end
 
-	if #char_juese[ID_mubiao].wuqi ~= 0 then
+	if #char_juese[ID_s].wuqi ~= 0 then
 	    if char_calc_distance(ID_s, ID_mubiao) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
 	        return false
 	    end

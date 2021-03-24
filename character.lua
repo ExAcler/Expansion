@@ -67,7 +67,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["袁术"] = {{4,4}, "群", false, {"庸肆", "伪帝"}, "男", {"锁定","禁止"}, true}, 
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"武圣","强袭","断粮","奇袭","国色","缔盟","离间","急救","鬼道"}, "男", {"","","","","","","","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"武圣","强袭","烈弓","奇袭","国色","缔盟","离间","急救","鬼道"}, "男", {"","","","","","","","",""}, true},
 	--["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离魂","奸雄","天香","鬼道","当先","火计","化身","新生","伪帝","补益","制衡","庸肆"}, "男", {"","","","","","","锁定","","禁止","禁止","禁止","","",""}, true},
 }
 
@@ -241,7 +241,10 @@ char_wushi = false  -- 无视防具标志 (古锭刀)
 char_rende_given = 0  -- 使用仁德技能已给出牌数
 char_luoyi = false  -- 许褚使用了裸衣技能
 char_xiangying_2 = false	-- 吕布无双、董卓肉林，需要己方使用两张手牌抵消的
-char_liegong = false	-- 黄忠发动烈弓标志
+char_liegong = nil		-- 黄忠发动烈弓标志
+char_sha_params = nil	-- 杀参数存储
+char_sha_mubiao = nil	-- 当前作用杀的目标列表
+char_sha_mubiao_i = nil	-- 当前作用杀的目标ID
 char_zhuque = false		-- 发动朱雀羽扇标志
 char_haoshi = false		-- 鲁肃发动好施标志
 skill_used = false  -- 已经发动过技能
@@ -593,6 +596,17 @@ function distance_remove(ID_s, ID_d)    -- 删除已死亡角色
 	return _ID_s, _ID_d, count
 end
 
+--  存活角色数量计算  --
+function char_alive_stat()
+	local n = 0
+	for i = 1, 5 do
+		if char_juese[i].siwang == false then
+			n = n + 1
+		end
+	end
+	return n
+end
+
 --  游戏胜利条件判断  --
 function char_judge_shengli(siwang_id, laiyuan)
 	local i, count, alive, ended
@@ -800,7 +814,7 @@ function char_tili_deduct(va_list, original_dianshu)
 
 	--  设置函数队列卖血标志  --
 	local old_add_tag_2 = funcptr_add_tag
-	funcptr_add_tag = table.concat({funcptr_add_tag, "/卖血-", id})
+	funcptr_add_tag = table.concat({funcptr_add_tag, "/卖血", id})
 	if cansellblood then
 		char_skills_sellblood(va_list, original_dianshu)
 	elseif tili <= 0 then
@@ -1276,11 +1290,11 @@ function _binsi_remove_sellblood(va_list)	--  濒死结算：角色已死亡，�
 		local tag = v_funcptr_queue[i].tag
 
 		if tag ~= nil then
-			if string.find(tag, table.concat("卖血-", siwang_id)) and keep_after == false then
+			if string.find(tag, table.concat({"卖血", siwang_id})) and keep_after == false then
 				keep_after = true
 			end
 
-			if string.find(tag, table.concat("卖血-", siwang_id)) or keep_after == false then
+			if string.find(tag, table.concat({"卖血", siwang_id})) or keep_after == false then
 				table.insert(items_to_remove, i)
 			else
 				break

@@ -39,8 +39,10 @@ imp_card = ""    -- 武将技能发动时要实现的卡牌名称
 
 gamerun_guankan_type = {}    -- "观看手牌"状态牌类型 (格式：{类型, 附加值})
 gamerun_guankan_selected = 1    -- "观看手牌"状态选取的目标牌
-guankan_s = 0    -- "观看手牌"作用源 (兼作火攻选择花色、贯石斧（五谷丰登）来源手牌临时存储，借刀杀人的目标A)
+guankan_s = 0    -- "观看手牌"作用源 (兼作火攻选择花色、贯石斧（五谷丰登）来源手牌临时存储，选择目标数为2的目标A)
 guankan_d = 0    -- "观看手牌"作用目标
+selected_target_b = 0	--  选择目标数为3时的目标B
+selected_target_c = 0	--  选择目标数为4时的目标C
 gamerun_temp = 0
 lianhuan_va = nil    -- 连环伤害传导前，若有麒麟弓结算，伤害函数va_list的存储
 sha_va = nil    -- 发动寒冰剑后，杀来源目标的va_list存储
@@ -199,7 +201,6 @@ function draw_messages_r()
 	txt_messages:setExpression(table.concat(t), -1)
 	
 	t = {}
-	--collectgarbage()
 end
 
 --  向游戏记录中插入一条消息  --
@@ -341,7 +342,7 @@ function gamerun_huihe_start()
 	end
 	
 	--  判定阶段  --
-	gamerun_huihe_panding()
+	add_funcptr(gamerun_huihe_panding)
 	
 	--  摸牌阶段  --
 	--  摸牌阶段技能  --
@@ -399,15 +400,13 @@ function _start_sub1()	--  回合开始：当前玩家进入出牌阶段
 	if game_skip_chupai == false then
 	    msg = {char_juese[char_current_i].name, "出牌阶段"}
 	    push_message(table.concat(msg))
-		msg = nil; --collectgarbage()
-	
+		
         gamerun_huihe_set("出牌")
         set_hints("请您出牌")
 	else
 	    msg = {char_juese[char_current_i].name, "不能出牌"}
 		push_message(table.concat(msg))
-		msg = nil; --collectgarbage()
-	
+		
         gamerun_huihe_set("出牌")
 		on.escapeKey()
 	end
@@ -424,7 +423,7 @@ function _start_chupai_ai()		--  回合开始：AI进入出牌阶段
 	    push_message(table.concat({char_juese[char_acting_i].name, "出牌阶段"}))
 		add_funcptr(ai_card_use, char_acting_i)
 	else
-		push_message(table.concat({char_juese[char_acting_i].name, "对'乐不思蜀'判定成功, 不能出牌"}))
+		push_message(table.concat({char_juese[char_acting_i].name, "不能出牌"}))
 		ai_stage_qipai(char_acting_i)
 	end
 	timer.start(0.6)
@@ -432,10 +431,20 @@ end
 
 --  判定阶段  --
 function gamerun_huihe_panding()
-    add_funcptr(_panding_huihe_set)
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+    _panding_huihe_set()
 	
 	for i = #char_juese[char_acting_i].panding, 1, -1 do
-		local card = char_juese[char_acting_i].panding[i][1]
+		local card = _panding_get_leixing(char_acting_i, i)
+
+		funcptr_add_tag = "无懈执行前"
+    	add_funcptr(_nanman_send_msg, {char_juese[char_acting_i].name, "的'", card, "'即将生效"})
+		funcptr_add_tag = nil
+
 		card_wuxie(card, char_acting_i, char_acting_i)
 
 		funcptr_add_tag = "无懈无效结算"
@@ -456,6 +465,8 @@ function gamerun_huihe_panding()
 	funcptr_add_tag = "无懈执行完毕"
 	add_funcptr(_panding_sub3)
 	funcptr_add_tag = nil
+
+	timer.start(0.2)
 end
 function _panding_huihe_set()
 	local msg
@@ -484,7 +495,6 @@ function _panding_sub1(ID)    -- 子函数1：翻开判定牌
 	
 	msg = {char_juese[ID].name, "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}
 	push_message(table.concat(msg))
-	msg = nil; --collectgarbage()
 end
 function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并修改相应标识符
     local card, msg, pass, v
@@ -562,7 +572,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	timer.start(0.2)
 end
 function _panding_sub3()    -- 子函数3：用于延时
-
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 function _panding_huifu()	--  判定阶段：闪电伤害结算后恢复原有函数队列执行
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -717,7 +727,7 @@ function gamerun_select_target(dir)
 	
 	if dir == "init" then
 	    gamerun_target_selected = char_current_i - 1
-		gamerun_target_skip_self("right")
+		gamerun_target_skip_self("right", card)
 		if gamerun_target_selected < 1 then
 			gamerun_target_selected = 5
 		end
@@ -729,7 +739,7 @@ function gamerun_select_target(dir)
 				gamerun_target_selected = gamerun_target_selected - 1
 				j = true
 			end
-			gamerun_target_skip_self("right")
+			gamerun_target_skip_self("right", card)
 			if gamerun_target_selected < 1 then
 				gamerun_target_selected = 5
 			end
@@ -738,7 +748,7 @@ function gamerun_select_target(dir)
 	
     if dir == "right" then
 	    gamerun_target_selected = gamerun_target_selected - 1
-		gamerun_target_skip_self("right")
+		gamerun_target_skip_self("right", card)
 		if gamerun_target_selected < 1 then
 			gamerun_target_selected = 5
 		end
@@ -750,7 +760,7 @@ function gamerun_select_target(dir)
 				gamerun_target_selected = gamerun_target_selected - 1
 				j = true
 			end
-			gamerun_target_skip_self("right")
+			gamerun_target_skip_self("right", card)
 			if gamerun_target_selected < 1 then
 				gamerun_target_selected = 5
 			end
@@ -759,7 +769,7 @@ function gamerun_select_target(dir)
 	
 	if dir == "left" then
 	    gamerun_target_selected = gamerun_target_selected + 1
-		gamerun_target_skip_self("left")
+		gamerun_target_skip_self("left", card)
 		if gamerun_target_selected > 5 then
 		    gamerun_target_selected = 1
 		end
@@ -771,7 +781,7 @@ function gamerun_select_target(dir)
 				gamerun_target_selected = gamerun_target_selected + 1
 				j = true
 			end
-			gamerun_target_skip_self("left")
+			gamerun_target_skip_self("left", card)
 			if gamerun_target_selected > 5 then
 				gamerun_target_selected = 1
 			end
@@ -779,7 +789,7 @@ function gamerun_select_target(dir)
 	end
 end
 
-function gamerun_target_skip_self(direction)
+function gamerun_target_skip_self(direction, card)
 	local increment
 	if direction == "left" then
 		increment = 1
@@ -791,14 +801,40 @@ function gamerun_target_skip_self(direction)
 		gamerun_target_selected = 1
 	end
 
-	if gamerun_status ~= "选择目标-B" and gamerun_status ~= "技能选择-目标B" and card ~= "火攻" then
-		if gamerun_target_selected == char_current_i then
+	if card == "火攻" then
+		return
+	end
+
+	if gamerun_status == "选择目标-B" then
+		while gamerun_target_selected == guankan_s or (gamerun_target_selected == char_current_i and card ~= "借刀杀人" and card ~= "铁锁连环") do
 			gamerun_target_selected = gamerun_target_selected + increment
 		end
-	else
+		return
+	end
+
+	if gamerun_status == "选择目标-C" then
+		while gamerun_target_selected == guankan_s or gamerun_target_selected == selected_target_b or gamerun_target_selected == char_current_i do
+			gamerun_target_selected = gamerun_target_selected + increment
+		end
+		return
+	end
+
+	if gamerun_status == "选择目标-D" then
+		while gamerun_target_selected == guankan_s or gamerun_target_selected == selected_target_b or gamerun_target_selected == selected_target_c or gamerun_target_selected == char_current_i do
+			gamerun_target_selected = gamerun_target_selected + increment
+		end
+		return
+	end
+
+	if gamerun_status == "技能选择-目标B" then
 		if gamerun_target_selected == guankan_s and (imp_card ~= "节命" and imp_card ~= "好施") then
 			gamerun_target_selected = gamerun_target_selected + increment
 		end
+		return
+	end
+
+	if gamerun_target_selected == char_current_i then
+		gamerun_target_selected = gamerun_target_selected + increment
 	end
 end
 
@@ -918,6 +954,21 @@ function gamerun_skills_reset()
 			end
 		end
 	end
+end
+
+--  判断是否符合方天画戟发动条件  --
+function gamerun_judge_fangtian()
+	local carda = char_juese[char_current_i].shoupai[card_highlighted][1]
+
+	if #char_juese[char_current_i].wuqi > 0 then
+		if char_juese[char_current_i].wuqi[1] == "方天戟" then
+			if #char_juese[char_current_i].shoupai == 1 and (carda == "杀" or carda == "火杀" or carda == "雷杀") then
+				return true
+			end
+		end
+	end
+
+	return false
 end
 
 
@@ -1231,21 +1282,67 @@ function on.enterKey()
 	if gamerun_huihe == "出牌" then
 		if table.getn2(card_selected) == 1 and card_selected[card_highlighted] ~= nil then
 			local carda = char_juese[char_current_i].shoupai[card_highlighted][1]
-			if carda == "借刀杀人" or carda == "铁锁连环" then
-				if gamerun_status == "选择目标" then
-					--  进入借刀杀人/铁索连环第二阶段  --
+			local fangtian = false
+			local n_sha_mubiao = 0
+			
+			--  判断是否符合方天画戟发动条件  --
+			if gamerun_judge_fangtian() == true then
+				fangtian = true
+				n_sha_mubiao = 3
+			end
+
+			if gamerun_status == "" then
+				if card_chupai(card_highlighted) then
+					--  恢复状态  --
+					card_selected = {}
+					card_highlighted = 1
+					platform.window:invalidate()
+				end
+				return
+			end
+
+			if gamerun_status == "选择目标" then
+				if carda == "借刀杀人" or carda == "铁锁连环" or fangtian == true then
+					--  多目标出牌  --
 					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
-						guankan_s = gamerun_target_selected
 						if carda == "借刀杀人" then
 							set_hints("请选择目标B")
-						else
+						elseif carda == "铁锁连环" then
 							set_hints("'确定'：选择B '取消'：仅A")
+						elseif fangtian == true then
+							--  若只有两人存活，方天画戟只能指定一个目标  --
+							if char_alive_stat() == 2 then
+								if card_fangtian(1) then
+									card_selected = {}
+									card_highlighted = 1
+									platform.window:invalidate()
+								end
+								return
+							else
+								set_hints("请选择目标B或'取消'出杀")
+							end
 						end
+
+						guankan_s = gamerun_target_selected
 						gamerun_status = "选择目标-B"
 						gamerun_select_target("init")
 						platform.window:invalidate()
 					end
-				elseif gamerun_status == "选择目标-B" then
+				else
+					--  单目标出牌  --
+					if card_chupai(card_highlighted) then
+						--  恢复状态  --
+						card_selected = {}
+						card_highlighted = 1
+						platform.window:invalidate()
+					end
+				end
+
+				return
+			end
+
+			if gamerun_status == "选择目标-B" then
+				if carda == "借刀杀人" or carda == "铁锁连环" then
 					--  开始借刀杀人/连环  --
 					if card_chupai(true) then
 						--  恢复状态  --
@@ -1253,15 +1350,38 @@ function on.enterKey()
 						card_highlighted = 1
 						platform.window:invalidate()
 					end
+
+				elseif fangtian == true then
+					if char_alive_stat() == 3 or n_sha_mubiao == 2 then
+						if card_fangtian(2) then
+							card_selected = {}
+							card_highlighted = 1
+							platform.window:invalidate()
+						end
+						return
+					end
+
+					--  方天画戟第二目标  --
+					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
+						set_hints("请选择目标C或'取消'出杀")
+						selected_target_b = gamerun_target_selected
+						gamerun_status = "选择目标-C"
+						gamerun_select_target("init")
+						platform.window:invalidate()
+					end
+
 				end
-			else
-				--  出牌  --
-				if card_chupai(card_highlighted) then
-					--  恢复状态  --
+				return
+			end
+
+			if gamerun_status == "选择目标-C" then
+				--  方天画戟第三目标  --
+				if card_fangtian(3) then
 					card_selected = {}
 					card_highlighted = 1
 					platform.window:invalidate()
 				end
+				return
 			end
 
 			return
@@ -1465,23 +1585,58 @@ function on.escapeKey()
 	
 	--  已选取至少一张牌时  --
 	if table.getn2(card_selected) > 0 then
+		local fangtian = false
+		local n_sha_mubiao = 0
+
 		card = char_juese[char_current_i].shoupai[card_highlighted][1]
-		if table.getn2(card_selected) == 1 and card == "铁锁连环" then
+
+		--  判断是否符合方天画戟发动条件  --
+		if gamerun_judge_fangtian() == true then
+			fangtian = true
+			n_sha_mubiao = 3
+		end
+
+		if table.getn2(card_selected) == 1 then
 			if gamerun_status == "选择目标" then
-				--  发动铁索连环 (重铸效果)  --
-				card_lian_chongzhu({card_highlighted, char_current_i})
-				--  恢复状态  --
-				card_selected = {}
-				card_highlighted = 1
-				platform.window:invalidate()
-			elseif gamerun_status == "选择目标-B" then
-				--  发动铁索连环 (连环效果)  --
-				if card_chupai(false) then
+				if card == "铁锁连环" then
+					--  发动铁索连环 (重铸效果)  --
+					card_lian_chongzhu({card_highlighted, char_current_i})
 					--  恢复状态  --
 					card_selected = {}
 					card_highlighted = 1
 					platform.window:invalidate()
 				end
+				return
+			end
+
+			if gamerun_status == "选择目标-B" then
+				if card == "铁锁连环" then
+					--  发动铁索连环 (连环效果)  --
+					if card_chupai(false) then
+						--  恢复状态  --
+						card_selected = {}
+						card_highlighted = 1
+						platform.window:invalidate()
+					end
+				elseif fangtian == true then
+					--  方天画戟仅选择一个目标  --
+					if card_fangtian(1) then
+						card_selected = {}
+						card_highlighted = 1
+						platform.window:invalidate()
+					end
+				end
+				return
+			end
+
+			if gamerun_status == "选择目标-C" then
+				--  方天画戟仅选择两个目标  --
+				if card_fangtian(2) then
+					card_selected = {}
+					card_highlighted = 1
+					platform.window:invalidate()
+				end
+				return
 			end
 		end
 
@@ -1754,9 +1909,21 @@ function on.tabKey()
 		--  其他情况  --
 		card = char_juese[char_current_i].shoupai[card_highlighted][1]
 		local flag = true
+		local fangtian = false
+		local n_sha_mubiao = 0
+
+		--  判断是否符合方天画戟发动条件  --
+		if gamerun_judge_fangtian() == true then
+			fangtian = true
+			n_sha_mubiao = 3
+		end
 
 		if gamerun_huihe == "出牌" and gamerun_status == "" then
-			set_hints(card_tishi[card])
+			if fangtian == false then
+				set_hints(card_tishi[card])
+			else
+				set_hints("请选择目标A")
+			end
 		
 			--  判断是否进入丈八蛇矛状态  --
 			if #char_juese[char_current_i].wuqi ~= 0 then
