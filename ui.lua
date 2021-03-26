@@ -85,7 +85,11 @@ function draw_opponent(gc)
 				gc:setColorRGB(192, 192, 192)
 			end
 			gc:setFont("sansserif", "r", 7)
-			gc:drawString(tostring(char_juese[id].tili), x1 + 81, y1 + 10 + 11)
+			if char_juese[id].tili < 0 then
+				gc:drawString("0", x1 + 81, y1 + 10 + 11)
+			else
+				gc:drawString(tostring(char_juese[id].tili), x1 + 81, y1 + 10 + 11)
+			end
 			gc:drawString("/", x1 + 81, y1 + 10 + 11 + 8)
 			gc:drawString(tostring(char_juese[id].tili_max), x1 + 81, y1 + 10 + 11 + 8 * 2)
 			gc:setFont("sansserif", "r", 11)
@@ -406,7 +410,11 @@ function draw_self(gc)
 	    gc:drawImage(hongxin_on_img, 224 + 77, 151 + 15)
 		gc:setFont("sansserif", "r", 7)
 		gc:setColorRGB(255, 0, 0)
-		gc:drawString(tostring(char_juese[char_current_i].tili), 224 + 81, 151 + 24 + 11)
+		if char_juese[char_current_i].tili < 0 then
+			gc:drawString("0", 224 + 81, 151 + 24 + 11)
+		else
+			gc:drawString(tostring(char_juese[char_current_i].tili), 224 + 81, 151 + 24 + 11)
+		end
 		gc:drawString("/", 224 + 81, 151 + 24 + 11 + 8)
 		gc:drawString(tostring(char_juese[char_current_i].tili_max), 224 + 81, 151 + 24 + 11 + 8 * 2)
 		gc:setFont("sansserif", "r", 11)

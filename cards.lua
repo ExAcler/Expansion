@@ -1554,12 +1554,12 @@ function _arm_sub1()
 end
 
 --  八卦阵效果  --
-function card_arm_bagua(ID)
+function card_arm_bagua(ID, ID_attack)
     add_funcptr(push_message, table.concat({char_juese[ID].name, "发动了'八卦阵'效果"}))
 	add_funcptr(_bagua_fan_panding, ID)
 
 	--  如场上有司马懿或张角，询问其改判技能  --
-	skills_guicai_guidao_ask(ID, nil, ID, "洛神")
+	skills_guicai_guidao_ask(ID, ID_attack, ID, "八卦阵")
 end
 function _bagua_fan_panding(ID)
 	--  翻开判定牌  --
@@ -2903,7 +2903,7 @@ function _wanjian_exe(va_list)
 			if char_juese[ID_mubiao].skill["八阵"] == "available" then
 				add_funcptr(push_message, table.concat({char_juese[ID_mubiao].name, "触发了武将技能 '八阵'"}))
 			end
-			card_arm_bagua(ID_mubiao)
+			card_arm_bagua(ID_mubiao, ID_s)
 		end
 	end
 	
@@ -3789,7 +3789,7 @@ function _sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)	--  
 
 	if #card ~= 0 or (char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0) then
 		if char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0 and (card_shoupai[1][2] == "黑桃" or card_shoupai[1][2] == "草花") then
-			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了技能'毅重'"})
+			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了武将技能 '毅重'，此杀无效"})
 			add_funcptr(_sha_sub2, nil)
 			return
 		elseif not char_wushi then
@@ -3822,7 +3822,7 @@ function _sha_exe_ai_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_fla
 				if char_juese[ID_mubiao].skill["八阵"] == "available" then
 					add_funcptr(skills_bazhen, ID_mubiao)
 				end
-				card_arm_bagua(ID_mubiao)
+				card_arm_bagua(ID_mubiao, ID_s)
 		    end
 		end
 	end
@@ -3936,9 +3936,9 @@ function _sha_zhudong_fangqi(va_list, is_from_zhudong)	--  杀：杀的来源是
 end
 function _sha_shan_post_ai(card_shoupai, ID_s, ID_mubiao, iscur)	--  杀：杀的来源是AI时，出闪后处理
 	if iscur and #char_juese[ID_s].wuqi ~= 0 and #card_shoupai == 1 then
-		if char_juese[ID_s].wuqi[1] == "青龙刀" and ai_judge_qinglong(ID_s) then    --  青龙刀，可再出杀追杀
+		if char_juese[ID_s].wuqi[1] == "青龙刀" and ai_judge_qinglong(ID_s, ID_mubiao) then    --  青龙刀，可再出杀追杀
 			add_funcptr(_sha_qinglong_ai_judge, {ID_s, ID_mubiao, iscur})
-		elseif char_juese[ID_s].wuqi[1] == "贯石斧" and ai_judge_guanshi(ID_s) then
+		elseif char_juese[ID_s].wuqi[1] == "贯石斧" and ai_judge_guanshi(ID_s, ID_mubiao) then
 			add_funcptr(_sha_guanshi_ai_judge, {card_shoupai, ID_s, ID_mubiao, iscur})
 		else
 			add_funcptr(_sha_sub2, nil)
@@ -4010,7 +4010,7 @@ function _sha_hanbing_ai_judge(va_list)		--  杀：判断寒冰剑发动条件�
 	funcptr_queue = {}
 	funcptr_i = 0
 
-	if ai_judge_hanbing(ID_mubiao) and char_juese[ID_s].wuqi[1] == "寒冰剑" then
+	if ai_judge_hanbing(ID_s, ID_mubiao) and char_juese[ID_s].wuqi[1] == "寒冰剑" then
 		_sha_hanbing_ai(ID_s, ID_mubiao)
 	else
 		_sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)
@@ -4044,7 +4044,7 @@ function _sha_qinglong_ai_judge(va_list)	--  杀：判断青龙刀发动条件�
 	funcptr_queue = {}
 	funcptr_i = 0
 	char_hejiu = false
-	if char_juese[ID_s].wuqi[1] == "青龙刀" and ai_judge_qinglong(ID_s) then    --  青龙刀，可再出杀追杀
+	if char_juese[ID_s].wuqi[1] == "青龙刀" and ai_judge_qinglong(ID_s, ID_mubiao) then    --  青龙刀，可再出杀追杀
 		_sha_qinglong_ai(ID_s, ID_mubiao, iscur)
 	else
 		add_funcptr(_sha_sub2, nil)
@@ -4070,7 +4070,7 @@ function _sha_guanshi_ai_judge(va_list)		--  杀：判断贯石斧发动条件�
 	funcptr_queue = {}
 	funcptr_i = 0
 
-	if char_juese[ID_s].wuqi[1] == "贯石斧" and ai_judge_guanshi(ID_s) then
+	if char_juese[ID_s].wuqi[1] == "贯石斧" and ai_judge_guanshi(ID_s, ID_mubiao) then
 		_sha_guanshi_ai(card_shoupai, ID_s, ID_mubiao, iscur)
 	else
 		add_funcptr(_sha_sub2, nil)
@@ -4158,7 +4158,7 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 
 	if #card ~= 0 or (char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0) then
 		if char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0 and (card_shoupai[1][2] == "黑桃" or card_shoupai[1][2] == "草花") then
-			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了技能'毅重'"})
+			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了武将技能 '毅重'，此杀无效"})
 			add_funcptr(_sha_sub2, nil)
 			return
 		elseif not char_wushi then
@@ -4197,7 +4197,7 @@ function _sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, 
 				if char_juese[ID_mubiao].skill["八阵"] == "available" then
 					add_funcptr(skills_bazhen, ID_mubiao)
 				end
-				card_arm_bagua(ID_mubiao)
+				card_arm_bagua(ID_mubiao, ID_s)
 		    end
 		end
 	end
@@ -4671,6 +4671,7 @@ function _sha_sub1(va_list)
 	gamerun_wuqi_out_hand(ID_s)
 end
 function _sha_sub2()
+	--  如果杀还有剩余目标，则继续下一个目标  --
 	if char_sha_mubiao_i < #char_sha_mubiao then
 		_sha_next_mubiao()
 		return
@@ -4678,6 +4679,14 @@ function _sha_sub2()
 
 	card_out_jiesuan()
 	gamerun_wuqi_out_hand(char_acting_i)
+
+	--  如果是夏侯渊发动神速，恢复被中断的函数队列  --
+	if gamerun_shensu == true then
+		gamerun_shensu = false
+		char_distance_infinity = false
+		_shensu_huifu()
+		return
+	end
 
 	char_sha_params = nil
 	char_sha_mubiao = nil

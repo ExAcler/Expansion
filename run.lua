@@ -62,7 +62,8 @@ zhudong_queue_stack_i = {}
 
 skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的选项的个数
-gamerun_dangxian = false -- 廖化当先发动与否的存储
+gamerun_dangxian = false  -- 廖化当先发动与否的存储
+gamerun_shensu = false	-- 夏侯渊神速发动与否的存储
 fenxin_pending = nil	-- 玩家当前需要决定是否发动焚心的死亡角色ID (无则为nil)，如果是，则暂时隐藏死亡角色的身份牌
 kunfen_adjusted = {}
 for i = 1, 5 do
@@ -283,6 +284,7 @@ function gamerun_huihe_start()
 	funcptr_queue = {}
 	card_selected = {}
 	game_skip_mopai = false
+	game_skip_panding = false
 	game_skip_chupai = false
 	char_yisha = false
 	char_sha_time = 1
@@ -344,13 +346,16 @@ function gamerun_huihe_start()
 	end
 	
 	--  判定阶段  --
+	--  进入判定阶段前技能  --
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, true})
 	end
+
+	--  判定  --
 	add_funcptr(gamerun_huihe_panding)
 	
 	--  摸牌阶段  --
-	--  摸牌阶段技能  --
+	--  进入摸牌阶段前技能  --
 	if char_juese[char_acting_i].skill["英姿"] == "available" then
 		add_funcptr(skills_yingzi, char_acting_i)
 	end
@@ -384,13 +389,17 @@ function gamerun_huihe_start()
 	--  摸牌  --
 	add_funcptr(card_mopai, nil)
 
+	--  出牌阶段  --
+	--  进入出牌阶段前技能  --
 	if char_juese[char_acting_i].skill["好施"] == "available" then
 		add_funcptr(skills_haoshi_stage_2, char_acting_i)
 	end
-	if char_juese[char_acting_i].skill["神速"] == "available" and game_skip_chupai == false then
+
+	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, false})
 	end
-	--  出牌阶段  --
+	
+	--  出牌  --
 	if char_acting_i == char_current_i then
 		add_funcptr(_start_sub1, nil)
 	else
@@ -438,7 +447,7 @@ end
 
 --  判定阶段  --
 function gamerun_huihe_panding()
-	if game_panding_skip ~= true then
+	if game_skip_panding ~= true then
 		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 		timer.stop()
 		funcptr_queue = {}
@@ -477,7 +486,7 @@ function gamerun_huihe_panding()
 		timer.start(0.2)
 	else
 		game_panding_skip = false
-		push_message(char_juese[char_acting_i].name.."的判定阶段被跳过")
+		push_message(char_juese[char_acting_i].name .. "的判定阶段被跳过")
 	end
 end
 function _panding_huihe_set()
@@ -1569,7 +1578,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end
