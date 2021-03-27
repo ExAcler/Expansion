@@ -404,10 +404,14 @@ end
 function ai_judge_liuli(ID_sha, ID_sha_mubiao)
 	local possible_targets = {1, 2, 3, 4, 5}
 	for i = #possible_targets, 1, -1 do
-		local inrange = card_if_d_limit("流离", ID_sha_mubiao, possible_targets[i])
-		--local _, inrange = ai_judge_distance(ID_sha_mubiao, possible_targets[i], 1)
-		if inrange == false or possible_targets[i] == ID_sha_mubiao or possible_targets[i] == ID_sha then
+		if possible_targets[i] == ID_sha_mubiao then
 			table.remove(possible_targets, i)
+		else
+			local inrange = card_if_d_limit("流离", ID_sha_mubiao, possible_targets[i])
+			--local _, inrange = ai_judge_distance(ID_sha_mubiao, possible_targets[i], 1)
+			if inrange == false or possible_targets[i] == ID_sha_mubiao or possible_targets[i] == ID_sha then
+				table.remove(possible_targets, i)
+			end
 		end
 	end
 
@@ -1006,6 +1010,87 @@ function ai_judge_duanliang(ID)
 	end
 end
 
+--  AI决定是否发动直谏  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_zhijian(ID)
+	local cards = ai_card_search(ID, "装备", #char_juese[ID].shoupai)
+	local card_fangju = -1
+	local card_fangma = -1
+	local card_wuqi = -1
+	local card_gongma = -1
+
+	if #cards == 0 then
+		return false, 0, 0
+	end
+
+	for i = 1, #cards do
+		if card_get_leixing[cards[i]] == "防具" and card_fangju < 0 then
+			card_fangju = cards[i]
+		elseif card_get_leixing[cards[i]] == "+1马" and card_fangma < 0 then
+			card_fangma = cards[i]
+		elseif card_get_leixing[cards[i]] == "武器" and card_wuqi < 0 then
+			card_wuqi = cards[i]
+		elseif card_get_leixing[cards[i]] == "-1马" and card_gongma < 0 then
+			card_gongma = cards[i]
+		end
+	end
+
+	local help_mubiao = ai_basic_judge_mubiao(ID, 4, true, true, true)
+
+	if card_fangju > 0 then
+		local mubiao = _judge_zhijian_mubiao_for("防具", card_fangju, ID, help_mubiao)
+		if mubiao > 0 then
+			return true, card_fangju, mubiao
+		end
+	end
+
+	if card_fangma > 0 then
+		local mubiao = _judge_zhijian_mubiao_for("+1马", card_fangma, ID, help_mubiao)
+		if mubiao > 0 then
+			return true, card_fangma, mubiao
+		end
+	end
+
+	if card_wuqi > 0 then
+		local mubiao = _judge_zhijian_mubiao_for("武器", card_wuqi, ID, help_mubiao)
+		if mubiao > 0 then
+			return true, card_wuqi, mubiao
+		end
+	end
+
+	if card_gongma > 0 then
+		local mubiao = _judge_zhijian_mubiao_for("-1马", card_gongma, ID, help_mubiao)
+		if mubiao > 0 then
+			return true, card_gongma, mubiao
+		end
+	end
+
+	return false, 0, 0
+end
+function _judge_zhijian_mubiao_for(leixing, card_ID, ID, help_mubiao)
+	local _help_mubiao = table.copy(help_mubiao)
+	for i = #_help_mubiao, 1, -1 do
+		if skills_judge_zhijian_2(card_ID, ID, _help_mubiao[i]) == false or (leixing == "防具" and (char_juese[_help_mubiao[i]].skill["八阵"] == "available" or char_juese[_help_mubiao[i]].skill["毅重"] == "available")) then
+			table.remove(_help_mubiao, i)
+		end
+	end
+	if #_help_mubiao > 0 then
+		if #_help_mubiao == 1 then
+			return _help_mubiao[1]
+		else
+			local mindef_ID = _help_mubiao[1]
+			for i = 2, #_help_mubiao do
+				if ai_judge_def(_help_mubiao[i], false, false) < ai_judge_def(mindef_ID, false, false) then
+					mindef_ID = _help_mubiao[i]
+				end
+			end
+			return mindef_ID
+		end
+	end
+
+	return -1
+end
+
 --  AI修改判定牌策略  --
 function ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
 	local skill_available = skills_judge_guicai_guidao(id)
@@ -1341,6 +1426,103 @@ end
 
 function ai_judge_yiji_mubiao(ID)
 	return ID
+end
+
+--  角色防御系数计算  --
+--  ID表示角色ID，is_self表示是否是自己，direct_only表示是否只计算直接防御 (不考虑能被他方杀到)
+function ai_judge_def(ID, is_self, direct_only)
+	local def
+	local possible_attackers = {}
+
+	if is_self == false then
+		def = 20 * char_juese[ID].tili + 10 * #char_juese[ID].shoupai
+	else
+		def = 20 * char_juese[ID].tili
+		for i = 1, #char_juese[ID].shoupai do
+			if card_judge_if_shan(ID, i) then
+				def = def + 30
+			else
+				def = def + 10
+			end
+		end
+	end
+
+	if #char_juese[ID].shoupai == 0 and char_juese[ID].skill["空城"] == "available" then
+		def = def + 70
+	end
+
+	if char_juese[ID].skill["谦逊"] == "available" then
+		def = def + 40
+	end
+
+	if char_juese[ID].isantigovernment ~= nil or is_self then
+		for i = 1, 5 do
+			if i ~= ID and ai_judge_same_identity(ID, i, false) == 2 then
+				table.insert(possible_attackers, i)
+			end
+		end
+	end
+
+	if #char_juese[ID].fangju > 0 then
+		if char_juese[ID].fangju[1] == "白银狮子" then
+			def = def + 20
+		elseif char_juese[ID].fangju[1] == "八卦阵" then
+			def = def + 70
+		elseif char_juese[ID].fangju[1] == "藤甲" then
+			local zhuque = false
+			for i = 1, possible_attackers do
+				local id_attack = possible_attackers[i]
+				if #char_juese[id_attack].wuqi > 0 then
+					if char_juese[id_attack].wuqi[1] == "朱雀扇" and char_calc_distance(id_attack, ID) <= card_wuqi_r[char_juese[id_attack].wuqi[1]] then
+						zhuque = true
+						break
+					end
+				end
+			end
+
+			if zhuque == false then
+				def = def + 100
+			else
+				def = def - 80
+			end
+		else
+			def = def + 100
+		end
+	else
+		if char_juese[ID].skill["八阵"] == "available" or char_juese[ID].skill["毅重"] == "available" then
+			def = def + 70
+		end
+	end
+
+	if #char_juese[ID].fangma > 0 then
+		def = def + 50
+	end
+
+	if #char_juese[ID].panding > 0 then
+		for i = 1, #char_juese[ID].panding do
+			if _panding_get_leixing(ID, i) ~= "闪电" then
+				def = def - 30
+			end
+		end
+	end
+
+	if direct_only == false then
+		for i = 1, possible_attackers do
+			local id_attack = possible_attackers[i]
+			if #char_juese[id_attack].wuqi > 0 then
+				if char_calc_distance(id_attack, ID) <= card_wuqi_r[char_juese[id_attack].wuqi[1]] then
+					def = def - (20 + 10 * math.max(#char_juese[id_attack].shoupai - 4, 0))
+				end
+			else
+				if char_calc_distance(id_attack, ID) <= 1 then
+					def = def - (20 + 10 * math.max(#char_juese[id_attack].shoupai - 4, 0))
+				end
+			end
+		end
+	end
+
+	def = math.max(def, 0)
+	return def
 end
 
 -- AI距离与攻击范围测算 --
@@ -2538,7 +2720,7 @@ end
 
 --  AI回合内使用技能 (优先于使用大部分牌前的)  --
 function ai_skill_use_priority(ID)
-	local mubiao
+	local fadong, ID_shoupai, mubiao
 
 	--  周瑜反间  --
 	if char_juese[ID].skill["反间"] == 1 then
@@ -2547,6 +2729,17 @@ function ai_skill_use_priority(ID)
 			skills_fanjian_ai(ID, mubiao[1])
 			timer.start(0.6)
 			return true
+		end
+	end
+
+	--  张昭张纮直谏  --
+	if char_juese[ID].skill["直谏"] == "available" then
+		fadong, ID_shoupai, mubiao = ai_judge_zhijian(ID)
+		if fadong == true then
+			if skills_zhijian_ai(ID, mubiao, ID_shoupai) then
+				timer.start(0.6)
+				return true
+			end
 		end
 	end
 
@@ -2618,7 +2811,7 @@ function ai_card_use(ID)
 			end
 		end
 	end
-	targets = ai_judge_target(ID, "火杀", {"火杀","红桃","K"}, 1)
+	targets = ai_judge_target(ID, "火杀", {{"火杀","红桃","K"}}, 1)
 	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" or #targets == 0 then
 		local card_use = ai_card_search(ID, "武器", 1)
 		if #card_use ~= 0 then

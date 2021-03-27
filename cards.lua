@@ -1920,6 +1920,10 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 			add_funcptr(skills_jizhi, id)
 		end
 
+		--  延时至0.6秒  --
+		add_funcptr(_wuxie_yanshi)
+		add_funcptr(_wuxie_yanshi)
+
 		add_funcptr(_wuxie_prepare_2)
 		card_wuxie_query("无懈可击", id, ID_s)
 		funcptr_i = 0
@@ -1928,6 +1932,9 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		msg = {char_juese[id].name, "放弃无懈"}
 		push_message(table.concat(msg))
 	end
+end
+function _wuxie_yanshi()
+
 end
 function card_wuxie_zhudong(va_list)	--  无懈可击：轮到己方出无懈可击时，状态转换至主动出牌
 	local actual_name, ID_s, ID_mubiao

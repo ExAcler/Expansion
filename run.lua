@@ -649,7 +649,7 @@ function gamerun_huihe_jieshu(qipai)
 
 	--  弃牌阶段技能  --
 	for i = 1, 5 do
-		if i ~= char_acting_i and char_juese[i].skill["固政"] == "available" then
+		if i ~= char_acting_i and char_juese[i].skill["固政"] == "available" and char_juese[i].siwang == false then
 			add_funcptr(skills_guzheng, {i, char_acting_i})
 		end
 	end

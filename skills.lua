@@ -3695,7 +3695,7 @@ function skills_guicai_guidao_ask(id, ID_laiyuan, ID_mubiao, panding_leixing)		-
 	local i
 
 	for i = 1, 5 do
-		if skills_judge_guicai_guidao(cur) ~= "" then
+		if skills_judge_guicai_guidao(cur) ~= "" and char_juese[cur].siwang == false then
 			if cur == char_current_i then
 				add_funcptr(skills_guicai_guidao_zhudong_enter)
 			else
@@ -5583,7 +5583,7 @@ function skills_judge_songwei(ID)
 
 	if yanse == "黑色" and char_juese[ID].shili == "魏" then
 		for i = 1, 5 do
-			if char_juese[i].skill["颂威"] == "available" and i ~= ID then
+			if char_juese[i].skill["颂威"] == "available" and i ~= ID and char_juese[i].siwang == false then
 				add_funcptr(skills_songwei, {ID, i})
 			end
 		end
@@ -5599,7 +5599,7 @@ function skills_judge_songwei_in_queue(ID)
 
 	if yanse == "黑色" and char_juese[ID].shili == "魏" then
 		for i = 1, 5 do
-			if char_juese[i].skill["颂威"] == "available" and i ~= ID then
+			if char_juese[i].skill["颂威"] == "available" and i ~= ID and char_juese[i].siwang == false then
 				add_funcptr(skills_songwei, {ID, i})
 			end
 		end
@@ -5721,7 +5721,7 @@ end
 function skills_hujia_add(ID_req, mode, va)
 	push_message(table.concat({char_juese[ID_req].name, "发动了武将技能 '护驾'"}))
 	for i = 1, 5 do
-		if char_juese[i].shili == "魏" and ID_req ~= i then
+		if char_juese[i].shili == "魏" and ID_req ~= i and char_juese[i].siwang == false then
 			add_funcptr(skills_hujia, {ID_req, i, mode, va})
 		end
 	end
