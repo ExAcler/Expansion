@@ -68,7 +68,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["袁术"] = {{4,4}, "群", false, {"庸肆", "伪帝"}, "男", {"锁定","禁止"}, true}, 
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"武圣","神速","断粮","强袭","国色","突袭","离间","急救","毅重"}, "男", {"","","","","","","","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"武圣","神速","断粮","红颜","国色","突袭","离间","急救","毅重"}, "男", {"","","","","","","","",""}, true},
 	--["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离魂","奸雄","天香","鬼道","当先","火计","化身","新生","伪帝","补益","制衡","庸肆"}, "男", {"","","","","","","锁定","","禁止","禁止","禁止","","",""}, true},
 }
 
@@ -1030,6 +1030,10 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 			return
 		end
 
+		if ID_s ~= ID_jiu and char_juese[ID_s].skill["救援"] == "available" and char_juese[ID_jiu].shili == "吴" then
+			push_message(table.concat({char_juese[ID_jiu].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
+		end
+
 		local n_tao = 0
 		local n_jiu = 0
 		local c_pos, card
@@ -1048,7 +1052,12 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 				card_add_qipai(card)
 				card_remove({ID_jiu, c_pos})
 
-				char_juese[ID_s].tili = char_juese[ID_s].tili + 1
+				if ID_s ~= ID_jiu and char_juese[ID_s].skill["救援"] == "available" and char_juese[ID_jiu].shili == "吴" then
+					char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 2, char_juese[ID_s].tili_max)
+				else
+					char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 1, char_juese[ID_s].tili_max)
+				end
+				
 				n_tao = n_tao + 1
 			else
 				break
@@ -1140,7 +1149,13 @@ function _binsi_zhudong(ID_s)	--  濒死结算：己方做出决定
 	funcptr_queue = {}
 	funcptr_i = 0
 
-	local tao_needed = 1 - char_juese[ID_s].tili
+	local tao_needed
+	if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
+		tao_needed = math.ceil((1 - char_juese[ID_s].tili) / 2)
+	else
+		tao_needed = 1 - char_juese[ID_s].tili
+	end
+
 	local msg
 
 	if ID_s == char_current_i then
@@ -1178,6 +1193,10 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 	local n_tao = 0
 	local n_jiu = 0
 
+	if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
+		push_message(table.concat({char_juese[char_current_i].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
+	end
+
 	for i = 1, #qualified_cards do
 		local card = char_juese[char_current_i].shoupai[qualified_cards[i]]
 
@@ -1189,7 +1208,12 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 
 		card_add_qipai(card)
 		card_remove({char_current_i, i})
-		char_juese[ID_s].tili = char_juese[ID_s].tili + 1
+
+		if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
+			char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 2, char_juese[ID_s].tili_max)
+		else
+			char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 1, char_juese[ID_s].tili_max)
+		end
 	end
 	gamerun_wuqi_out_hand(char_current_i)
 

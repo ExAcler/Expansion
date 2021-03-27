@@ -10,6 +10,7 @@ message_list = {}
 
 -- 标识符 --
 game_skip_mopai = false    -- 跳过摸牌阶段标识
+game_skip_panding = false	-- 跳过判定阶段标识
 game_skip_chupai = false    -- 跳过出牌阶段标识
 game_victory = false    -- 游戏胜利标识
 
@@ -19,13 +20,14 @@ skill_text_1 = ""; skill_text_2 = ""    -- 当前武将技能提示文字
 gamerun_huihe = ""    -- 回合阶段 ("开始"、"判定"、"摸牌"、"出牌"、"弃牌"、"结束"、"游戏结束")
 gamerun_status = ""    --[[游戏状态
                            选择目标： 使用 "杀"、锦囊等需指定作用目标的卡牌时
-								选择目标-B：使用 "借刀杀人" 选择目标A确定之后的状态
+								选择目标-B/C/D：选择目标A确定之后的状态
 						   手牌生效中：卡牌需要队列执行效果时
 						   观看手牌 ("-拆、-顺"、"-杀")：使用一些卡牌需要选择对方手牌时
-						   牌堆选择 ("-五谷")：使用一些卡牌、技能等需要翻开牌堆顶数张牌并选择时
+						   牌堆选择 ("-五谷、-固政")：使用一些卡牌、技能等需要翻开一个牌堆并选择时
 						   主动出牌 ("-决斗"、"-火攻A"、"-青龙"、"-贯石"、"-刚烈"|"-杀"、"-南蛮"、"-万箭"、"-火攻B"、"-借刀"、"-雌雄")：使用一些卡牌需要己方进一步响应时
 						   技能选择 ("-单牌"：选取单张牌、"-多牌"：选取多张牌、"-目标"：选取目标状态)
 						   确认操作：技能等需要确认发动的
+						   选项选择
 					   --]]
 last_status = ""    -- 上一个状态：用于技能从选择目标返回单牌或多牌选择时
 
@@ -44,7 +46,6 @@ guankan_d = 0    -- "观看手牌"作用目标
 selected_target_b = 0	--  选择目标数为3时的目标B
 selected_target_c = 0	--  选择目标数为4时的目标C
 gamerun_temp = 0
-lianhuan_va = nil    -- 连环伤害传导前，若有麒麟弓结算，伤害函数va_list的存储
 sha_va = nil    -- 发动寒冰剑后，杀来源目标的va_list存储
 
 funcptr_add_tag = nil	-- 如果设置为一个字符串，则设置的字符串会被加入到之后的每一个funcptr_queue项的tag
@@ -55,16 +56,16 @@ wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数�
 wuxie_va = nil		-- 无懈可击轮到己方响应时，原有锦囊来源目标的va_list存储
 wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能被其他无懈可击抵消导致失效）
 
-zhudong_queue = {}	-- 卡牌效果轮到己方被动响应时，记录原有的函数队列
-zhudong_queue_i = 0	-- 卡牌效果轮到己方被动响应时，原有函数队列的执行位置
-zhudong_queue_stack = {}
-zhudong_queue_stack_i = {}
+zhudong_queue_stack = {}	-- 队列内函数执行堆栈
+zhudong_queue_stack_i = {}	-- 队列内函数执行位置记录
 
 skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的选项的个数
+
 gamerun_dangxian = false  -- 廖化当先发动与否的存储
 gamerun_shensu = false	-- 夏侯渊神速发动与否的存储
 fenxin_pending = nil	-- 玩家当前需要决定是否发动焚心的死亡角色ID (无则为nil)，如果是，则暂时隐藏死亡角色的身份牌
+
 kunfen_adjusted = {}
 for i = 1, 5 do
 	kunfen_adjusted[i] = false
@@ -529,10 +530,15 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 
 	card = _panding_get_leixing(char_acting_i, id)
     pass = false
-	
+
+	local yanse, huase, dianshu = ai_judge_cardinfo(char_acting_i, {card_panding_card})
+
+	--  曹丕颂威  --
+	skills_judge_songwei(char_acting_i)
+
     if card == "乐不思蜀" then
 	    --  如果判定结果不是红桃，则跳过出牌阶段  --
-	    if card_panding_card[2] ~= "红桃" then
+	    if huase ~= "红桃" then
 		    game_skip_chupai = true
 		    msg = {char_juese[char_acting_i].name, "的'乐不思蜀'判定成功"}
 			push_message(table.concat(msg))
@@ -546,7 +552,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	
 	if card == "兵粮寸断" then
 	    --  如果判定结果不是草花，则跳过摸牌阶段  --
-	    if card_panding_card[2] ~= "草花" then
+	    if huase ~= "草花" then
 		    game_skip_mopai = true
 		    msg = {char_juese[char_acting_i].name, "的'兵粮寸断'判定成功"}
 			push_message(table.concat(msg))
@@ -560,7 +566,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	
 	if card == "闪电" then
 	    --  如果判定结果是黑桃2~9，失去3点体力  --
-	    if card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
+	    if huase == "黑桃" and dianshu >= "2" and dianshu <= "9" then
 		    msg = {char_juese[char_acting_i].name, "的'闪电'判定成功"}
 			push_message(table.concat(msg))
 
@@ -1171,8 +1177,10 @@ function on.enterKey()
 	
 		if string.find(gamerun_status, "火攻A") then
 			if table.getn2(card_selected) ~= 0 then
-				card = char_juese[char_current_i].shoupai[card_highlighted][2]
-				if card == guankan_s then
+				card = char_juese[char_current_i].shoupai[card_highlighted]
+				local yanse, huase, dianshu = ai_judge_cardinfo(char_current_i, {card})
+
+				if huase == guankan_s then
 					funcptr_queue = {}
 					_huogong_exe_2(char_current_i, gamerun_target_selected, card_highlighted)
 					consent_func_queue(0.6)
@@ -1274,7 +1282,11 @@ function on.enterKey()
 				gamerun_status = "手牌生效中"
 				set_hints("")
 				funcptr_queue = {}; card_highlighted = 1
+
+				n_qipai = table.getn2(card_selected)
 				card_qipai_go()
+				skills_losecard(char_current_i, n_qipai, true)
+				
 				_sha_exe_3(char_current_i, gamerun_target_selected, guankan_s)
 				consent_func_queue(0.6)
 			end
@@ -1578,7 +1590,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end
@@ -1620,7 +1632,10 @@ function on.escapeKey()
 						funcptr_queue = {}
 						push_message(char_juese[char_acting_i].name.."触发了武将技能 '庸肆'")
 
+						local n_qipai = table.getn2(card_selected)
 						card_qipai_go()
+						skills_losecard(char_current_i, n_qipai, true)
+
 						add_funcptr(gamerun_wuqi_out_hand, char_acting_i)
 						char_yongsi_withdraw = true
 						
@@ -1890,6 +1905,7 @@ function on.tabKey()
     if card_selected[card_highlighted] ~= nil then
 	    --  取消选择  --
 		card_selected[card_highlighted] = nil
+		platform.window:invalidate()
 		
 		if last_status == "技能选择-多牌" then
 			if gamerun_status == "技能选择-目标" then
