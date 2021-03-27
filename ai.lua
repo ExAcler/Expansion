@@ -1209,13 +1209,14 @@ function ai_judge_zhijian(ID)
 	end
 
 	for i = 1, #cards do
-		if card_get_leixing[cards[i]] == "防具" and card_fangju < 0 then
+		local s = char_juese[ID].shoupai
+		if card_get_leixing(s[cards[i]][1]) == "防具" and card_fangju < 0 then
 			card_fangju = cards[i]
-		elseif card_get_leixing[cards[i]] == "+1马" and card_fangma < 0 then
+		elseif card_get_leixing(s[cards[i]][1]) == "+1马" and card_fangma < 0 then
 			card_fangma = cards[i]
-		elseif card_get_leixing[cards[i]] == "武器" and card_wuqi < 0 then
+		elseif card_get_leixing(s[cards[i]][1]) == "武器" and card_wuqi < 0 then
 			card_wuqi = cards[i]
-		elseif card_get_leixing[cards[i]] == "-1马" and card_gongma < 0 then
+		elseif card_get_leixing(s[cards[i]][1]) == "-1马" and card_gongma < 0 then
 			card_gongma = cards[i]
 		end
 	end
@@ -1655,7 +1656,7 @@ function ai_judge_def(ID, is_self, direct_only)
 			def = def + 70
 		elseif char_juese[ID].fangju[1] == "藤甲" then
 			local zhuque = false
-			for i = 1, possible_attackers do
+			for i = 1, #possible_attackers do
 				local id_attack = possible_attackers[i]
 				if #char_juese[id_attack].wuqi > 0 then
 					if char_juese[id_attack].wuqi[1] == "朱雀扇" and char_calc_distance(id_attack, ID) <= card_wuqi_r[char_juese[id_attack].wuqi[1]] then
@@ -1692,7 +1693,7 @@ function ai_judge_def(ID, is_self, direct_only)
 	end
 
 	if direct_only == false then
-		for i = 1, possible_attackers do
+		for i = 1, #possible_attackers do
 			local id_attack = possible_attackers[i]
 			if #char_juese[id_attack].wuqi > 0 then
 				if char_calc_distance(id_attack, ID) <= card_wuqi_r[char_juese[id_attack].wuqi[1]] then

@@ -4824,9 +4824,8 @@ function card_jiedao(ID_shoupai, ID_req, ID_s, ID_d)
 		else	
 	    	add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "放弃"})
 			add_funcptr(_jiedao_swap, {ID_req, ID_s})
+			add_funcptr(_jiedao_sub2)
 		end
-	
-		add_funcptr(_jiedao_sub2)
 	else
 		add_funcptr(_jiedao_beidong_xiangying_enter, {ID_shoupai, ID_req, ID_s, ID_d})
 	end
@@ -4850,7 +4849,7 @@ function _jiedao_beidong_chu(c_pos, va_list)	--  借刀杀人：己方出杀
 	card_selected = {}
 
 	card_sha({c_pos}, ID_s, {ID_d}, false)
-	add_funcptr(_jiedao_sub2)
+	--add_funcptr(_jiedao_sub2)
 end
 function _jiedao_beidong_fangqi(va_list)	--  借刀杀人：己方放弃
 	local ID_s, ID_d

@@ -2432,7 +2432,7 @@ function skills_zhijian_ai(ID_s, ID_mubiao, ID_shoupai)
 		return false
 	end
 
-	skills_zhijian(ID_s, ID_mubiao, ID_shoupai)
+	skills_zhijian(ID_s, ID_shoupai, ID_mubiao)
 	return true
 end
 function skills_zhijian_enter()
@@ -2490,7 +2490,7 @@ function skills_zhijian(ID_s, ID_shoupai, ID_mubiao)
 	funcptr_queue = {}
 	add_funcptr(_zhijian_sub1, ID_s)
 	add_funcptr(_zhijian_sub2, {ID_shoupai, ID_s, ID_mubiao})
-	skills_losecard(ID_shoupai, 1, true)
+	skills_losecard(ID_s, 1, true)
 
 	add_funcptr(card_fenfa, {ID_s, 1, true})
 	add_funcptr(skills_rst)
@@ -2524,7 +2524,7 @@ function _zhijian_sub2(va_list)
 	if card_get_leixing(card[1]) == "-1马" then
 		char_juese[ID_mubiao].gongma = card
 	end
-	card_shanchu({ID_s, ID_shoupai})
+	card_remove({ID_s, ID_shoupai})
 end
 
 --  孙权：制衡  --
