@@ -10,7 +10,6 @@ message_list = {}
 
 -- 标识符 --
 game_skip_mopai = false    -- 跳过摸牌阶段标识
-game_skip_panding = false	-- 跳过判定阶段标识
 game_skip_chupai = false    -- 跳过出牌阶段标识
 game_victory = false    -- 游戏胜利标识
 
@@ -20,14 +19,13 @@ skill_text_1 = ""; skill_text_2 = ""    -- 当前武将技能提示文字
 gamerun_huihe = ""    -- 回合阶段 ("开始"、"判定"、"摸牌"、"出牌"、"弃牌"、"结束"、"游戏结束")
 gamerun_status = ""    --[[游戏状态
                            选择目标： 使用 "杀"、锦囊等需指定作用目标的卡牌时
-								选择目标-B/C/D：选择目标A确定之后的状态
+								选择目标-B：使用 "借刀杀人" 选择目标A确定之后的状态
 						   手牌生效中：卡牌需要队列执行效果时
 						   观看手牌 ("-拆、-顺"、"-杀")：使用一些卡牌需要选择对方手牌时
-						   牌堆选择 ("-五谷、-固政")：使用一些卡牌、技能等需要翻开一个牌堆并选择时
+						   牌堆选择 ("-五谷")：使用一些卡牌、技能等需要翻开牌堆顶数张牌并选择时
 						   主动出牌 ("-决斗"、"-火攻A"、"-青龙"、"-贯石"、"-刚烈"|"-杀"、"-南蛮"、"-万箭"、"-火攻B"、"-借刀"、"-雌雄")：使用一些卡牌需要己方进一步响应时
 						   技能选择 ("-单牌"：选取单张牌、"-多牌"：选取多张牌、"-目标"：选取目标状态)
 						   确认操作：技能等需要确认发动的
-						   选项选择
 					   --]]
 last_status = ""    -- 上一个状态：用于技能从选择目标返回单牌或多牌选择时
 
@@ -46,6 +44,7 @@ guankan_d = 0    -- "观看手牌"作用目标
 selected_target_b = 0	--  选择目标数为3时的目标B
 selected_target_c = 0	--  选择目标数为4时的目标C
 gamerun_temp = 0
+lianhuan_va = nil    -- 连环伤害传导前，若有麒麟弓结算，伤害函数va_list的存储
 sha_va = nil    -- 发动寒冰剑后，杀来源目标的va_list存储
 
 funcptr_add_tag = nil	-- 如果设置为一个字符串，则设置的字符串会被加入到之后的每一个funcptr_queue项的tag
@@ -56,19 +55,22 @@ wuxie_queue_xiangying_i = 0	-- 无懈可击轮到己方响应时，原有函数�
 wuxie_va = nil		-- 无懈可击轮到己方响应时，原有锦囊来源目标的va_list存储
 wuxie_in_effect = false		-- 目前无懈可击是否生效（无懈可击可能被其他无懈可击抵消导致失效）
 
-zhudong_queue_stack = {}	-- 队列内函数执行堆栈
-zhudong_queue_stack_i = {}	-- 队列内函数执行位置记录
+zhudong_queue = {}	-- 卡牌效果轮到己方被动响应时，记录原有的函数队列
+zhudong_queue_i = 0	-- 卡牌效果轮到己方被动响应时，原有函数队列的执行位置
+zhudong_queue_stack = {}
+zhudong_queue_stack_i = {}
 
 skill_disrow = 0    -- 技能多于四个时显示的四个技能前面忽略的技能的行数
 item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的选项的个数
-
 gamerun_dangxian = false  -- 廖化当先发动与否的存储
 gamerun_shensu = false	-- 夏侯渊神速发动与否的存储
+gamerun_qiaobian = false	-- 张郃巧变发动与否的存储
 fenxin_pending = nil	-- 玩家当前需要决定是否发动焚心的死亡角色ID (无则为nil)，如果是，则暂时隐藏死亡角色的身份牌
-
-kunfen_adjusted = {}
+kunfen_adjusted = {}  --困奋是否已经修改的存储
+skill_double = {}  --同一角色是否存在重复技能的存储
 for i = 1, 5 do
 	kunfen_adjusted[i] = false
+	skill_double[i] = {}
 end
 
 end
@@ -240,7 +242,7 @@ function gamerun_init()
 	add_funcptr(_init_weidi)
 	add_funcptr(_init_sub1, nil)
 end
-function _init_huashen()
+--[[function _init_huashen()
 	huashen_paidui = {}
 	if char_juese[char_current_i].skill["化身"] == "available" then
 		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
@@ -250,6 +252,27 @@ function _init_huashen()
 		add_funcptr(skills_xinsheng_exe, {char_current_i, true})
 		add_funcptr(skills_xinsheng_exe, {char_current_i, true})
 		add_funcptr(skills_huashen, {char_current_i, "游戏开始"})
+		add_funcptr(_init_huifu)
+	end
+end]]
+function _init_huashen()
+	huashen_paidui, huashen_wujiang, huashen_skill = {},{},{}
+	local had_huashen = {}
+	for i = 1, 5 do
+		huashen_paidui[i] = {}
+		if char_juese[i].skill["化身"] == "available" then
+			table.insert(had_huashen, i)
+		end
+	end
+	if #had_huashen ~= 0 then
+		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+		funcptr_queue = {}
+		funcptr_i = 0
+		for i = 1, #had_huashen do
+			add_funcptr(skills_xinsheng_exe, {had_huashen[i], true})
+			add_funcptr(skills_xinsheng_exe, {had_huashen[i], true})
+			add_funcptr(skills_huashen, {had_huashen[i], "游戏开始"})
+		end
 		add_funcptr(_init_huifu)
 	end
 end
@@ -351,12 +374,18 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, true})
 	end
+	if char_juese[char_acting_i].skill["巧变"] == "available" then
+		add_funcptr(skills_qiaobian, {char_acting_i, "判定"})
+	end
 
 	--  判定  --
 	add_funcptr(gamerun_huihe_panding)
 	
 	--  摸牌阶段  --
 	--  进入摸牌阶段前技能  --
+	if char_juese[char_acting_i].skill["巧变"] == "available" then
+		add_funcptr(skills_qiaobian, {char_acting_i, "摸牌"})
+	end
 	if char_juese[char_acting_i].skill["英姿"] == "available" then
 		add_funcptr(skills_yingzi, char_acting_i)
 	end
@@ -395,7 +424,9 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["好施"] == "available" then
 		add_funcptr(skills_haoshi_stage_2, char_acting_i)
 	end
-
+	if char_juese[char_acting_i].skill["巧变"] == "available" then
+		add_funcptr(skills_qiaobian, {char_acting_i, "出牌"})
+	end
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, false})
 	end
@@ -530,15 +561,10 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 
 	card = _panding_get_leixing(char_acting_i, id)
     pass = false
-
-	local yanse, huase, dianshu = ai_judge_cardinfo(char_acting_i, {card_panding_card})
-
-	--  曹丕颂威  --
-	skills_judge_songwei(char_acting_i)
-
+	
     if card == "乐不思蜀" then
 	    --  如果判定结果不是红桃，则跳过出牌阶段  --
-	    if huase ~= "红桃" then
+	    if card_panding_card[2] ~= "红桃" then
 		    game_skip_chupai = true
 		    msg = {char_juese[char_acting_i].name, "的'乐不思蜀'判定成功"}
 			push_message(table.concat(msg))
@@ -552,7 +578,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	
 	if card == "兵粮寸断" then
 	    --  如果判定结果不是草花，则跳过摸牌阶段  --
-	    if huase ~= "草花" then
+	    if card_panding_card[2] ~= "草花" then
 		    game_skip_mopai = true
 		    msg = {char_juese[char_acting_i].name, "的'兵粮寸断'判定成功"}
 			push_message(table.concat(msg))
@@ -566,7 +592,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	
 	if card == "闪电" then
 	    --  如果判定结果是黑桃2~9，失去3点体力  --
-	    if huase == "黑桃" and dianshu >= "2" and dianshu <= "9" then
+	    if card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
 		    msg = {char_juese[char_acting_i].name, "的'闪电'判定成功"}
 			push_message(table.concat(msg))
 
@@ -1177,10 +1203,8 @@ function on.enterKey()
 	
 		if string.find(gamerun_status, "火攻A") then
 			if table.getn2(card_selected) ~= 0 then
-				card = char_juese[char_current_i].shoupai[card_highlighted]
-				local yanse, huase, dianshu = ai_judge_cardinfo(char_current_i, {card})
-
-				if huase == guankan_s then
+				card = char_juese[char_current_i].shoupai[card_highlighted][2]
+				if card == guankan_s then
 					funcptr_queue = {}
 					_huogong_exe_2(char_current_i, gamerun_target_selected, card_highlighted)
 					consent_func_queue(0.6)
@@ -1282,11 +1306,7 @@ function on.enterKey()
 				gamerun_status = "手牌生效中"
 				set_hints("")
 				funcptr_queue = {}; card_highlighted = 1
-
-				n_qipai = table.getn2(card_selected)
 				card_qipai_go()
-				skills_losecard(char_current_i, n_qipai, true)
-				
 				_sha_exe_3(char_current_i, gamerun_target_selected, guankan_s)
 				consent_func_queue(0.6)
 			end
@@ -1590,7 +1610,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end
@@ -1614,8 +1634,10 @@ function on.escapeKey()
 				card_highlighted = 1
 				gamerun_huihe_start()    -- 正常回合开始
 				consent_func_queue(0.2)
+			elseif char_juese[char_acting_i].skill["巧变"]=="available" and not gamerun_qiaobian then
+				skills_qiaobian({char_acting_i,"弃牌"})
 			elseif char_juese[char_acting_i].skill["克己"]=="available" and not char_yisha then
-				skills_keji(char_current_i)
+				skills_keji(char_acting_i)
 			elseif char_juese[char_acting_i].skill["庸肆"]=="available" and char_yongsi_withdraw == nil then
 				local shili = {}
 				for i = 1, 5 do
@@ -1632,10 +1654,7 @@ function on.escapeKey()
 						funcptr_queue = {}
 						push_message(char_juese[char_acting_i].name.."触发了武将技能 '庸肆'")
 
-						local n_qipai = table.getn2(card_selected)
 						card_qipai_go()
-						skills_losecard(char_current_i, n_qipai, true)
-
 						add_funcptr(gamerun_wuqi_out_hand, char_acting_i)
 						char_yongsi_withdraw = true
 						
@@ -1754,16 +1773,24 @@ function on.arrowKey(key)
 				end
 			end
 		elseif string.find(gamerun_status, "牌堆操作") then
-			if gamerun_guankan_selected > 1 then
-				if gamerun_guankan_selected == card_dealed_selected then
-					if card_paidui_dealed == 1 then
-						card_dealed_1[card_dealed_selected],card_dealed_1[card_dealed_selected-1] = card_dealed_1[card_dealed_selected-1],card_dealed_1[card_dealed_selected]
-					elseif card_paidui_dealed == 2 then
-						card_dealed_2[card_dealed_selected],card_dealed_2[card_dealed_selected-1] = card_dealed_2[card_dealed_selected-1],card_dealed_2[card_dealed_selected]
+			if choose_name == "观星" then
+				if gamerun_guankan_selected > 1 then
+					if gamerun_guankan_selected == card_dealed_selected then
+						if card_paidui_dealed == 1 then
+							card_dealed_1[card_dealed_selected],card_dealed_1[card_dealed_selected-1] = card_dealed_1[card_dealed_selected-1],card_dealed_1[card_dealed_selected]
+						elseif card_paidui_dealed == 2 then
+							card_dealed_2[card_dealed_selected],card_dealed_2[card_dealed_selected-1] = card_dealed_2[card_dealed_selected-1],card_dealed_2[card_dealed_selected]
+						end
+						card_dealed_selected = card_dealed_selected - 1
 					end
-					card_dealed_selected = card_dealed_selected - 1
+					gamerun_guankan_selected = gamerun_guankan_selected - 1
 				end
-				gamerun_guankan_selected = gamerun_guankan_selected - 1
+			elseif choose_name == "巧变" then
+				if gamerun_guankan_selected > 1 then
+					if gamerun_guankan_selected ~= card_dealed_selected then
+						gamerun_guankan_selected = gamerun_guankan_selected - 1
+					end
+				end
 			end
 		else
 		    --  选取手牌状态  --
@@ -1797,16 +1824,24 @@ function on.arrowKey(key)
 				end
 			end
 		elseif string.find(gamerun_status, "牌堆操作") then
-			if (gamerun_guankan_selected < #card_dealed_1 and card_paidui_dealed == 1) or (gamerun_guankan_selected < #card_dealed_2 and card_paidui_dealed == 2) then
-				if gamerun_guankan_selected == card_dealed_selected then
-					if card_paidui_dealed == 1 then
-						card_dealed_1[card_dealed_selected],card_dealed_1[card_dealed_selected+1] = card_dealed_1[card_dealed_selected+1],card_dealed_1[card_dealed_selected]
-					elseif card_paidui_dealed == 2 then
-						card_dealed_2[card_dealed_selected],card_dealed_2[card_dealed_selected+1] = card_dealed_2[card_dealed_selected+1],card_dealed_2[card_dealed_selected]
+			if choose_name == "观星" then
+				if (gamerun_guankan_selected < #card_dealed_1 and card_paidui_dealed == 1) or (gamerun_guankan_selected < #card_dealed_2 and card_paidui_dealed == 2) then
+					if gamerun_guankan_selected == card_dealed_selected then
+						if card_paidui_dealed == 1 then
+							card_dealed_1[card_dealed_selected],card_dealed_1[card_dealed_selected+1] = card_dealed_1[card_dealed_selected+1],card_dealed_1[card_dealed_selected]
+						elseif card_paidui_dealed == 2 then
+							card_dealed_2[card_dealed_selected],card_dealed_2[card_dealed_selected+1] = card_dealed_2[card_dealed_selected+1],card_dealed_2[card_dealed_selected]
+						end
+						card_dealed_selected = card_dealed_selected + 1
 					end
-					card_dealed_selected = card_dealed_selected + 1
+					gamerun_guankan_selected = gamerun_guankan_selected + 1
 				end
-				gamerun_guankan_selected = gamerun_guankan_selected + 1
+			elseif choose_name == "巧变" then
+				if (gamerun_guankan_selected < #card_dealed_1 and card_paidui_dealed == 1) or (gamerun_guankan_selected < #card_dealed_2 and card_paidui_dealed == 2) then
+					if gamerun_guankan_selected ~= card_dealed_selected then
+						gamerun_guankan_selected = gamerun_guankan_selected + 1
+					end
+				end
 			end
 		else
 			local wuqi
@@ -1833,13 +1868,41 @@ function on.arrowKey(key)
 				end
 			end
 		elseif string.find(gamerun_status, "牌堆操作") and card_paidui_dealed == 2 and (gamerun_guankan_selected == card_dealed_selected or #card_dealed_1 > 0) then
-			if gamerun_guankan_selected == card_dealed_selected then
-				table.insert(card_dealed_1,1,card_dealed_2[card_dealed_selected])
-				table.remove(card_dealed_2,card_dealed_selected)
-				card_dealed_selected = 1
+			if choose_name == "观星" then
+				if gamerun_guankan_selected == card_dealed_selected then
+					table.insert(card_dealed_1,1,card_dealed_2[card_dealed_selected])
+					table.remove(card_dealed_2,card_dealed_selected)
+					card_dealed_selected = 1
+				end
+				gamerun_guankan_selected = 1
+				card_paidui_dealed = 1
+			elseif choose_name == "巧变" then
+				if gamerun_guankan_selected ~= card_dealed_selected then
+					gamerun_guankan_selected = 1
+					card_paidui_dealed = 1
+				elseif gamerun_guankan_selected == card_dealed_selected then
+					if gamerun_guankan_selected <= 4 then
+						if card_dealed_1[gamerun_guankan_selected][1] == "空" then
+							skills_qiaobian_chupai_set({qiaobian_up, qiaobian_down, gamerun_guankan_selected})
+						end
+					else
+						local cardname, same_card = "",false
+						if card_dealed_2[gamerun_guankan_selected][1] == "闪电" or card_dealed_2[gamerun_guankan_selected][1] == "乐不思蜀" or card_dealed_2[gamerun_guankan_selected][1] == "兵粮寸断" then
+							cardname = card_dealed_2[gamerun_guankan_selected][1]
+						else
+							cardname = card_dealed_2[gamerun_guankan_selected][4]
+						end
+						for i = 5, #card_dealed_1 do
+							if cardname == card_dealed_1[i][1] or cardname == card_dealed_1[i][4] then
+								same_card = true
+							end
+						end
+						if same_card == false and (cardname ~= "乐不思蜀" or char_juese[qiaobian_up].skill["谦逊"] ~= "available") and (ai_judge_cardinfo(qiaobian_down,{card_dealed_2[gamerun_guankan_selected]}) ~= "黑色" or char_juese[qiaobian_up].skill["帷幕"] ~= "available")  then
+							skills_qiaobian_chupai_set({qiaobian_up, qiaobian_down, gamerun_guankan_selected})
+						end
+					end
+				end
 			end
-			gamerun_guankan_selected = 1
-			card_paidui_dealed = 1
 		elseif #char_juese[char_current_i].skillname > 4 and skill_disrow > 0 then
 			skill_disrow = skill_disrow - 1
 		end
@@ -1854,13 +1917,41 @@ function on.arrowKey(key)
 				end
 			end
 		elseif string.find(gamerun_status, "牌堆操作") and card_paidui_dealed == 1 and (gamerun_guankan_selected == card_dealed_selected or #card_dealed_2 > 0) then
-			if gamerun_guankan_selected == card_dealed_selected then
-				table.insert(card_dealed_2,1,card_dealed_1[card_dealed_selected])
-				table.remove(card_dealed_1,card_dealed_selected)
-				card_dealed_selected = 1
+			if choose_name == "观星" then
+				if gamerun_guankan_selected == card_dealed_selected then
+					table.insert(card_dealed_2,1,card_dealed_1[card_dealed_selected])
+					table.remove(card_dealed_1,card_dealed_selected)
+					card_dealed_selected = 1
+				end
+				gamerun_guankan_selected = 1
+				card_paidui_dealed = 2
+			elseif choose_name == "巧变" then
+				if gamerun_guankan_selected ~= card_dealed_selected then
+					gamerun_guankan_selected = 1
+					card_paidui_dealed = 2
+				elseif gamerun_guankan_selected == card_dealed_selected then
+					if gamerun_guankan_selected <= 4 then
+						if card_dealed_2[gamerun_guankan_selected][1] == "空" then
+							skills_qiaobian_chupai_set({qiaobian_up, qiaobian_down, gamerun_guankan_selected})
+						end
+					else
+						local cardname, same_card = "",false
+						if card_dealed_1[gamerun_guankan_selected][1] == "闪电" or card_dealed_1[gamerun_guankan_selected][1] == "乐不思蜀" or card_dealed_1[gamerun_guankan_selected][1] == "兵粮寸断" then
+							cardname = card_dealed_1[gamerun_guankan_selected][1]
+						else
+							cardname = card_dealed_1[gamerun_guankan_selected][4]
+						end
+						for i = 5, #card_dealed_2 do
+							if cardname == card_dealed_2[i][1] or cardname == card_dealed_2[i][4] then
+								same_card = true
+							end
+						end
+						if same_card == false and (cardname ~= "乐不思蜀" or char_juese[qiaobian_down].skill["谦逊"] ~= "available") and (ai_judge_cardinfo(qiaobian_up,{card_dealed_1[gamerun_guankan_selected]}) ~= "黑色" or char_juese[qiaobian_down].skill["帷幕"] ~= "available") then
+							skills_qiaobian_chupai_set({qiaobian_down, qiaobian_up, gamerun_guankan_selected})
+						end
+					end
+				end
 			end
-			gamerun_guankan_selected = 1
-			card_paidui_dealed = 2
 		elseif #char_juese[char_current_i].skillname > 4 and math.ceil(#char_juese[char_current_i].skillname / 2) - 2 > skill_disrow then
 			skill_disrow = skill_disrow + 1
 		end
@@ -1889,13 +1980,31 @@ function on.tabKey()
 	end
 	
 	if string.find(gamerun_status, "牌堆操作") then
-		if gamerun_guankan_selected ~= card_dealed_selected then
-			card_dealed_selected = gamerun_guankan_selected
-		else
-			card_dealed_selected = 0
+		if choose_name == "观星" then
+			if gamerun_guankan_selected ~= card_dealed_selected then
+				card_dealed_selected = gamerun_guankan_selected
+			else
+				card_dealed_selected = 0
+			end
+			platform.window:invalidate()
+			return
+		elseif choose_name == "巧变" then
+			if gamerun_guankan_selected ~= card_dealed_selected then
+				if card_paidui_dealed == 1 then
+					if card_dealed_1[gamerun_guankan_selected][1] ~= "空" then
+						card_dealed_selected = gamerun_guankan_selected
+					end
+				else
+					if card_dealed_2[gamerun_guankan_selected][1] ~= "空" then
+						card_dealed_selected = gamerun_guankan_selected
+					end
+				end
+			else
+				card_dealed_selected = 0
+			end
+			platform.window:invalidate()
+			return
 		end
-		platform.window:invalidate()
-		return
 	end
 	
 	if #char_juese[char_current_i].shoupai == 0 then
@@ -1905,7 +2014,6 @@ function on.tabKey()
     if card_selected[card_highlighted] ~= nil then
 	    --  取消选择  --
 		card_selected[card_highlighted] = nil
-		platform.window:invalidate()
 		
 		if last_status == "技能选择-多牌" then
 			if gamerun_status == "技能选择-目标" then

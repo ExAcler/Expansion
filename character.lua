@@ -13,7 +13,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["庞统"] = {{3,3}, "蜀", false, {"连环", "涅槃"}, "男", {"","限定"}, true},  
 	["卧龙诸葛"] = {{3,3}, "蜀", false, {"火计", "看破", "八阵"}, "男", {"","","锁定"}, true},  
 	["孟获"] = {{4,4}, "蜀", false, {"祸首", "再起"}, "男", {"锁定",""}, true},  
-	["祝融"] = {{4,4}, "蜀", false, {"巨象", "烈刃"}, "女", {"锁定",""}, false},  
+	["祝融"] = {{4,4}, "蜀", false, {"巨象", "烈刃"}, "女", {"锁定",""}, true},  
 	["姜维"] = {{4,4}, "蜀", false, {"挑衅", "志继"}, "男", {"","觉醒"}, true},  
 	["刘禅"] = {{3,3}, "蜀", true, {"享乐", "放权", "若愚"}, "男", {"锁定","","主公"}, false}, 
     ["关索"] = {{4,4}, "蜀", false, {"征南", "撷芳"}, "男", {"","锁定"}, false},	
@@ -26,15 +26,15 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["夏侯惇"] = {{4,4}, "魏", false, {"刚烈"}, "男", {""}, true}, 
     ["曹仁"] = {{4,4}, "魏", false, {"据守"}, "男", {""}, true},
     ["许褚"] = {{4,4}, "魏", false, {"裸衣"}, "男", {""}, true}, 
-    ["夏侯渊"] = {{4,4}, "魏", false, {"神速"}, "男", {""}, false},  
+    ["夏侯渊"] = {{4,4}, "魏", false, {"神速"}, "男", {""}, true},  
     ["荀彧"] = {{3,3}, "魏", false, {"驱虎", "节命"}, "男", {"",""}, true}, 
     ["典韦"] = {{4,4}, "魏", false, {"强袭"}, "男", {""}, true}, 
     ["曹丕"] = {{3,3}, "魏", true, {"放逐", "行殇", "颂威"}, "男", {"","","主公"}, true},    
     ["徐晃"] = {{4,4}, "魏", false, {"断粮"}, "男", {""}, true}, 
     ["邓艾"] = {{4,4}, "魏", false, {"屯田", "凿险"}, "男", {"","觉醒"}, false}, 
-    ["张郃"] = {{4,4}, "魏", false, {"巧变"}, "男", {""}, false}, 
+    ["张郃"] = {{4,4}, "魏", false, {"巧变"}, "男", {""}, true}, 
 	["张春华"] = {{3,3}, "魏", false, {"绝情", "伤逝"}, "女", {"锁定",""}, true},
-	["于禁"] = {{4,4}, "魏", false, {"毅重"}, "男", {"锁定"}, false}, 
+	["于禁"] = {{4,4}, "魏", false, {"毅重"}, "男", {"锁定"}, true}, 
 	["SP姜维"] = {{4,4}, "魏", false, {"困奋", "逢亮"}, "男", {"锁定","觉醒"}, true},
 	["曹彰"] = {{4,4}, "魏", false, {"将驰"}, "男", {""}, true},
     ["孙权"] = {{4,4}, "吴", true, {"制衡", "救援"}, "男", {"","主公"}, true}, 
@@ -68,7 +68,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["袁术"] = {{4,4}, "群", false, {"庸肆", "伪帝"}, "男", {"锁定","禁止"}, true}, 
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"武圣","神速","断粮","红颜","国色","突袭","离间","急救","毅重"}, "男", {"","","","","","","","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"巧变","化身","新生","涅槃","驱虎","伏枥","离间","急救","毅重"}, "男", {"","禁止","禁止","限定","","限定","","",""}, true},
 	--["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离魂","奸雄","天香","鬼道","当先","火计","化身","新生","伪帝","补益","制衡","庸肆"}, "男", {"","","","","","","锁定","","禁止","禁止","禁止","","",""}, true},
 }
 
@@ -987,18 +987,19 @@ function char_binsi(va_list)
 				--  庞统发动涅槃  --
 				if id == cur and char_juese[id].skill["逢亮"] == "available" then
 					add_funcptr(skills_fengliang, id)
-				elseif id == cur and char_juese[id].skill["涅槃"] == 1 then
-					add_funcptr(skills_niepan, id)
-				elseif id == cur and char_juese[id].skill["伏枥"] == 1 then
-					add_funcptr(skills_fuli, id)
-				else
-					if cur ~= char_current_i then
-						add_funcptr(_binsi_ai, {id, cur})
-					else
-						add_funcptr(_binsi_zhudong, id)
-					end
-					skills_losecard(cur, 9999, true)
 				end
+				if id == cur and char_juese[id].skill["涅槃"] == 1 then
+					add_funcptr(skills_niepan, id)
+				end
+				if id == cur and char_juese[id].skill["伏枥"] == 1 then
+					add_funcptr(skills_fuli, id)
+				end
+				if cur ~= char_current_i then
+					add_funcptr(_binsi_ai, {id, cur})
+				else
+					add_funcptr(_binsi_zhudong, id)
+				end
+				skills_losecard(cur, 9999, true)
 			end
 		end
 		
@@ -1030,10 +1031,6 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 			return
 		end
 
-		if ID_s ~= ID_jiu and char_juese[ID_s].skill["救援"] == "available" and char_juese[ID_jiu].shili == "吴" then
-			push_message(table.concat({char_juese[ID_jiu].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
-		end
-
 		local n_tao = 0
 		local n_jiu = 0
 		local c_pos, card
@@ -1052,12 +1049,7 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 				card_add_qipai(card)
 				card_remove({ID_jiu, c_pos})
 
-				if ID_s ~= ID_jiu and char_juese[ID_s].skill["救援"] == "available" and char_juese[ID_jiu].shili == "吴" then
-					char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 2, char_juese[ID_s].tili_max)
-				else
-					char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 1, char_juese[ID_s].tili_max)
-				end
-				
+				char_juese[ID_s].tili = char_juese[ID_s].tili + 1
 				n_tao = n_tao + 1
 			else
 				break
@@ -1149,13 +1141,7 @@ function _binsi_zhudong(ID_s)	--  濒死结算：己方做出决定
 	funcptr_queue = {}
 	funcptr_i = 0
 
-	local tao_needed
-	if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
-		tao_needed = math.ceil((1 - char_juese[ID_s].tili) / 2)
-	else
-		tao_needed = 1 - char_juese[ID_s].tili
-	end
-
+	local tao_needed = 1 - char_juese[ID_s].tili
 	local msg
 
 	if ID_s == char_current_i then
@@ -1193,10 +1179,6 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 	local n_tao = 0
 	local n_jiu = 0
 
-	if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
-		push_message(table.concat({char_juese[char_current_i].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
-	end
-
 	for i = 1, #qualified_cards do
 		local card = char_juese[char_current_i].shoupai[qualified_cards[i]]
 
@@ -1208,12 +1190,7 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 
 		card_add_qipai(card)
 		card_remove({char_current_i, i})
-
-		if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
-			char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 2, char_juese[ID_s].tili_max)
-		else
-			char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 1, char_juese[ID_s].tili_max)
-		end
+		char_juese[ID_s].tili = char_juese[ID_s].tili + 1
 	end
 	gamerun_wuqi_out_hand(char_current_i)
 
