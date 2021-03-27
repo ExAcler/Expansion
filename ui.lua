@@ -675,7 +675,7 @@ function draw_others(gc)
 		gc:fillRect(50, 15, 220, 190)
         gc:setColorRGB(0, 0, 0)
         gc:drawRect(50, 15, 220, 190)
-		gc:drawString("观星", 145, 45)
+		gc:drawString(choose_name, 145, 45)
 		if #card_dealed_1 > 3 then
 			img_width = (167 - 81) / (#card_dealed_1 - 1)
 		else
@@ -700,18 +700,20 @@ function draw_others(gc)
 			end
 			--  如果不是技能虚拟的无色无点牌才绘制  --
 			if card_paidui_dealed == 1 then
-				if gamerun_guankan_selected ~= card_dealed_selected then
-					gc:drawImage(cards_img[card_dealed_1[gamerun_guankan_selected][1]], 81 + img_width * (gamerun_guankan_selected - 1), 51)
-					gc:drawImage(color_img[card_dealed_1[gamerun_guankan_selected][2]], 82 + img_width * (gamerun_guankan_selected - 1), 53)
-					gc:setFont("sansserif", "r", 7)
-					gc:drawString(card_dealed_1[gamerun_guankan_selected][3], 85 + img_width * (gamerun_guankan_selected - 1), 73)
-					gc:setFont("sansserif", "r", 11)
-				else
-					gc:drawImage(cards_img[card_dealed_1[gamerun_guankan_selected][1]], 81 + img_width * (gamerun_guankan_selected - 1), 46)
-					gc:drawImage(color_img[card_dealed_1[gamerun_guankan_selected][2]], 82 + img_width * (gamerun_guankan_selected - 1), 48)
-					gc:setFont("sansserif", "r", 7)
-					gc:drawString(card_dealed_1[gamerun_guankan_selected][3], 85 + img_width * (gamerun_guankan_selected - 1), 68)
-					gc:setFont("sansserif", "r", 11)
+				if card_dealed_1[gamerun_guankan_selected][2] ~= "" then
+					if gamerun_guankan_selected ~= card_dealed_selected then
+						gc:drawImage(cards_img[card_dealed_1[gamerun_guankan_selected][1]], 81 + img_width * (gamerun_guankan_selected - 1), 51)
+						gc:drawImage(color_img[card_dealed_1[gamerun_guankan_selected][2]], 82 + img_width * (gamerun_guankan_selected - 1), 53)
+						gc:setFont("sansserif", "r", 7)
+						gc:drawString(card_dealed_1[gamerun_guankan_selected][3], 85 + img_width * (gamerun_guankan_selected - 1), 73)
+						gc:setFont("sansserif", "r", 11)
+					else
+						gc:drawImage(cards_img[card_dealed_1[gamerun_guankan_selected][1]], 81 + img_width * (gamerun_guankan_selected - 1), 46)
+						gc:drawImage(color_img[card_dealed_1[gamerun_guankan_selected][2]], 82 + img_width * (gamerun_guankan_selected - 1), 48)
+						gc:setFont("sansserif", "r", 7)
+						gc:drawString(card_dealed_1[gamerun_guankan_selected][3], 85 + img_width * (gamerun_guankan_selected - 1), 68)
+						gc:setFont("sansserif", "r", 11)
+					end
 				end
 			end
 		end
@@ -748,18 +750,20 @@ function draw_others(gc)
 			end	
 			--  如果不是技能虚拟的无色无点牌才绘制  --
 			if card_paidui_dealed == 2 then
-				if gamerun_guankan_selected ~= card_dealed_selected then
-					gc:drawImage(cards_img[card_dealed_2[gamerun_guankan_selected][1]], 81 + img_width * (gamerun_guankan_selected - 1), 121)
-					gc:drawImage(color_img[card_dealed_2[gamerun_guankan_selected][2]], 82 + img_width * (gamerun_guankan_selected - 1), 123)
-					gc:setFont("sansserif", "r", 7)
-					gc:drawString(card_dealed_2[gamerun_guankan_selected][3], 85 + img_width * (gamerun_guankan_selected - 1), 143)
-					gc:setFont("sansserif", "r", 11)
-				else
-					gc:drawImage(cards_img[card_dealed_2[gamerun_guankan_selected][1]], 81 + img_width * (gamerun_guankan_selected - 1), 116)
-					gc:drawImage(color_img[card_dealed_2[gamerun_guankan_selected][2]], 82 + img_width * (gamerun_guankan_selected - 1), 118)
-					gc:setFont("sansserif", "r", 7)
-					gc:drawString(card_dealed_2[gamerun_guankan_selected][3], 85 + img_width * (gamerun_guankan_selected - 1), 138)
-					gc:setFont("sansserif", "r", 11)
+				if card_dealed_2[gamerun_guankan_selected][2] ~= "" then
+					if gamerun_guankan_selected ~= card_dealed_selected then
+						gc:drawImage(cards_img[card_dealed_2[gamerun_guankan_selected][1]], 81 + img_width * (gamerun_guankan_selected - 1), 121)
+						gc:drawImage(color_img[card_dealed_2[gamerun_guankan_selected][2]], 82 + img_width * (gamerun_guankan_selected - 1), 123)
+						gc:setFont("sansserif", "r", 7)
+						gc:drawString(card_dealed_2[gamerun_guankan_selected][3], 85 + img_width * (gamerun_guankan_selected - 1), 143)
+						gc:setFont("sansserif", "r", 11)
+					else
+						gc:drawImage(cards_img[card_dealed_2[gamerun_guankan_selected][1]], 81 + img_width * (gamerun_guankan_selected - 1), 116)
+						gc:drawImage(color_img[card_dealed_2[gamerun_guankan_selected][2]], 82 + img_width * (gamerun_guankan_selected - 1), 118)
+						gc:setFont("sansserif", "r", 7)
+						gc:drawString(card_dealed_2[gamerun_guankan_selected][3], 85 + img_width * (gamerun_guankan_selected - 1), 138)
+						gc:setFont("sansserif", "r", 11)
+					end
 				end
 			end
 		end
