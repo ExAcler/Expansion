@@ -2,12 +2,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+FILE *fBuild, *fLink, *fDest;
+int build, length;
+char *buffer;
+
+int appendFile(const char *filename)
+{
+	fLink = fopen(filename, "rb");
+	if (fLink == NULL) return 0;
+	fseek(fLink, 0L, SEEK_END);
+	length = ftell(fLink);
+	fseek(fLink, 0L, SEEK_SET);
+	buffer = (char *)calloc(length + 1, 1);
+	fread(buffer, 1, length, fLink);
+	fwrite(buffer, strlen(buffer), 1, fDest);
+	fclose(fLink);
+	free(buffer);
+	return 1;
+}
+
 int main()
 {
-	FILE *fBuild, *fLink, *fDest;
-	int build, length;
-	char *buffer;
-	
 	fBuild = fopen("build.txt", "r");
 	fscanf(fBuild, "%d", &build);
 	fclose(fBuild);
@@ -19,82 +34,65 @@ int main()
 	fDest = fopen("Debug/dest.lua", "ab");
 	if (fDest == NULL) return 0;
 	
-	fLink = fopen("sprite.lua", "rb");
-	if (fLink == NULL) return 0;
-	fseek(fLink, 0L, SEEK_END);
-	length = ftell(fLink);
-	fseek(fLink, 0L, SEEK_SET);
-	buffer = (char *)calloc(length + 1, 1);
-	fread(buffer, length, 1, fLink);
-	fwrite(buffer, strlen(buffer), 1, fDest);
-	fclose(fLink);
-	free(buffer);
-	
-	fLink = fopen("ai.lua", "rb");
-	if (fLink == NULL) return 0;
-	fseek(fLink, 0L, SEEK_END);
-	length = ftell(fLink);
-	fseek(fLink, 0L, SEEK_SET);
-	buffer = (char *)calloc(length + 1, 1);
-	fread(buffer, length, 1, fLink);
-	fwrite(buffer, strlen(buffer), 1, fDest);
-	fclose(fLink);
-	free(buffer);
+	if (appendFile("sprite.lua") == 0)
+		return 0;
 
-	fLink = fopen("character.lua", "rb");
-	if (fLink == NULL) return 0;
-	fseek(fLink, 0L, SEEK_END);
-	length = ftell(fLink);
-	fseek(fLink, 0L, SEEK_SET);
-	buffer = (char *)calloc(length + 1, 1);
-	fread(buffer, length, 1, fLink);
-	fwrite(buffer, strlen(buffer), 1, fDest);
-	fclose(fLink);
-	free(buffer);
-	
-	fLink = fopen("skills.lua", "rb");
-	if (fLink == NULL) return 0;
-	fseek(fLink, 0L, SEEK_END);
-	length = ftell(fLink);
-	fseek(fLink, 0L, SEEK_SET);
-	buffer = (char *)calloc(length + 1, 1);
-	fread(buffer, 1, length, fLink);
-	fwrite(buffer, strlen(buffer), 1, fDest);
-	fclose(fLink);
-	free(buffer);
-	
-	fLink = fopen("cards.lua", "rb");
-	if (fLink == NULL) return 0;
-	fseek(fLink, 0L, SEEK_END);
-	length = ftell(fLink);
-	fseek(fLink, 0L, SEEK_SET);
-	buffer = (char *)calloc(length + 1, 1);
-	fread(buffer, 1, length, fLink);
-	fwrite(buffer, strlen(buffer), 1, fDest);
-	fclose(fLink);
-	free(buffer);
-	
-	fLink = fopen("run.lua", "rb");
-	if (fLink == NULL) return 0;
-	fseek(fLink, 0L, SEEK_END);
-	length = ftell(fLink);
-	fseek(fLink, 0L, SEEK_SET);
-	buffer = (char *)calloc(length + 1, 1);
-	fread(buffer, length, 1, fLink);
-	fwrite(buffer, strlen(buffer), 1, fDest);
-	fclose(fLink);
-	free(buffer);
-	
-	fLink = fopen("ui.lua", "rb");
-	if (fLink == NULL) return 0;
-	fseek(fLink, 0L, SEEK_END);
-	length = ftell(fLink);
-	fseek(fLink, 0L, SEEK_SET);
-	buffer = (char *)calloc(length + 1, 1);
-	fread(buffer, length, 1, fLink);
-	fwrite(buffer, strlen(buffer), 1, fDest);
-	fclose(fLink);
-	free(buffer);
+	if (appendFile("ai_skills_jin.lua") == 0)
+		return 0;
+
+	if (appendFile("ai_skills_qun.lua") == 0)
+		return 0;
+
+	if (appendFile("ai_skills_shen.lua") == 0)
+		return 0;
+
+	if (appendFile("ai_skills_shu.lua") == 0)
+		return 0;
+
+	if (appendFile("ai_skills_wei.lua") == 0)
+		return 0;
+
+	if (appendFile("ai_skills_wu.lua") == 0)
+		return 0;
+
+	if (appendFile("ai_cards.lua") == 0)
+		return 0;
+
+	if (appendFile("ai_gamerun.lua") == 0)
+		return 0;
+
+	if (appendFile("character.lua") == 0)
+		return 0;
+
+	if (appendFile("skills_gamerun.lua") == 0)
+		return 0;
+
+	if (appendFile("skills_jin.lua") == 0)
+		return 0;
+
+	if (appendFile("skills_qun.lua") == 0)
+		return 0;
+
+	if (appendFile("skills_shen.lua") == 0)
+		return 0;
+
+	if (appendFile("skills_shu.lua") == 0)
+		return 0;
+
+	if (appendFile("skills_wei.lua") == 0)
+		return 0;
+
+	if (appendFile("skills_wu.lua") == 0)
+		return 0;
+
+	if (appendFile("cards.lua") == 0)
+		return 0;
+
+	if (appendFile("run.lua") == 0)
+		return 0;
+
+	if (appendFile("ui.lua") == 0)
+		return 0;
 	
 	fclose(fDest);
 	return 0;
