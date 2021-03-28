@@ -3058,6 +3058,7 @@ function skills_jiangchi_enter(ID)
 		skills_jiangchi_set(char_current_i, i)
 		
 		gamerun_status = ""
+		set_hints("")
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
 		funcptr_i = funcptr_i + 1
 		timer.start(0.2)
@@ -3463,6 +3464,7 @@ function skills_tuxi_enter()
 	
 	gamerun_OK_ptr = function()
 		funcptr_queue = {}
+		set_hints("")
 	
 		if gamerun_OK then
 			_tuxi_target1()
@@ -6055,7 +6057,7 @@ function skills_songwei_ai(ID, ID_zhugong)
 	funcptr_i = 0
 
 	_songwei_exe(ID, ID_zhugong)
-	timer.start(0.2)
+	timer.start(0.6)
 end
 function skills_songwei_enter(ID_zhugong)
 	local old_gamerun_status = gamerun_status
@@ -6079,7 +6081,7 @@ function skills_songwei_enter(ID_zhugong)
 			_songwei_huifu()
 			funcptr_i = funcptr_i + 1
 		end
-		timer.start(0.2)
+		timer.start(0.6)
 	end
 	
 	platform.window:invalidate()
@@ -6250,6 +6252,7 @@ function _hujia_exe(ID_req, ID_res, ID_shoupai, mode, va)
 
 	push_message(table.concat({char_juese[ID_res].name, "响应"}))
 	add_funcptr(_sha_shan, {ID_res, ID_shoupai})
+	skills_losecard(ID_res, 9999, true)
 	
 	if mode == "杀" then
 		local card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag
@@ -6262,5 +6265,223 @@ function _hujia_exe(ID_req, ID_res, ID_shoupai, mode, va)
 	end
 end
 function _hujia_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
+--  董卓：暴虐  --
+function skills_judge_baonue(ID)
+	if char_juese[ID].shili == "群" then
+		for i = 1, 5 do
+			if char_juese[i].skill["暴虐"] == "available" and i ~= ID and char_juese[i].siwang == false and char_juese[i].tili < char_juese[i].tili_max then
+				add_funcptr(skills_baonue, {ID, i})
+				soldblood = true
+			end
+		end
+	end
+end
+function skills_baonue(va_list)
+	local ID, ID_zhugong
+	ID = va_list[1]; ID_zhugong = va_list[2]
+
+	if ID == char_current_i then
+		skills_baonue_enter(ID_zhugong)
+	else
+		skills_baonue_ai(ID, ID_zhugong)
+	end
+end
+function skills_baonue_ai(ID, ID_zhugong)
+	if ai_judge_baonue(ID, ID_zhugong) == false then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	_baonue_exe(ID, ID_zhugong)
+	timer.start(0.6)
+end
+function skills_baonue_enter(ID_zhugong)
+	local old_gamerun_status = gamerun_status
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_status = "确认操作"
+	jiaohu_text = table.concat({"是否响应", char_juese[ID_zhugong].name, "的'暴虐'?"})
+	gamerun_OK = false
+	gamerun_OK_ptr = function()
+		gamerun_status = old_gamerun_status
+		funcptr_queue = {}
+		set_hints("")
+
+		if gamerun_OK == true then
+			_baonue_exe(char_current_i, ID_zhugong)
+		else
+			_baonue_huifu()
+			funcptr_i = funcptr_i + 1
+		end
+		timer.start(0.6)
+	end
+	
+	platform.window:invalidate()
+end
+function _baonue_exe(ID, ID_zhugong)
+	push_message(table.concat({char_juese[ID].name .. "响应了", char_juese[ID_zhugong].name, "的武将技能 '暴虐'"}))
+	add_funcptr(_baonue_fan_panding, ID)
+
+	--  如场上有司马懿或张角，询问其改判技能  --
+	skills_guicai_guidao_ask(ID, ID, ID_zhugong, "暴虐")
+	
+	add_funcptr(_baonue_jiesuan, {ID, ID_zhugong})
+	timer.start(0.6)
+end
+function _baonue_fan_panding(ID_s)
+	--  翻开判定牌  --
+	if #card_yixi == 0 then
+	    card_xipai(true)
+	end
+    card_panding_card = card_yixi[1]
+	table.remove(card_yixi, 1)
+	push_message(table.concat({char_juese[ID_s].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
+end
+function _baonue_jiesuan(va_list)
+	local ID, ID_zhugong
+	ID = va_list[1]; ID_zhugong = va_list[2]
+
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card_panding_card})
+
+	--  曹丕颂威  --
+	skills_judge_songwei(ID)
+
+	if huase == "黑桃" then
+		push_message(char_juese[ID_zhugong].name .. "的 '暴虐' 判定成功")
+		skills_card_qi_panding(ID)
+		add_funcptr(_kuanggu_sub1, ID_zhugong)
+	else
+		push_message(char_juese[ID_zhugong].name .. "的 '暴虐' 判定失败")
+		skills_card_qi_panding(ID)
+	end
+	
+	add_funcptr(_baonue_huifu)
+	timer.start(0.6)
+end
+function _baonue_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
+--  孟获：再起  --
+function skills_zaiqi(ID)
+	if char_juese[ID].tili == char_juese[ID].tili_max then
+		return
+	end
+
+	if ID == char_current_i then
+		skills_zaiqi_enter()
+	else
+		skills_zaiqi_ai(ID)
+	end
+end
+function skills_zaiqi_ai(ID)
+	if ai_judge_zaiqi(ID) == false then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	_zaiqi_exe(ID)
+end
+function skills_zaiqi_enter()
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '再起'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		gamerun_status = old_gamerun_status
+		set_hints("")
+
+		if gamerun_OK then
+			_zaiqi_exe(char_current_i)
+	    else
+			_zaiqi_huifu()
+			funcptr_i = funcptr_i + 1
+			timer.start(0.2)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function _zaiqi_exe(ID)
+	wugucards = {}
+	game_skip_mopai = true
+	push_message(table.concat({char_juese[ID].name, "发动了武将技能 '再起'"}))
+
+	local lost_tili = char_juese[ID].tili_max - char_juese[ID].tili
+	for i = 1, lost_tili do
+		add_funcptr(_zaiqi_into_paidui, ID)
+	end
+	add_funcptr(_zaiqi_get_from_paidui, ID)
+	timer.start(0.6)
+end
+function _zaiqi_into_paidui(ID)
+	if #card_yixi == 0 then
+	    card_xipai(true)
+	end
+
+    local card = card_yixi[1]
+	push_message(table.concat({char_juese[ID].name, "展示了牌堆顶的'", card[2], card[3], "的", card[1], "'"}))
+	
+	table.remove(card_yixi, 1)
+	table.insert(wugucards, card)
+end
+function _zaiqi_get_from_paidui(ID)
+	local tili_add = 0
+	local shoupai_add = 0
+
+	for i = #wugucards, 1, -1 do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {wugucards[i]})
+
+		if huase == "红桃" then
+			tili_add = tili_add + 1
+			card_add_qipai(wugucards[i])
+			table.remove(wugucards, i)
+		else
+			shoupai_add = shoupai_add + 1
+			table.insert(char_juese[ID].shoupai, wugucards[i])
+			table.remove(wugucards, i)
+		end
+	end
+	wugucards = {}
+
+	if tili_add > 0 then
+		push_message(table.concat({char_juese[ID].name, "回复", tili_add, "点体力"}))
+		char_juese[ID].tili = math.min(char_juese[ID].tili + tili_add, char_juese[ID].tili_max)
+	end
+
+	if shoupai_add > 0 then
+		push_message(table.concat({char_juese[ID].name, "获得了", shoupai_add, "张牌"}))
+	end
+
+	_zaiqi_huifu()
+end
+function _zaiqi_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end

@@ -374,6 +374,7 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, true})
 	end
+
 	if char_juese[char_acting_i].skill["巧变"] == "available" then
 		add_funcptr(skills_qiaobian, {char_acting_i, "判定"})
 	end
@@ -386,6 +387,7 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["巧变"] == "available" then
 		add_funcptr(skills_qiaobian, {char_acting_i, "摸牌"})
 	end
+
 	if char_juese[char_acting_i].skill["英姿"] == "available" then
 		add_funcptr(skills_yingzi, char_acting_i)
 	end
@@ -416,6 +418,12 @@ function gamerun_huihe_start()
 		end
 	end
 
+	if char_juese[char_acting_i].skill["再起"] == "available" then
+		if char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
+			add_funcptr(skills_zaiqi, char_acting_i)
+		end
+	end
+
 	--  摸牌  --
 	add_funcptr(card_mopai, nil)
 
@@ -424,9 +432,11 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["好施"] == "available" then
 		add_funcptr(skills_haoshi_stage_2, char_acting_i)
 	end
+
 	if char_juese[char_acting_i].skill["巧变"] == "available" then
 		add_funcptr(skills_qiaobian, {char_acting_i, "出牌"})
 	end
+	
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, false})
 	end
@@ -1366,7 +1376,7 @@ function on.enterKey()
 			--  判断是否通过技能增加了出杀目标  --
 			if char_sha_add_target_able == true and (carda == "杀" or carda == "火杀" or carda == "雷杀") then
 				fangtian = true
-				n_sha_mubiao = n_sha_mubiao + char_sha_additional_target
+				n_sha_mubiao = math.min(n_sha_mubiao + char_sha_additional_target, 4)
 			end
 
 			if gamerun_status == "" then

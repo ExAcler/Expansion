@@ -216,7 +216,7 @@ card_weixi = {}    -- 未洗的牌，供随机选取
 card_yixi = {}    -- 已洗的牌 (游戏牌堆)，用于分发
 card_qipai = {}    -- 弃牌堆
 card_panding_card = {}    -- 翻开的判定牌
-card_jiesuan = {{}, ""}		--  正在结算的牌 (参数1为牌，参数2为实际的牌名)
+card_jiesuan = {{}, "", 0}		--  正在结算的牌 (参数1为牌，参数2为实际的牌名，参数3为手牌来源ID)
 wugucards = {}		--  五谷丰登/弃牌阶段牌堆
 
 -- 界面上高亮/已选取 (凸起) 的牌
@@ -394,9 +394,10 @@ function card_shoupai_stat(ID)
 end
 
 --  手牌效果执行前进入结算区  --
-function card_into_jiesuan(ID, ID_shoupai, actual_name)
+function card_into_jiesuan(ID, ID_shoupai, actual_name, ID_laiyuan)
 	card_jiesuan[1] = {}
 	card_jiesuan[2] = actual_name
+	card_jiesuan[3] = ID_laiyuan
 
 	for i = #ID_shoupai, 1, -1 do
 		local card = char_juese[ID].shoupai[ID_shoupai[i]]
@@ -418,11 +419,11 @@ function card_out_jiesuan()
 		--  祝融巨象拿走南蛮入侵  --
 		if card_jiesuan[2] == "南蛮入侵" then
 			for i = 1, 5 do
-				if char_juese[i].skill["巨象"] == "available" then
+				if char_juese[i].skill["巨象"] == "available" and i ~= card_jiesuan[3] then
 					skills_juxiang(i)
 
-					for i = 1, #card_jiesuan[1] do
-						table.insert(char_juese[i].shoupai, card_jiesuan[1][i])
+					for j = 1, #card_jiesuan[1] do
+						table.insert(char_juese[i].shoupai, card_jiesuan[1][j])
 					end
 
 					card_gone = true
@@ -440,6 +441,7 @@ function card_out_jiesuan()
 
 	card_jiesuan[1] = {}
 	card_jiesuan[2] = ""
+	card_jiesuan[3] = 0
 end
 
 --  弃牌阶段结算结束后将牌从弃牌阶段牌堆移入弃牌堆  --
@@ -872,6 +874,22 @@ function card_get_leixing(name)
 	
 	if name == "赤兔" or name == "大宛" or name == "紫骍" then
 	    return "-1马"
+	end
+end
+
+--  判断指定的牌是否是酒  --
+function card_judge_if_jiu(ID, card_i)
+	local card = char_juese[ID].shoupai[card_i]
+
+	if card[1] == "酒" then
+		return true
+	end
+
+	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card})
+	if char_juese[ID].skill["酒池"] == "available" then
+		if huase == "黑桃" then
+			return true
+		end
 	end
 end
 
@@ -1833,7 +1851,7 @@ function _card_sub1(va_list)
 	end
 	push_message(msg)
 	
-	card_into_jiesuan(ID_s, ID_shoupai, actual_name)
+	card_into_jiesuan(ID_s, ID_shoupai, actual_name, ID_s)
 end
 
 --  使用无懈可击  --
@@ -4696,7 +4714,7 @@ function _sha_sub1(va_list)
 	end
 	push_message(msg)
 	
-	card_into_jiesuan(ID_s, ID_shoupai, hint_1)
+	card_into_jiesuan(ID_s, ID_shoupai, hint_1, ID_s)
 	gamerun_wuqi_out_hand(ID_s)
 end
 function _sha_sub2()

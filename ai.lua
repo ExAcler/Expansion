@@ -35,6 +35,24 @@ function ai_chazhao_shan(ID, shoupai)
 	return c_pos
 end
 
+--  AI从手牌中查找酒  --
+--  返回-1即为没有酒  --
+function ai_chazhao_jiu(ID)
+	local cards = ai_card_search(ID, "酒", 1)
+	if #cards == 0 then
+		--  董卓酒池  --
+		if char_juese[ID].skill["酒池"] == "available" then
+			cards = ai_card_search(ID, "黑桃", 1)
+		end
+	end
+
+	if #cards == 0 then
+		return -1
+	else
+		return cards[1]
+	end
+end
+
 --  AI决定是否发动雌雄双股剑  --
 function ai_judge_cixiong()
 	return true
@@ -46,7 +64,7 @@ function ai_judge_liegong(ID_s, ID_mubiao)
 		return true
 	end
 
-	if ai_judge_same_identity(ID_s, ID_mubiao, true) == 1 then
+	if ai_judge_same_identity(ID_s, ID_mubiao, false) == 1 then
 		--  杀被流离等导致目标非自己所愿的情况  --
 		return false
 	else
@@ -60,7 +78,7 @@ function ai_judge_tieqi(ID_s, ID_mubiao)
 		return true
 	end
 
-	if ai_judge_same_identity(ID_s, ID_mubiao, true) == 1 then
+	if ai_judge_same_identity(ID_s, ID_mubiao, false) == 1 then
 		return false
 	else
 		return true
@@ -226,6 +244,19 @@ function ai_judge_benghuai(ID)
 	end
 end
 
+--  AI决定是否发动再起  --
+function ai_judge_zaiqi(ID)
+	if char_juese[ID].tili_max - char_juese[ID].tili < 2 then
+		return false
+	end
+
+	if ai_judge_random_percent(80) == 1 then
+		return true
+	else
+		return false
+	end
+end
+
 --  AI决定是否发动护驾  --
 --  true发动，false不发动  --
 function ai_judge_hujia_req(ID_req)
@@ -271,6 +302,15 @@ function ai_judge_hujia(ID_req, ID_res)
 	end
 
 	if ai_judge_random_percent(percent) == 1 then
+		return true
+	else
+		return false
+	end
+end
+
+--  AI决定是否响应暴虐  --
+function ai_judge_baonue(ID, ID_zhugong)
+	if ai_judge_same_identity(ID, ID_zhugong, true) == 1 then
 		return true
 	else
 		return false
@@ -1650,7 +1690,7 @@ function ai_judge_def(ID, is_self, direct_only)
 	end
 
 	if #char_juese[ID].fangju > 0 then
-		if char_juese[ID].fangju[1] == "白银狮子" then
+		if char_juese[ID].fangju[1] == "白银狮" then
 			def = def + 20
 		elseif char_juese[ID].fangju[1] == "八卦阵" then
 			def = def + 70

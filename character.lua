@@ -68,7 +68,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["袁术"] = {{4,4}, "群", false, {"庸肆", "伪帝"}, "男", {"锁定","禁止"}, true}, 
 	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"武圣","强袭","断粮","直谏","国色","突袭","固政","急救","毅重"}, "男", {"","","","","","","","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"武圣","再起","断粮","直谏","国色","突袭","固政","急救","毅重"}, "男", {"","","","","","","","",""}, true},
 	--["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离魂","奸雄","天香","鬼道","当先","火计","化身","新生","伪帝","补益","制衡","庸肆"}, "男", {"","","","","","","锁定","","禁止","禁止","禁止","","",""}, true},
 }
 
@@ -684,6 +684,20 @@ function char_fanmian(ID)
 	push_message(msg)
 end
 
+--  伤害后伤害方技能结算  --
+function char_skills_injured(va_list)
+	local id, laiyuan, tili, shuxing
+	id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]
+
+	--  魏延对距离1以内的玩家造成伤害，回复1点体力  --
+	if char_juese[laiyuan].skill["狂骨"] == "available" and char_calc_distance(laiyuan, id) <= 1 and char_juese[laiyuan].tili < char_juese[laiyuan].tili_max and shuxing ~= "流失" then
+		skills_kuanggu(laiyuan)
+	end
+
+	--  董卓暴虐  --
+	skills_judge_baonue(laiyuan)
+end
+
 --  卖血技能结算  --
 function char_skills_sellblood(va_list, original_dianshu)
 	local id, laiyuan, tili, shuxing, AOE
@@ -795,13 +809,11 @@ function char_tili_deduct(va_list, original_dianshu)
 	add_funcptr(_char_tili_deduct, {dianshu, id, laiyuan, shuxing, original_dianshu})
 	tili = char_juese[id].tili - _deduct_count({dianshu, id, laiyuan, shuxing}, original_dianshu)
 	
+	--  伤害方技能结算  --
 	if laiyuan ~= -1 then
-		--  魏延对距离1以内的玩家造成伤害，回复1点体力  --
-		if char_juese[laiyuan].skill["狂骨"] == "available" and char_calc_distance(laiyuan, id) <= 1 and char_juese[laiyuan].tili < char_juese[laiyuan].tili_max and shuxing ~= "流失" then
-			skills_kuanggu(laiyuan)
-		end
+		char_skills_injured(va_list)
 	end
-	
+
 	--  重置连环状态  --
 	hengzhi = char_juese[id].hengzhi
 	if shuxing == "火" or shuxing == "雷" then
@@ -809,7 +821,7 @@ function char_tili_deduct(va_list, original_dianshu)
 			add_funcptr(_deduct_chongzhi, id)
 		end
 	end
-		
+
 	if tili <= 0 then
 		--  进入濒死状态  --
 		add_funcptr(char_binsi, {id, tili, laiyuan, shuxing, true})
@@ -984,16 +996,21 @@ function char_binsi(va_list)
 				wansha = true
 			end
 			if wansha == false then
-				--  庞统发动涅槃  --
+				--  SP姜维触发逢亮  --
 				if id == cur and char_juese[id].skill["逢亮"] == "available" then
 					add_funcptr(skills_fengliang, id)
 				end
+
+				--  庞统发动涅槃  --
 				if id == cur and char_juese[id].skill["涅槃"] == 1 then
 					add_funcptr(skills_niepan, id)
 				end
+
+				--  廖化发动伏枥  --
 				if id == cur and char_juese[id].skill["伏枥"] == 1 then
 					add_funcptr(skills_fuli, id)
 				end
+
 				if cur ~= char_current_i then
 					add_funcptr(_binsi_ai, {id, cur})
 				else
@@ -1068,7 +1085,7 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 		--  救自己才能用酒  --
 		if ID_s == ID_jiu then
 			while char_juese[ID_s].tili <= 0 do
-				c_pos = card_chazhao(ID_jiu, "酒")
+				c_pos = ai_chazhao_jiu(ID_jiu)
 				if c_pos > 0 then
 					card = char_juese[ID_jiu].shoupai[c_pos]
 					card_add_qipai(card)
@@ -1118,7 +1135,7 @@ function _binsi_judge_tao(ID_s, tao_needed)		--  濒死结算：判断选择的�
 					qualified = true
 				end
 
-				if ID_s == char_current_i and shoupai[i][1] == "酒" then
+				if ID_s == char_current_i and card_judge_if_jiu(ID_s, i) then
 					qualified = true
 				end
 

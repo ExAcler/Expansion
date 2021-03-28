@@ -425,41 +425,91 @@ function draw_self(gc)
 	gc:drawImage(identity_img[char_juese[char_current_i].shenfen], 224 + 77, 151 + 1)
 	
 	-- 装备信息 --
+	local width
 	if card_selected[-1] ~= nil then
 		gc:setColorRGB(0, 255, 0)
-		gc:fillRect(5,131+20,gc:getStringWidth(char_juese[char_current_i].wuqi[1]),20)
+
+		gc:setFont("sansserif", "r", 7)
+		width = 12 + gc:getStringWidth(char_juese[char_current_i].wuqi[3])
+		gc:setFont("sansserif", "r", 11)
+		width = width + gc:getStringWidth(char_juese[char_current_i].wuqi[1])
+
+		gc:fillRect(5,131+20,width,20)
 		gc:setColorRGB(0, 0, 0)
 	end
 	if card_selected[-2] ~= nil then
 		gc:setColorRGB(0, 255, 0)
-		gc:fillRect(5,151+19,gc:getStringWidth(char_juese[char_current_i].fangju[1]),20)
+
+		gc:setFont("sansserif", "r", 7)
+		width = 12 + gc:getStringWidth(char_juese[char_current_i].fangju[3])
+		gc:setFont("sansserif", "r", 11)
+		width = width + gc:getStringWidth(char_juese[char_current_i].fangju[1])
+
+		gc:fillRect(5,151+20,width,20)
 		gc:setColorRGB(0, 0, 0)
 	end
 	if card_selected[-4] ~= nil then
 		gc:setColorRGB(0, 255, 0)
-		gc:fillRect(5,170+19,30,20)
+		
+		gc:setFont("sansserif", "r", 7)
+		width = 12 + gc:getStringWidth(char_juese[char_current_i].fangma[3])
+		gc:setFont("sansserif", "r", 11)
+		width = width + gc:getStringWidth("防")
+
+		gc:fillRect(5,170+20,width,20)
 		gc:setColorRGB(0, 0, 0)
 	end
 	if card_selected[-3] ~= nil then
 		gc:setColorRGB(0, 255, 0)
-		gc:fillRect(40,170+19,30,20)
+
+		gc:setFont("sansserif", "r", 7)
+		width = 12 + gc:getStringWidth(char_juese[char_current_i].gongma[3])
+		gc:setFont("sansserif", "r", 11)
+		width = width + gc:getStringWidth("攻")
+
+		gc:fillRect(42,170+20,width,20)
 		gc:setColorRGB(0, 0, 0)
 	end
 	if #char_juese[char_current_i].wuqi ~= 0 then
-	    gc:drawString(char_juese[char_current_i].wuqi[1], 5, 151 + 20)
+		gc:drawImage(color_img[char_juese[char_current_i].wuqi[2]], 5, 151 + 5)
+
+		gc:setFont("sansserif", "r", 7)
+		local width = gc:getStringWidth(char_juese[char_current_i].wuqi[3])
+		gc:drawString(char_juese[char_current_i].wuqi[3], 5 + 12, 151 + 16)
+
+		gc:setFont("sansserif", "r", 11)
+	    gc:drawString(char_juese[char_current_i].wuqi[1], 5 + 12 + width, 151 + 20)
 	end
 	if #char_juese[char_current_i].fangju ~= 0 then
-	    gc:drawString(char_juese[char_current_i].fangju[1], 5, 171 + 19)
+		gc:drawImage(color_img[char_juese[char_current_i].fangju[2]], 5, 171 + 5)
+
+		gc:setFont("sansserif", "r", 7)
+		local width = gc:getStringWidth(char_juese[char_current_i].fangju[3])
+		gc:drawString(char_juese[char_current_i].fangju[3], 5 + 12, 171 + 16)
+
+		gc:setFont("sansserif", "r", 11)
+	    gc:drawString(char_juese[char_current_i].fangju[1], 5 + 12 + width, 171 + 20)
 	end
-	if #char_juese[char_current_i].gongma ~= 0 and #char_juese[char_current_i].fangma ~= 0 then
-	    gc:drawString("+1 / -1", 5, 190 + 19)
-	else
-	    if #char_juese[char_current_i].gongma ~= 0 then
-		    gc:drawString("-1", 40, 190 + 19)
-		end
-		if #char_juese[char_current_i].fangma ~= 0 then
-		    gc:drawString("+1", 5, 190 + 19)
-		end
+	
+	if #char_juese[char_current_i].gongma ~= 0 then
+		gc:drawImage(color_img[char_juese[char_current_i].gongma[2]], 42, 191 + 5)
+
+		gc:setFont("sansserif", "r", 7)
+		local width = gc:getStringWidth(char_juese[char_current_i].gongma[3])
+		gc:drawString(char_juese[char_current_i].gongma[3], 42 + 12, 191 + 16)
+
+		gc:setFont("sansserif", "r", 11)
+		gc:drawString("攻", 42 + 12 + width, 191 + 20)
+	end
+	if #char_juese[char_current_i].fangma ~= 0 then
+		gc:drawImage(color_img[char_juese[char_current_i].fangma[2]], 5, 191 + 5)
+
+		gc:setFont("sansserif", "r", 7)
+		local width = gc:getStringWidth(char_juese[char_current_i].fangma[3])
+		gc:drawString(char_juese[char_current_i].fangma[3], 5 + 12, 191 + 16)
+
+		gc:setFont("sansserif", "r", 11)
+		gc:drawString("防", 5 + 12 + width, 190 + 20)
 	end
 
 	-- 锦囊状态 --
