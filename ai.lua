@@ -373,6 +373,12 @@ function ai_judge_jushou(ID)
 	end
 end
 
+--  AI决定是否发动连破  --
+--  true发动，false不发动  --
+function ai_judge_lianpo(ID)
+	return true
+end
+
 --  AI决定是否发动集智  --
 --  true发动，false不发动  --
 function ai_judge_jizhi(ID)
@@ -654,6 +660,19 @@ function ai_get_lord_id()
 	end
 end
 
+--  AI决定是否发动放权  --
+function ai_judge_fangquan(ID)
+	if #char_juese[ID].shoupai == 0 then
+		return {}
+	end
+	local ID_mubiao = ai_basic_judge_mubiao(ID, 1, true, false)
+	if ai_judge_random_percent(75 - 25 * ai_withdraw_need(ID)) == 1 then
+		return ID_mubiao
+	else
+		return {}
+	end
+end
+
 --  AI决定是否发动神速  --
 function ai_judge_shensu(ID, is_panding)
 	local ID_shoupai, ID_zhuangbei, ID_mubiao ={}, {}, {}
@@ -830,6 +849,38 @@ function ai_judge_haoshi(ID)
 
 	local target = ai_judge_haoshi_mubiao(ID, n_shoupai, false)
 	if #target == 0 then
+		return 2
+	else
+		if ai_judge_random_percent(50) == 1 then
+			return 1
+		else
+			return 2
+		end
+	end
+end
+
+--  AI决定是否发动涉猎  --
+--  1发动，2不发动  --
+function ai_judge_shelie(ID)
+	local n_shoupai = 2
+	
+	if char_juese[ID].skill["将驰"] == "available" then
+		if ai_judge_jiangchi(ID) == 1 then
+			n_shoupai = n_shoupai + 1
+		elseif ai_judge_jiangchi(ID) == 2 then
+			n_shoupai = n_shoupai - 1
+		end
+	end
+	if char_juese[ID].skill["裸衣"] == "available" and ai_judge_luoyi(ID) == 1 then
+		n_shoupai = n_shoupai - 1
+	end
+	if char_juese[ID].skill["英姿"] == "available" and ai_judge_yingzi(ID) then
+		n_shoupai = n_shoupai + 1
+	end
+
+	if n_shoupai <= 3 then
+		return 1
+	elseif n_shoupai >= 5 then
 		return 2
 	else
 		if ai_judge_random_percent(50) == 1 then
@@ -1232,6 +1283,42 @@ function ai_judge_duanliang(ID)
 		return false, 0, 0
 	else
 		return true, selected_card, targets[1]
+	end
+end
+
+--  AI决定是否发动攻心  --
+--  返回发动对象、发动对象操作后的手牌、选出的红桃牌、红桃牌的去处  --
+function ai_judge_gongxin_mubiao(ID)
+	local ID_mubiao = ai_basic_judge_mubiao(ID, 1, false)
+	if #ID_mubiao > 0 then
+		ID_mubiao = ID_mubiao[1]
+	else
+		return nil,{},{},nil
+	end
+	if #char_juese[ID_mubiao].shoupai == 0 then
+		return nil,{},{},nil
+	else
+		card_dealed_1 = char_juese[ID_mubiao].shoupai
+		card_dealed_2 = {}
+		local i = #card_dealed_1
+		while i >= 1 do
+			if card_dealed_1[i][2] == "红桃" then
+				table.insert(card_dealed_2,card_dealed_1[i])
+				table.remove(card_dealed_1,i)
+				break
+			else
+				i = i - 1
+			end
+		end
+		if #card_dealed_2 == 0 then
+			return ID_mubiao, card_dealed_1, card_dealed_2, nil
+		else
+			if ai_judge_random_percent(60) == 1 then
+				return ID_mubiao, card_dealed_1, card_dealed_2, 2
+			else
+				return ID_mubiao, card_dealed_1, card_dealed_2, 1
+			end
+		end
 	end
 end
 
@@ -2948,6 +3035,20 @@ end
 function ai_skill_use_priority(ID)
 	local fadong, ID_shoupai, mubiao
 
+	--  神司马懿极略  --
+	if char_juese[ID].skill["极略"] == "available" and mark_ren > 0 then
+		skills_jilve_ai(ID)
+		timer.start(0.6)
+		return true
+	end
+	
+	--  神吕蒙攻心  --
+	if char_juese[ID].skill["攻心"] == 1 then
+		skills_gongxin_ai(ID)
+		timer.start(0.6)
+		return true
+	end
+	
 	--  周瑜反间  --
 	if char_juese[ID].skill["反间"] == 1 then
 		mubiao = ai_judge_fanjian_mubiao(ID)
@@ -3344,7 +3445,8 @@ function ai_stage_qipai(ID)
 		extra = skills_judge_xueyi(char_acting_i)
 		if char_juese[ID].skill["巧变"] == "available" then
 			add_funcptr(skills_qiaobian,{ID, "弃牌"})
-		elseif char_juese[ID].skill["克己"] == "available" and char_yisha == false then
+		end
+		if char_juese[ID].skill["克己"] == "available" and char_yisha == false then
 			add_funcptr(skills_keji,ID)
 		elseif char_juese[ID].tili + extra < #char_juese[ID].shoupai or char_juese[ID].skill["庸肆"] == "available" then
 			_ai_qipai_exe(ID)

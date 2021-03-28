@@ -64,13 +64,22 @@ item_disrow = 0   -- 选项多于三个时显示的三个选项前面忽略的�
 
 gamerun_dangxian = false  -- 廖化当先发动与否的存储
 gamerun_shensu = false	-- 夏侯渊神速发动与否的存储
+gamerun_fangquan = false  -- 刘禅放权发动与否的存储
 gamerun_qiaobian = false	-- 张郃巧变发动与否的存储
 fenxin_pending = nil	-- 玩家当前需要决定是否发动焚心的死亡角色ID (无则为nil)，如果是，则暂时隐藏死亡角色的身份牌
 kunfen_adjusted = {}  --困奋是否已经修改的存储
 skill_double = {}  --同一角色是否存在重复技能的存储
+extra_turn = {}  --额外回合角色的存储
+real_last = 0  --正常顺序的上个回合行动的角色
+mark_ren = {}  --忍标记数量
+gamerun_killed = {}  --在当前回合内杀死角色的数量
+skill_temp = {}  --临时获得的技能，在自己的回合结束后失去
 for i = 1, 5 do
 	kunfen_adjusted[i] = false
 	skill_double[i] = {}
+	mark_ren[i] = 0
+	gamerun_killed[i] = 0
+	skill_temp[i] = {}
 end
 
 end
@@ -345,6 +354,10 @@ function gamerun_huihe_start()
 		add_funcptr(skills_huashen, {char_acting_i, "回合开始"})
 	end
 	
+	if char_juese[char_acting_i].skill["拜印"] == "available" and mark_ren[char_acting_i] >= 4 then
+		add_funcptr(skills_baiyin)
+	end
+	
 	if char_juese[char_acting_i].skill["魂姿"] == "available" and char_juese[char_acting_i].tili == 1 then
 		add_funcptr(skills_hunzi)
 	end
@@ -424,6 +437,12 @@ function gamerun_huihe_start()
 		end
 	end
 
+	if char_juese[char_acting_i].skill["涉猎"] == "available" then
+		if char_acting_i == char_current_i or ai_judge_shelie(char_acting_i) == 1 then
+			add_funcptr(skills_shelie, char_acting_i)
+		end
+	end
+
 	--  摸牌  --
 	add_funcptr(card_mopai, nil)
 
@@ -439,6 +458,10 @@ function gamerun_huihe_start()
 	
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, false})
+	end
+	
+	if char_juese[char_acting_i].skill["放权"] == "available" then
+		add_funcptr(skills_fangquan, char_acting_i)
 	end
 	
 	--  出牌  --
@@ -712,6 +735,10 @@ function gamerun_huihe_jieshu(qipai)
 		add_funcptr(skills_jushou,char_acting_i)
 	end
 	
+	if char_juese[char_acting_i].skill["放权"] == "available" and gamerun_fangquan == true then
+		add_funcptr(skills_fangquan_2,char_acting_i)
+	end
+	
 	if char_juese[char_acting_i].skill["困奋"] == "available" then
 		add_funcptr(skills_kunfen,char_acting_i)
 	end
@@ -719,6 +746,11 @@ function gamerun_huihe_jieshu(qipai)
 	if char_juese[char_acting_i].skill["崩坏"] == "available" then
 		if skills_judge_benghuai(char_acting_i) then
 			add_funcptr(skills_benghuai)
+		end
+	end
+	for i = 1, 5 do
+		if char_juese[i].skill["连破"] == "available" and char_juese[i].siwang == false and gamerun_killed[i] > 0 then
+			add_funcptr(skills_lianpo,i)
 		end
 	end
 	
@@ -731,7 +763,9 @@ function gamerun_huihe_jieshu(qipai)
 	last_OK = false
 	char_luoyi = false
 	skill_disrow = 0
-
+	for i = 1, 5 do
+		gamerun_killed[i] = 0
+	end
 	gamerun_skills_reset()
 	
 	msg = {char_juese[char_acting_i].name, "回合结束"}
@@ -743,6 +777,9 @@ function _jieshu_huihe_set(qipai)
 	local msg
 
 	gamerun_huihe_set("结束")
+	if char_juese[char_acting_i].skill["忍戒"] == "available" and char_juese[char_acting_i].siwang == false and #wugucards ~= 0 then
+		add_funcptr(skills_renjie, {char_acting_i, #wugucards})
+	end
 	card_huihe_cards_into_qipai()
 
 	if not qipai then
@@ -976,29 +1013,51 @@ end
 
 --  将游戏回合交给下一位玩家  --
 function gamerun_next_player()
-	char_acting_i = char_acting_i + 1
-	if char_acting_i > 5 then
-		char_acting_i = 1
-	end
-			
-	--  跳过死亡以及翻面的玩家  --
-	local j = true
-	while j do
-		j = false
-		if char_juese[char_acting_i].siwang == true then
-			char_acting_i = char_acting_i + 1
-			j = true
-		elseif char_juese[char_acting_i].fanmian == true and char_juese[char_acting_i].siwang == false then
-			char_juese[char_acting_i].fanmian = false
-			push_message(table.concat({char_juese[char_acting_i].name, "将武将牌翻回正面"}))
-			char_acting_i = char_acting_i + 1
-			j = true
+	if #extra_turn > 0 then
+		while #extra_turn > 0 do
+			if char_juese[extra_turn[1]].siwang == true then
+				table.remove(extra_turn, 1)
+			elseif char_juese[extra_turn[1]].fanmian == true then
+				char_juese[extra_turn[1]].fanmian = false
+				push_message(table.concat({char_juese[extra_turn[1]].name, "将武将牌翻回正面"}))
+				table.remove(extra_turn, 1)
+			else
+				if real_last == 0 then
+					real_last = char_acting_i
+				end
+				char_acting_i = extra_turn[1]
+				table.remove(extra_turn, 1)
+				break
+			end
 		end
+	else
+		if real_last ~= 0 then
+			char_acting_i = real_last
+			real_last = 0
+		end
+		char_acting_i = char_acting_i + 1
 		if char_acting_i > 5 then
 			char_acting_i = 1
 		end
+				
+		--  跳过死亡以及翻面的玩家  --
+		local j = true
+		while j do
+			j = false
+			if char_juese[char_acting_i].siwang == true then
+				char_acting_i = char_acting_i + 1
+				j = true
+			elseif char_juese[char_acting_i].fanmian == true and char_juese[char_acting_i].siwang == false then
+				char_juese[char_acting_i].fanmian = false
+				push_message(table.concat({char_juese[char_acting_i].name, "将武将牌翻回正面"}))
+				char_acting_i = char_acting_i + 1
+				j = true
+			end
+			if char_acting_i > 5 then
+				char_acting_i = 1
+			end
+		end
 	end
-
 	--  注释此行即使用主动AI，不注释不使用  --
 	--char_current_i = char_acting_i
 end
@@ -1013,12 +1072,26 @@ function gamerun_start_from_lord()
 	end
 end
 
---  重置所有"回限x"技能  --
+--  重置所有"回限x"技能并失去临时获得的技能  --
 function gamerun_skills_reset()
 	for i = 1,5 do
 		for k,v in pairs(char_juese[i].skill) do
-			if v=="locked" then
+			if v == "locked" then
 				char_juese[i].skill[k] = 1
+			end
+		end
+	end
+	for i = 1,5 do
+		for j = #skill_temp[i], 1, -1 do
+			if skill_double[i][skill_temp[i][j]] then
+				skill_double[i][skill_temp[i][j]] = nil
+			else
+				char_juese[i].skill[skill_temp[i][j]] = nil
+				for k = #char_juese[i].skillname, 1, -1 do
+					if char_juese[i].skillname[k] == skill_temp[i][j] then
+						table.remove(char_juese[i].skillname,k)
+					end
+				end
 			end
 		end
 	end
@@ -1777,7 +1850,7 @@ function on.arrowKey(key)
 	if (gamerun_huihe == "" or gamerun_huihe == "游戏结束") and gamerun_status ~= "选项选择" then
 		return
 	end
-	if ((gamerun_huihe == "结束" or gamerun_status == "手牌生效中") and gamerun_status ~= "选项选择") then
+	if (((gamerun_huihe == "结束" and imp_card ~= "放权") or gamerun_status == "手牌生效中") and gamerun_status ~= "选项选择") then
 		return
 	end
 
@@ -1797,7 +1870,7 @@ function on.arrowKey(key)
 				end
 			end
 		elseif string.find(gamerun_status, "牌堆操作") then
-			if choose_name == "观星" then
+			if choose_name == "观星" or choose_name == "涉猎" or choose_name == "攻心" then
 				if gamerun_guankan_selected > 1 then
 					if gamerun_guankan_selected == card_dealed_selected then
 						if card_paidui_dealed == 1 then
@@ -1848,7 +1921,7 @@ function on.arrowKey(key)
 				end
 			end
 		elseif string.find(gamerun_status, "牌堆操作") then
-			if choose_name == "观星" then
+			if choose_name == "观星" or choose_name == "涉猎" or choose_name == "攻心" then
 				if (gamerun_guankan_selected < #card_dealed_1 and card_paidui_dealed == 1) or (gamerun_guankan_selected < #card_dealed_2 and card_paidui_dealed == 2) then
 					if gamerun_guankan_selected == card_dealed_selected then
 						if card_paidui_dealed == 1 then
@@ -1892,7 +1965,7 @@ function on.arrowKey(key)
 				end
 			end
 		elseif string.find(gamerun_status, "牌堆操作") and card_paidui_dealed == 2 and (gamerun_guankan_selected == card_dealed_selected or #card_dealed_1 > 0) then
-			if choose_name == "观星" then
+			if choose_name == "观星" or choose_name == "涉猎" or choose_name == "攻心" then
 				if gamerun_guankan_selected == card_dealed_selected then
 					table.insert(card_dealed_1,1,card_dealed_2[card_dealed_selected])
 					table.remove(card_dealed_2,card_dealed_selected)
@@ -1941,7 +2014,7 @@ function on.arrowKey(key)
 				end
 			end
 		elseif string.find(gamerun_status, "牌堆操作") and card_paidui_dealed == 1 and (gamerun_guankan_selected == card_dealed_selected or #card_dealed_2 > 0) then
-			if choose_name == "观星" then
+			if choose_name == "观星" or choose_name == "涉猎" or choose_name == "攻心" then
 				if gamerun_guankan_selected == card_dealed_selected then
 					table.insert(card_dealed_2,1,card_dealed_1[card_dealed_selected])
 					table.remove(card_dealed_1,card_dealed_selected)
@@ -1995,7 +2068,7 @@ function on.tabKey()
 		return
 	end
 	
-	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" or gamerun_huihe == "结束" then
+	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" or (gamerun_huihe == "结束" and imp_card ~= "放权") then
 		return
 	end
 
@@ -2004,7 +2077,7 @@ function on.tabKey()
 	end
 	
 	if string.find(gamerun_status, "牌堆操作") then
-		if choose_name == "观星" then
+		if choose_name == "观星" or choose_name == "涉猎" or choose_name == "攻心" then
 			if gamerun_guankan_selected ~= card_dealed_selected then
 				card_dealed_selected = gamerun_guankan_selected
 			else

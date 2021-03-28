@@ -58,7 +58,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["貂蝉"] = {{3,3}, "群", false, {"闭月", "离间"}, "女", {"",""}, true}, 	
 	["华佗"] = {{3,3}, "群", false, {"急救", "青囊"}, "男", {"",""}, true}, 
 	["张角"] = {{3,3}, "群", true, {"雷击", "鬼道", "黄天"}, "男", {"","","主公"}, true}, 
-    ["庞德"] = {{4,4}, "群", false, {"猛进", "马术"}, "男", {"","锁定"}, true}, 
+    ["庞德"] = {{4,4}, "群", false, {"马术", "猛进"}, "男", {"锁定",""}, true}, 
     ["袁绍"] = {{4,4}, "群", true, {"乱击", "血裔"}, "男", {"","主公"}, true}, 
     ["董卓"] = {{8,8}, "群", true, {"酒池", "肉林", "崩坏", "暴虐"}, "男", {"","锁定","锁定","主公"}, true}, 
     ["蔡文姬"] = {{3,3}, "群", false, {"悲歌", "断肠"}, "女", {"","锁定"}, false}, 
@@ -66,9 +66,12 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["贾诩"] = {{3,3}, "群", false, {"完杀", "乱武", "帷幕"}, "男", {"锁定", "限定", "锁定"}, true},	
 	["SP貂蝉"] = {{3,3}, "群", false, {"闭月", "离魂"}, "女", {"",""}, true}, 
 	["袁术"] = {{4,4}, "群", false, {"庸肆", "伪帝"}, "男", {"锁定","禁止"}, true}, 
-	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},	
+	["公孙瓒"] = {{4,4}, "群", false, {"义从"}, "男", {"锁定"}, true}, 
+	["灵雎"] = {{3,3}, "群", false, {"竭缘", "焚心"}, "女", {"", "限定"}, true},
+	["神吕蒙"] = {{3,3}, "神", false, {"涉猎", "攻心"}, "男", {"",""}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"武圣","再起","断粮","直谏","国色","突袭","固政","急救","毅重"}, "男", {"","","","","","","","",""}, true},
+	["神司马懿"] = {{4,4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定","觉醒",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"攻心","涉猎","断粮","直谏","国色","放权","忍戒","拜印","连破"}, "男", {"","","","","","","锁定","觉醒",""}, true},
 	--["孙笑川"] = {{4,4}, "神", false, {"苦肉","驱虎","离魂","奸雄","天香","鬼道","当先","火计","化身","新生","伪帝","补益","制衡","庸肆"}, "男", {"","","","","","","锁定","","禁止","禁止","禁止","","",""}, true},
 }
 
@@ -84,7 +87,7 @@ card_wuqi_r =
 
 function init_character()
 -- 各角色武将牌 --
-char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "孙笑川", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "关索", "司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张郃", "张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张宏", "凌统", "吴国太", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈", "神曹操", "曹彰", "廖化", "灵雎", "SP貂蝉", "SP姜维", "袁术", "贾诩"}
+char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "孙笑川", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "关索", "司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张郃", "张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张宏", "凌统", "吴国太", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈", "公孙瓒", "神曹操", "神司马懿", "神吕蒙·", "曹彰", "廖化", "灵雎", "SP貂蝉", "SP姜维", "袁术", "贾诩"}
 char_wujiang_zhugong = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓","孙笑川"}  -- 主公武将牌
 char_wujiang_f = {}  -- 洗后的武将牌
 
@@ -363,7 +366,7 @@ function char_choose_zhudong()
 			for j = 1,#char_juese_jineng[char_juese[char_current_i].name][4] do
 				if char_juese_jineng[char_juese[char_current_i].name][4][j] == "焚心" then
 					
-				elseif char_juese_jineng[char_juese[char_current_i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "伏枥" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "反间" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "制衡" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "结姻" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "天义"  or char_juese_jineng[char_juese[char_current_i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "离间" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "离魂" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "青囊" then
+				elseif char_juese_jineng[char_juese[char_current_i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "伏枥" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "反间" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "制衡" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "结姻" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "天义"  or char_juese_jineng[char_juese[char_current_i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "离间" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "离魂" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "青囊" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "攻心" then
 					char_juese[char_current_i].skill[char_juese_jineng[char_juese[char_current_i].name][4][j]] = 1
 				else
 					char_juese[char_current_i].skill[char_juese_jineng[char_juese[char_current_i].name][4][j]] = "available"
@@ -381,7 +384,7 @@ function char_choose_zhudong()
 			for j = 1,#char_juese_jineng[char_juese[char_current_i].name][4] do
 				if char_juese_jineng[char_juese[char_current_i].name][4][j] == "激将" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "护驾" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "救援" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "黄天" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "血裔" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "颂威" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "暴虐" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "若愚" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "制霸" then
 					
-				elseif char_juese_jineng[char_juese[char_current_i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "伏枥" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "反间" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "制衡" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "结姻" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "天义"  or char_juese_jineng[char_juese[char_current_i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "离间" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "离魂" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "青囊" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "焚心" then
+				elseif char_juese_jineng[char_juese[char_current_i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "伏枥" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "反间" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "制衡" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "结姻" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "天义"  or char_juese_jineng[char_juese[char_current_i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "离间" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "离魂" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "青囊" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "焚心" or char_juese_jineng[char_juese[char_current_i].name][4][j] == "攻心" then
 					char_juese[char_current_i].skill[char_juese_jineng[char_juese[char_current_i].name][4][j]] = 1
 					table.insert(char_juese[char_current_i].skillname,char_juese_jineng[char_juese[char_current_i].name][4][j])
 				else
@@ -452,7 +455,7 @@ function _wujiang_sub1()
 			for j = 1,#char_juese_jineng[char_juese[i].name][4] do
 				if char_juese_jineng[char_juese[i].name][4][j] == "焚心" then
 					
-				elseif char_juese_jineng[char_juese[i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[i].name][4][j] == "伏枥" or char_juese_jineng[char_juese[i].name][4][j] == "反间" or char_juese_jineng[char_juese[i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[i].name][4][j] == "制衡" or char_juese_jineng[char_juese[i].name][4][j] == "结姻" or char_juese_jineng[char_juese[i].name][4][j] == "天义"  or char_juese_jineng[char_juese[i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[i].name][4][j] == "离间" or char_juese_jineng[char_juese[i].name][4][j] == "离魂" or char_juese_jineng[char_juese[i].name][4][j] == "青囊" then
+				elseif char_juese_jineng[char_juese[i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[i].name][4][j] == "伏枥" or char_juese_jineng[char_juese[i].name][4][j] == "反间" or char_juese_jineng[char_juese[i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[i].name][4][j] == "制衡" or char_juese_jineng[char_juese[i].name][4][j] == "结姻" or char_juese_jineng[char_juese[i].name][4][j] == "天义"  or char_juese_jineng[char_juese[i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[i].name][4][j] == "离间" or char_juese_jineng[char_juese[i].name][4][j] == "离魂" or char_juese_jineng[char_juese[i].name][4][j] == "青囊" or char_juese_jineng[char_juese[i].name][4][j] == "攻心" then
 					char_juese[i].skill[char_juese_jineng[char_juese[i].name][4][j]] = 1
 				else
 					char_juese[i].skill[char_juese_jineng[char_juese[i].name][4][j]] = "available"
@@ -501,7 +504,7 @@ function _wujiang_sub2(va_list)
 		for j = 1,#char_juese_jineng[char_juese[i].name][4] do
 			if char_juese_jineng[char_juese[i].name][4][j] == "激将" or char_juese_jineng[char_juese[i].name][4][j] == "护驾" or char_juese_jineng[char_juese[i].name][4][j] == "救援" or char_juese_jineng[char_juese[i].name][4][j] == "黄天" or char_juese_jineng[char_juese[i].name][4][j] == "血裔" or char_juese_jineng[char_juese[i].name][4][j] == "颂威" or char_juese_jineng[char_juese[i].name][4][j] == "暴虐" or char_juese_jineng[char_juese[i].name][4][j] == "若愚" or char_juese_jineng[char_juese[i].name][4][j] == "制霸" then
 				
-			elseif char_juese_jineng[char_juese[i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[i].name][4][j] == "伏枥" or char_juese_jineng[char_juese[i].name][4][j] == "反间" or char_juese_jineng[char_juese[i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[i].name][4][j] == "制衡" or char_juese_jineng[char_juese[i].name][4][j] == "结姻" or char_juese_jineng[char_juese[i].name][4][j] == "天义"  or char_juese_jineng[char_juese[i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[i].name][4][j] == "离间" or char_juese_jineng[char_juese[i].name][4][j] == "离魂" or char_juese_jineng[char_juese[i].name][4][j] == "青囊" or char_juese_jineng[char_juese[i].name][4][j] == "焚心" then
+			elseif char_juese_jineng[char_juese[i].name][4][j] == "挑衅" or char_juese_jineng[char_juese[i].name][4][j] == "伏枥" or char_juese_jineng[char_juese[i].name][4][j] == "反间" or char_juese_jineng[char_juese[i].name][4][j] == "驱虎" or char_juese_jineng[char_juese[i].name][4][j] == "制衡" or char_juese_jineng[char_juese[i].name][4][j] == "结姻" or char_juese_jineng[char_juese[i].name][4][j] == "天义"  or char_juese_jineng[char_juese[i].name][4][j] == "涅槃" or char_juese_jineng[char_juese[i].name][4][j] == "缔盟" or char_juese_jineng[char_juese[i].name][4][j] == "离间" or char_juese_jineng[char_juese[i].name][4][j] == "离魂" or char_juese_jineng[char_juese[i].name][4][j] == "青囊" or char_juese_jineng[char_juese[i].name][4][j] == "焚心" or char_juese_jineng[char_juese[i].name][4][j] == "攻心" then
 				char_juese[i].skill[char_juese_jineng[char_juese[i].name][4][j]] = 1
 				table.insert(char_juese[i].skillname,char_juese_jineng[char_juese[i].name][4][j])
 			else
@@ -560,6 +563,11 @@ function char_calc_distance(_ID_s, _ID_d)
 	if (char_juese[_ID_d].skill["飞影"] == "available") then
 		dist = dist + 1
 	end	
+	--  公孙瓒拥有义从，体力小于等于2距离加1  --
+	if char_juese[_ID_d].skill["义从"] == "available" and char_juese[_ID_d].tili <= 2 then
+		dist = dist + 1
+	end
+	
 	--  攻击马计算距离时，减1  --
 	if #char_juese[_ID_s].gongma ~= 0 and dist > 1 then
 	    dist = dist - 1
@@ -567,6 +575,11 @@ function char_calc_distance(_ID_s, _ID_d)
 	
 	--  马超、庞德拥有马术，距离减1  --
 	if char_juese[_ID_s].skill["马术"] == "available" and dist > 1 then
+		dist = dist - 1
+	end
+
+	--  公孙瓒拥有义从，体力大于等于3距离减1  --
+	if char_juese[_ID_s].skill["义从"] == "available" and char_juese[_ID_s].tili >= 3 and dist > 1 then
 		dist = dist - 1
 	end
 	
@@ -672,6 +685,7 @@ function char_judge_shengli(siwang_id, laiyuan)
 			card_qipai_all(laiyuan, false)
 			skills_losecard(laiyuan, 9999, true)
 		end
+		gamerun_killed[laiyuan] = gamerun_killed[laiyuan] + 1
 	end
 	
 	return false
@@ -707,7 +721,12 @@ function char_skills_sellblood(va_list, original_dianshu)
 	tili = char_juese[id].tili - _deduct_count(va_list, original_dianshu)
 
 	local soldblood = false
-
+	
+	--  神司马懿触发忍戒  --
+	if char_juese[id].skill["忍戒"] == "available" then
+		add_funcptr(skills_renjie, {id, _deduct_count(va_list, original_dianshu)})
+	end
+	
 	--  曹操发动奸雄  --
 	if char_juese[id].skill["奸雄"] == "available" and cansellblood == true then
 		add_funcptr(skills_jianxiong, id)
@@ -729,7 +748,7 @@ function char_skills_sellblood(va_list, original_dianshu)
 	end
 	
 	--  曹丕发动放逐  --
-	if char_juese[id].skill["放逐"] == "available" and cansellblood == true and laiyuan ~= -1 then
+	if (char_juese[id].skill["放逐"] == "available" or char_juese[id].skill["极略"] == "available" and mark_ren[id] > 0) and cansellblood == true and laiyuan ~= -1 then
 		add_funcptr(skills_fangzhu, {id, laiyuan})
 		soldblood = true
 	end

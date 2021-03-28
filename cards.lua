@@ -1934,7 +1934,7 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		funcptr_queue = {}
 
 		skills_losecard(id, 0, true)
-		if char_juese[id].skill["集智"] == "available" then
+		if char_juese[id].skill["集智"] == "available" or (char_juese[id].skill["极略"] == "available" and mark_ren[id] > 0) then
 			add_funcptr(skills_jizhi, id)
 		end
 
@@ -1986,7 +1986,7 @@ function _wuxie_zhudong_chu(card, i, va_list)	--  无懈可击：己方选择出
 	funcptr_queue = {}
 
 	skills_losecard(char_current_i, 0, true)
-	if char_juese[char_current_i].skill["集智"] == "available" then
+	if char_juese[char_current_i].skill["集智"] == "available" or (char_juese[char_current_i].skill["极略"] == "available" and mark_ren[char_current_i] > 0) then
 		add_funcptr(skills_jizhi, char_current_i)
 	end	
 
@@ -2136,7 +2136,7 @@ function card_wuzhong(ID_shoupai, ID_s)
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, nil, "无中生有"})
 
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 
@@ -2206,7 +2206,7 @@ function card_lian_lianhuan(ID_shoupai, ID_s, ID_first, ID_second, doubl)
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, nil, "铁锁连环"})
 
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 	
@@ -2302,7 +2302,7 @@ function card_taoyuan(ID_shoupai, ID_s)
 
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, nil, "桃园结义"})
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 	
@@ -2377,7 +2377,7 @@ function card_chai(ID_shoupai, ID_s, ID_mubiao)
 		add_funcptr(_card_sub1, {ID_shoupai, ID_s, ID_mubiao, "过河拆桥"})
 		skills_losecard(ID_s, #ID_shoupai, true)
 	end
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 	
@@ -2497,7 +2497,7 @@ function card_shun(ID_shoupai, ID_s, ID_mubiao)
 
     add_funcptr(_card_sub1, {ID_shoupai, ID_s, ID_mubiao, "顺手牵羊"})
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 
@@ -2691,7 +2691,7 @@ function card_nanman(ID_shoupai, _ID_s)
 
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, nil, "南蛮入侵"})
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 
@@ -2867,7 +2867,7 @@ function card_wanjian(ID_shoupai, ID_s)
 
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, nil, "万箭齐发"})
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 
@@ -3064,7 +3064,7 @@ function card_wugu(ID_shoupai, ID_s)
 
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, nil, "五谷丰登"})
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 
@@ -3177,7 +3177,7 @@ function card_juedou(ID_shoupai, ID_s, ID_mubiao)
 
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, ID_mubiao, "决斗"})
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 	
@@ -3336,7 +3336,7 @@ function _juedou_sha(va_list)    --  决斗：出杀
     local ID_mubiao, c_pos, msg, card
 	ID_s = va_list[1]; ID_mubiao = va_list[2]; c_pos = va_list[3]
 	
-	card = char_juese[ID_s].shoupai[c_pos]
+	card = table.copy(char_juese[ID_s].shoupai[c_pos])
 	card_add_qipai(card)
 	card_remove({ID_s, c_pos})
 	
@@ -3389,7 +3389,7 @@ function card_huogong(ID_shoupai, ID_s, ID_mubiao)
 
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, ID_mubiao, "火攻"})
 	skills_losecard(ID_s, #ID_shoupai, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 
@@ -4824,7 +4824,7 @@ function card_jiedao(ID_shoupai, ID_req, ID_s, ID_d)
 
 	add_funcptr(_jiedao_sub1, {ID_shoupai, ID_req, ID_s, ID_d})
 	skills_losecard(ID_s, 1, true)
-	if char_juese[ID_s].skill["集智"] == "available" then
+	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
 	
