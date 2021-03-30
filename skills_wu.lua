@@ -182,7 +182,7 @@ function skills_tianyi_ai(ID_s, ID_mubiao)	--  AI发动天义
 
 	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '天义'")
 	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "与", char_juese[ID_mubiao].name, "进行拼点"}))
-	add_funcptr(card_pindian, {ID_s, ID_mubiao, win})
+	add_funcptr(card_pindian, {ID_s, ID_mubiao, win, false})
 	add_funcptr(_quhu_sub2)
 	timer.start(0.6)
 
@@ -211,7 +211,7 @@ function skills_tianyi_enter()	--  己方发动天义
 
 		add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '天义'")
 		add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "与", char_juese[gamerun_target_selected].name, "进行拼点"}))
-		add_funcptr(card_pindian, {char_current_i, gamerun_target_selected, win_fp})
+		add_funcptr(card_pindian, {char_current_i, gamerun_target_selected, win_fp, false})
 		add_funcptr(_quhu_sub2)
 		timer.start(0.6)
 	end
@@ -1631,4 +1631,57 @@ function _liuli_sub1(va_list)
 end
 function _liuli_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
+--  孙策：制霸  --
+function skills_zhiba(ID_s, ID_zhugong)
+	if #char_juese[ID_s].shoupai == 0 then return false end
+	if #char_juese[ID_zhugong].shoupai == 0 then return false end
+	
+	timer.stop()
+	funcptr_queue = {}
+	
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	skills_cs()
+
+	lordskill_used[ID_zhugong]["制霸"] = 1
+
+	local win_fp = function(s_win, mubiao_win)
+		skills_cs()
+		
+		if mubiao_win == false then
+			card_add_qipai(pindianing[1])
+			card_add_qipai(pindianing[2])
+			pindianing = {}
+		else
+			push_message(table.concat({char_juese[ID_zhugong].name, "获得了双方的拼点牌"}))
+			table.insert(char_juese[ID_zhugong].shoupai, pindianing[1])
+			table.insert(char_juese[ID_zhugong].shoupai, pindianing[2])
+			pindianing = {}
+		end
+	end
+
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "响应了", char_juese[ID_zhugong].name, "的武将技能 '制霸'"}))
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "与", char_juese[ID_zhugong].name, "进行拼点"}))
+	add_funcptr(card_pindian, {ID_s, ID_zhugong, win_fp, true})
+	add_funcptr(_zhiba_sub1)
+	timer.start(0.6)
+	
+	return true
+end
+function _zhiba_sub1()
+	gamerun_OK = false
+
+	if char_acting_i == char_current_i then
+		gamerun_status = ""
+		jiaohu_text = "请您出牌"
+	else
+		gamerun_status = "AI出牌"
+		jiaohu_text = ""
+
+		ai_card_use(char_acting_i)
+	end
+
+	platform.window:invalidate()
 end

@@ -88,7 +88,7 @@ function skills_quhu_ai(ID_s, ID_mubiao, ID_to_shanghai)	--  AI发动驱虎
 
 	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '驱虎'")
 	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "与", char_juese[ID_mubiao].name, "进行拼点"}))
-	add_funcptr(card_pindian, {ID_s, ID_mubiao, win})
+	add_funcptr(card_pindian, {ID_s, ID_mubiao, win, false})
 	add_funcptr(_quhu_sub2)
 	timer.start(0.6)
 
@@ -132,7 +132,7 @@ function skills_quhu_enter()	--  己方发动驱虎
 
 		add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '驱虎'")
 		add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "与", char_juese[gamerun_target_selected].name, "进行拼点"}))
-		add_funcptr(card_pindian, {char_current_i, gamerun_target_selected, win_fp})
+		add_funcptr(card_pindian, {char_current_i, gamerun_target_selected, win_fp, false})
 		add_funcptr(_quhu_sub2)
 		timer.start(0.6)
 	end
@@ -2387,7 +2387,7 @@ function skills_hujia(va_list)
 	end
 end
 function skills_hujia_ai(ID_req, ID_res, mode, va)
-	if ai_judge_hujia(ID_req, ID_res) == false then
+	if ai_judge_hujia(_hujia_get_ids(va, mode), ID_req, ID_res) == false then
 		push_message(table.concat({char_juese[ID_res].name, "不响应"}))
 		return
 	end
@@ -2484,6 +2484,14 @@ function _hujia_exe(ID_req, ID_res, ID_shoupai, mode, va)
 		ID_s = va[1]; ID_mubiao = va[2]
 		_wanjian_shan_replaced(ID_s, ID_mubiao)
 	end
+end
+function _hujia_get_ids(va, mode)
+	if mode == "杀" then
+		return va[2]
+	elseif mode == "万箭齐发" then
+		return va[1]
+	end
+	return nil
 end
 function _hujia_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()

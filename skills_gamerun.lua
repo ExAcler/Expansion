@@ -29,12 +29,21 @@ skills_func =
 	["攻心"] = function() return skills_gongxin_enter() end
 }
 
+--  主公技触发函数表  --
+skills_lord_func =
+{
+	["黄天"] = function(ID_zhugong) return skills_huangtian_enter(ID_zhugong) end,
+	["制霸"] = function(ID_zhugong) return skills_zhiba(char_current_i, ID_zhugong) end
+}
+
 --  清除技能选择状态  --
 function skills_cs()    
 	gamerun_skill_selected = 0
 	gamerun_tab_ptr = nil
 	gamerun_OK_ptr = nil
 	gamerun_OK = false
+	gamerun_armskill_selected = false
+	gamerun_lordskill_selected = false
 	skill_text_1 = ""
 	skill_text_2 = ""
 	last_status = ""
@@ -48,6 +57,8 @@ function skills_cs_2()
 	gamerun_tab_ptr = nil
 	gamerun_OK_ptr = nil
 	gamerun_OK = false
+	gamerun_armskill_selected = false
+	gamerun_lordskill_selected = false
 	skill_text_1 = ""
 	skill_text_2 = ""
 	last_status = ""
@@ -179,4 +190,75 @@ function skills_losecard(ID_juese, n_card, in_queue)
 			add_funcptr(skills_xuanfeng, ID_juese)
 		end
 	end]]
+end
+
+--  进入选择主公技状态  --
+function skills_judge_lordskill(ID_s, ID_zhugong)
+	local skill_table = {}
+	
+	if ID_s == ID_zhugong then
+		return {}
+	end
+
+	if char_juese[ID_zhugong].skill["黄天"] == "available" and lordskill_used[ID_zhugong]["黄天"] ~= 1 and char_juese[ID_s].shili == "群" then
+		table.insert(skill_table, "黄天")
+	end
+
+	if char_juese[ID_zhugong].skill["制霸"] == "available" and lordskill_used[ID_zhugong]["制霸"] ~= 1 and char_juese[ID_s].shili == "吴" then
+		table.insert(skill_table, "制霸")
+	end
+
+	return skill_table
+end
+function skills_lordskill_select_enter()
+	gamerun_lordskill_selected = true
+	skills_enter("请选择角色", "", "主公技", "技能选择-目标")
+	gamerun_select_target("init")
+
+	gamerun_OK_ptr = function()
+		if gamerun_status == "技能选择-目标" and gamerun_OK == true then
+			local lordskills = skills_judge_lordskill(char_current_i, gamerun_target_selected)
+			if #lordskills > 0 then
+				gamerun_lordskill_selected = false
+				_lordskill_choose(gamerun_target_selected)
+			end
+			return
+		end
+	end
+end
+function _lordskill_choose(ID)
+	gamerun_status = "选项选择"
+	choose_name = "选择主公技"
+	jiaohu_text = table.concat({"您想响应", char_juese[ID].name, "的哪项主公技?"})
+	choose_option = skills_judge_lordskill(char_current_i, ID)
+	table.insert(choose_option, "放弃")
+
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		set_hints("")
+
+		if choose_option[i] == "放弃" then
+			_lordskill_fangqi()
+		else
+			local skillname = choose_option[i]
+			if skills_lord_func[skillname] ~= nil then
+				if skills_lord_func[skillname](ID) == false then
+					_lordskill_fangqi()
+				end
+			else
+				_lordskill_fangqi()
+			end
+		end
+	end
+
+	platform.window:invalidate()
+end
+function _lordskill_fangqi()
+	gamerun_status = ""
+	set_hints("请您出牌")
+	skills_cs()
 end

@@ -33,6 +33,8 @@ last_status = ""    -- 上一个状态：用于技能从选择目标返回单牌
 
 gamerun_target_selected = 0    -- "选择目标"状态选取的目标 ID
 gamerun_skill_selected = 0    -- 高亮选取的武将技能 (1 - 4，0为不选取)
+gamerun_armskill_selected = false	--  是否处于选取发动武器技能状态 (丈八蛇矛)
+gamerun_lordskill_selected = false	--  是否处于选取响应主公技状态
 gamerun_OK = false; gamerun_OK_ptr = nil
 last_OK = false    -- 上一个OK状态：用于技能时
 
@@ -45,7 +47,6 @@ guankan_s = 0    -- "观看手牌"作用源 (兼作火攻选择花色、贯石�
 guankan_d = 0    -- "观看手牌"作用目标
 selected_target_b = 0	--  选择目标数为3时的目标B
 selected_target_c = 0	--  选择目标数为4时的目标C
-gamerun_temp = 0
 sha_va = nil    -- 发动寒冰剑后，杀来源目标的va_list存储
 
 funcptr_add_tag = nil	-- 如果设置为一个字符串，则设置的字符串会被加入到之后的每一个funcptr_queue项的tag
@@ -74,12 +75,15 @@ real_last = 0  --正常顺序的上个回合行动的角色
 mark_ren = {}  --忍标记数量
 gamerun_killed = {}  --在当前回合内杀死角色的数量
 skill_temp = {}  --临时获得的技能，在自己的回合结束后失去
+lordskill_used = {}		-- 当前回合中角色是否已经使用过主公技
+
 for i = 1, 5 do
 	kunfen_adjusted[i] = false
 	skill_double[i] = {}
 	mark_ren[i] = 0
 	gamerun_killed[i] = 0
 	skill_temp[i] = {}
+	lordskill_used[i] = {}
 end
 
 end
@@ -159,6 +163,7 @@ function change_funcptr(func, va_list, p)
 	end
 	return #funcptr_queue
 end
+
 --  开始函数队列执行  --
 function consent_func_queue(interval)
 	funcptr_i = 1
@@ -167,9 +172,7 @@ end
 
 --  暂停函数队列执行  --
 function pause_func_queue()
-	pause = true
 	timer.stop()
-	stick_at = funcptr_i
 end
 
 --  继续函数队列执行  --
@@ -327,6 +330,10 @@ function gamerun_huihe_start()
 	char_sha_additional_target = 0
 	char_sha_able = true
 	char_hejiu = false
+	lordskill_used = {}
+	for i = 1, 5 do
+		lordskill_used[i] = {}
+	end
 
 	--  廖化当先额外出牌阶段  --
 	if char_juese[char_acting_i].skill["当先"] == "available" and gamerun_dangxian == false then
@@ -726,7 +733,6 @@ function gamerun_huihe_jieshu(qipai)
 	end
 	
 	--  回合结束阶段技能  --
-	--  貂蝉闭月：可在回合结束阶段摸一张牌  --
 	if char_juese[char_acting_i].skill["闭月"] == "available" then
 		add_funcptr(skills_biyue,char_acting_i)
 	end
@@ -1126,8 +1132,6 @@ function on.timer()
 	if funcptr_i <= #funcptr_queue then
 		if funcptr_queue[funcptr_i].func ~= nil then
 			funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
-		else
-			print(funcptr_queue[funcptr_i].func)
 		end
 		funcptr_i = funcptr_i + 1
 	else
@@ -1569,17 +1573,6 @@ function on.enterKey()
 
 			return
 		end
-			
-		--  丈八蛇矛  --
-		if table.getn2(card_selected) == 2 then
-			if card_chupai(card_highlighted) then
-				--  恢复状态  --
-				card_selected = {}
-				card_highlighted = 1
-				platform.window:invalidate()
-			end
-			return
-		end
 
 		return
 	end
@@ -1626,9 +1619,17 @@ end
 function on.escapeKey()
     local msg, card
 
-	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then return end
-	if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then return end
-	if string.find(gamerun_status, "五谷") then return end
+	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then
+		return
+	end
+
+	if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then
+		return
+	end
+	
+	if string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then
+		return
+	end
 	
 	--  未选取牌时  --
 	if table.getn2(card_selected) == 0 then
@@ -1704,7 +1705,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end
@@ -1892,15 +1893,8 @@ function on.arrowKey(key)
 		else
 		    --  选取手牌状态  --
 			--  已选取牌的情况下不允许移动  --
-			local wuqi
-			if #char_juese[char_current_i].wuqi ~= 0 then
-				wuqi = char_juese[char_current_i].wuqi[1]
-			else
-				wuqi = ""
-			end
-			
 			--  允许移动的情况  --
-		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or wuqi == "丈八矛" or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
+		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
 		        if card_highlighted > 1 then
 		            card_highlighted = card_highlighted - 1
 			    end
@@ -1941,14 +1935,7 @@ function on.arrowKey(key)
 				end
 			end
 		else
-			local wuqi
-			if #char_juese[char_current_i].wuqi ~= 0 then
-				wuqi = char_juese[char_current_i].wuqi[1]
-			else
-				wuqi = ""
-			end
-		
-		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or wuqi == "丈八矛" or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
+		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
 	            if card_highlighted < #char_juese[char_current_i].shoupai then
 		            card_highlighted = card_highlighted + 1
 			    end
@@ -2158,25 +2145,6 @@ function on.tabKey()
 				return
 			end
 		end
-		
-		--  丈八蛇矛取消选择第二张牌时，恢复第一张牌出牌  --
-		if #char_juese[char_current_i].wuqi ~= 0 then
-			if gamerun_huihe == "出牌" and table.getn2(card_selected) == 1 and char_juese[char_current_i].wuqi[1] == "丈八矛" then
-				local i
-				for i = 1, #char_juese[char_current_i].shoupai do
-					if card_selected[i] ~= nil then
-						card2 = char_juese[char_current_i].shoupai[i][1]
-					end
-				end
-				
-				set_hints(card_tishi[card2])
-			    gamerun_status = ""
-			    gamerun_target_selected = 0
-				platform.window:invalidate()
-			end
-
-			return
-		end
 	else
 		--  弃牌阶段  --
 	    --  选择的牌超过需弃牌数，则不能继续选择  --
@@ -2200,7 +2168,6 @@ function on.tabKey()
 
 		--  其他情况  --
 		card = char_juese[char_current_i].shoupai[card_highlighted][1]
-		local flag = true
 		local fangtian = false
 
 		--  判断是否符合方天画戟发动条件  --
@@ -2219,43 +2186,22 @@ function on.tabKey()
 			else
 				set_hints("请选择目标A")
 			end
-		
-			--  判断是否进入丈八蛇矛状态  --
-			if #char_juese[char_current_i].wuqi ~= 0 then
-				if char_juese[char_current_i].wuqi[1] == "丈八矛" then
-					if table.getn2(card_selected) < 2 then
-						card_selected[card_highlighted] = 0
-					end
-					if table.getn2(card_selected) == 2 then
-						set_hints("杀")
-						gamerun_status = "选择目标"
-						gamerun_select_target("init")
-					end
-					flag = false
-				end
-			end
 
-			--  如未进入丈八蛇矛状态  --
-			if gamerun_status == "" then
-				--  选取的是锦囊 (闪电、无懈可击、南蛮入侵、万箭齐发、桃园结义、无中生有、五谷丰登除外)、杀  --
-				--  借刀杀人、铁锁连环选取目标A  --
-				if card_get_leixing(card) == "延时类锦囊" and card ~= "闪电" or card == "顺手牵羊" or card == "过河拆桥" or card == "决斗" or card == "火攻" or card == "杀" or card == "火杀" or card == "雷杀" or card == "借刀杀人" or card == "铁锁连环" then
-					gamerun_status = "选择目标"
-					gamerun_select_target("init")    -- 初始化选择目标状态
-				end
+			--  选取的是锦囊 (闪电、无懈可击、南蛮入侵、万箭齐发、桃园结义、无中生有、五谷丰登除外)、杀  --
+			--  借刀杀人、铁锁连环选取目标A  --
+			if card_get_leixing(card) == "延时类锦囊" and card ~= "闪电" or card == "顺手牵羊" or card == "过河拆桥" or card == "决斗" or card == "火攻" or card == "杀" or card == "火杀" or card == "雷杀" or card == "借刀杀人" or card == "铁锁连环" then
+				gamerun_status = "选择目标"
+				gamerun_select_target("init")    -- 初始化选择目标状态
 			end
 		end
 		
 		--  选择牌  --
-		--  丈八蛇矛状态若已处理选牌，此处不再处理选牌  --
-		if flag then
-			if string.find(gamerun_status, "贯石") then
-				if table.getn2(card_selected) < 2 then
-					card_selected[card_highlighted] = 0
-				end
-			else
+		if string.find(gamerun_status, "贯石") then
+			if table.getn2(card_selected) < 2 then
 				card_selected[card_highlighted] = 0
 			end
+		else
+			card_selected[card_highlighted] = 0
 		end
 	end
 	platform.window:invalidate()
@@ -2270,6 +2216,17 @@ function on.charIn(char)
 	
 	skills = char_juese[char_current_i].skillname
 	
+	--  选取主公技  --
+	if char == '0' then
+		if gamerun_status == "" and gamerun_lordskill_selected == false then
+			skills_lordskill_select_enter()
+		elseif gamerun_lordskill_selected == true then
+			gamerun_lordskill_selected = false
+			skills_rst()
+		end
+	end
+
+	--  选取1~4号技能  --
 	if char == '1' then
 		if gamerun_skill_selected == 1 + 2 * skill_disrow then
 			gamerun_skill_selected = 0
@@ -2330,18 +2287,34 @@ function on.charIn(char)
 		end
 	end
 	
+	--  选取武器牌  --
 	if char == 'a' then
+		--  丈八蛇矛技能发动  --
+		if gamerun_status == "" and gamerun_armskill_selected == false then
+			if card_zhangba_enter() then
+				gamerun_armskill_selected = true
+			end
+			return
+		elseif gamerun_armskill_selected == true then
+			gamerun_armskill_selected = false
+			skills_rst()
+			return
+		end
+
 		gamerun_card_select_zhuangbei(-1)
 	end
 	
+	--  选取防具牌  --
 	if char == 'b' then
 		gamerun_card_select_zhuangbei(-2)
 	end
 	
+	--  选取-1马牌  --
 	if char == 'c' then
 		gamerun_card_select_zhuangbei(-3)
 	end
 	
+	--  选取+1马牌  --
 	if char == 'd' then
 		gamerun_card_select_zhuangbei(-4)
 	end

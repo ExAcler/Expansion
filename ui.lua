@@ -234,6 +234,14 @@ function draw_opponent(gc)
 						msg = {"距离 ", char_calc_distance(char_current_i, id)}
 						gc:drawString(table.concat(msg), x1 + 12, y1 + 37 + 9)
 					end
+				elseif gamerun_lordskill_selected == true then
+					local lordskills = skills_judge_lordskill(char_current_i, id)
+					if #lordskills == 0 then
+						gc:drawString("无技能", x1 + 12, y1 + 29 + 9)
+					else
+						gc:drawString("有技能", x1 + 12, y1 + 29 + 9)
+					end
+					gc:drawString("可响应", x1 + 12, y1 + 49 + 9)
 				else
 					msg = {"距离 ", char_calc_distance(char_current_i, id)}
 					gc:drawString(table.concat(msg), x1 + 12, y1 + 37 + 9)
@@ -384,6 +392,18 @@ function draw_self(gc)
 		if s - 2 * skill_disrow == 4 then
 			gc:fillRect(225 + 38, 170 + 20, 37, 18)
 		end
+	end
+
+	--  选取的武器技能高亮显示  --
+	if gamerun_armskill_selected and #char_juese[char_current_i].wuqi > 0 then
+		gc:setColorRGB(153, 217, 234)
+
+		gc:setFont("sansserif", "r", 7)
+		local width = 12 + gc:getStringWidth(char_juese[char_current_i].wuqi[3])
+		gc:setFont("sansserif", "r", 11)
+		width = width + gc:getStringWidth(char_juese[char_current_i].wuqi[1])
+
+		gc:fillRect(5, 131 + 20, width, 20)
 	end
 	gc:setColorRGB(0, 0, 0)
 	

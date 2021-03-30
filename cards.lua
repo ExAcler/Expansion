@@ -741,8 +741,8 @@ end
 
 --  拼点结算  --
 function card_pindian(va_list)
-	local ID_s, ID_mubiao, win_fp
-	ID_s = va_list[1]; ID_mubiao = va_list[2]; win_fp = va_list[3]
+	local ID_s, ID_mubiao, win_fp, keep_card
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; win_fp = va_list[3]; keep_card = va_list[4]
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
@@ -771,7 +771,7 @@ function card_pindian(va_list)
 			card_selected = {}
 			card_highlighted = 1
 
-			add_funcptr(card_pindian_judge, {ID_s, ID_mubiao, win_fp})
+			add_funcptr(card_pindian_judge, {ID_s, ID_mubiao, win_fp, keep_card})
 			add_funcptr(_pindian_huifu)
 			timer.start(0.6)
 		end
@@ -781,7 +781,7 @@ function card_pindian(va_list)
 		add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, true)})
 		skills_losecard(ID_mubiao, 1, true)
 		
-		add_funcptr(card_pindian_judge, {ID_s, ID_mubiao, win_fp})
+		add_funcptr(card_pindian_judge, {ID_s, ID_mubiao, win_fp, keep_card})
 		add_funcptr(_pindian_huifu)
 		timer.start(0.6)
 	end
@@ -804,8 +804,8 @@ end
 
 --  拼点结算  --
 function card_pindian_judge(va_list)
-	local ID_s, ID_mubiao, win_fp
-	ID_s = va_list[1]; ID_mubiao = va_list[2]; win_fp = va_list[3]
+	local ID_s, ID_mubiao, win_fp, keep_card
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; win_fp = va_list[3]; keep_card = va_list[4]
 
 	local i,j
 	if pindianing[1][3] == "A" then
@@ -831,9 +831,12 @@ function card_pindian_judge(va_list)
 		j = tonumber(pindianing[2][3])
 	end
 	
-	card_add_qipai(pindianing[1])
-	card_add_qipai(pindianing[2])
-	pindianing = {}
+	if not keep_card then
+		card_add_qipai(pindianing[1])
+		card_add_qipai(pindianing[2])
+		pindianing = {}
+	end
+
 	if i > j then
 		push_message(char_juese[ID_s].name .. "拼点获胜")
 		win_fp(true, false)
@@ -943,24 +946,6 @@ function card_if_d_limit(card, ID_s, ID_d)
 
 	--  无任何使用限制，无来源限制  --
 	if ID_s < 0 then
-		return true
-	end
-
-	if type(card) == "table" then
-		if #char_juese[ID_s].wuqi ~= 0 then
-		    if char_sha_time <= 0 or char_sha_able == false then
-	            return false
-	        end
-		
-	        if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] and char_distance_infinity == false then
-	            return false
-	        end
-	    else
-		    if char_sha_time <= 0 or char_sha_able == false then return false end
-	        if char_calc_distance(ID_s, ID_d) > 1 and char_distance_infinity == false then
-	            return false
-	        end
-	    end
 		return true
 	end
 	
@@ -1160,6 +1145,14 @@ function card_if_d_limit(card, ID_s, ID_d)
 		end
 	end
 
+	--  选择主公技  --
+	if card == "主公技" then
+		local lordskills = skills_judge_lordskill(ID_s, ID_d)
+		if #lordskills == 0 then
+			return false
+		end
+	end
+
 	return true
 end
 
@@ -1174,33 +1167,8 @@ function card_chupai(ID)
 	
 	card = char_juese[char_current_i].shoupai[card_highlighted][1]
 	funcptr_queue = {}
-		
-	--  丈八蛇矛出两张手牌  --
-	if #char_juese[char_current_i].wuqi ~= 0 then
-		wuqi = char_juese[char_current_i].wuqi[1]
-	else
-		wuqi = ""
-	end
-	if table.getn2(card_selected) == 2 and wuqi == "丈八矛" then
-		--  取出所有选择的手牌  --
-		local i, max_select
-		
-		max_select = #char_juese[char_current_i].shoupai
-		for i = 1, max_select do
-			if card_selected[i] ~= nil then
-				table.insert(ID_shoupai, i)
-			end
-		end
+	ID_shoupai = {card_highlighted}
 	
-		--  执行操作  --
-		if card_sha(ID_shoupai, char_current_i, {gamerun_target_selected}, true) then
-		    consent_func_queue(0.6)
-		end
-		return false
-	else
-		ID_shoupai = {card_highlighted}
-	end
-		
     --  武器牌  --
 	if card_get_leixing(card) == "武器" or card_get_leixing(card) == "防具" or card_get_leixing(card) == "+1马" or card_get_leixing(card) == "-1马" then
 		card_arm({ID_shoupai[1], char_current_i})
@@ -1486,7 +1454,7 @@ function card_fangtian(n_mubiao, cancel_clicked)
 
 	if card_sha({card_highlighted}, char_current_i, ID_mubiao, true) then
 		if gamerun_judge_fangtian() == true then
-			push_message(char_juese[char_current_i].name .. "发动了 '方天戟' 效果")
+			push_message(char_juese[char_current_i].name .. "发动了 '方天画戟' 效果")
 		end
 
 		consent_func_queue(0.6)
@@ -1494,6 +1462,91 @@ function card_fangtian(n_mubiao, cancel_clicked)
 	else
 		return false
 	end
+end
+
+--  丈八蛇矛出杀  --
+function card_zhangba(n_mubiao, cancel_clicked)
+	local wuqi
+	if #char_juese[char_current_i].wuqi ~= 0 then
+		wuqi = char_juese[char_current_i].wuqi[1]
+	else
+		wuqi = ""
+	end
+
+	local ID_shoupai = skills_get_selected_shoupai()
+	local ID_mubiao = {}
+
+	if cancel_clicked == false then
+		if n_mubiao == 2 then
+			table.insert(ID_mubiao, guankan_s)
+		end
+		table.insert(ID_mubiao, gamerun_target_selected)
+	else
+		table.insert(ID_mubiao, guankan_s)
+	end
+	
+	funcptr_queue = {}
+	if card_sha(ID_shoupai, char_current_i, ID_mubiao, true) then
+		if wuqi == "丈八矛" then
+			push_message(char_juese[char_current_i].name .. "发动了 '丈八蛇矛' 效果")
+		end
+
+		skills_cs()
+		consent_func_queue(0.6)
+	end
+end
+
+--  丈八蛇矛选牌  --
+function card_zhangba_enter()
+	if #char_juese[char_current_i].wuqi == 0 then
+		return false
+	end
+
+	if char_juese[char_current_i].wuqi[1] ~= "丈八矛" then
+		return false
+	end
+
+	gamerun_armskill_selected = true
+	gamerun_OK = false
+	skills_enter("请选择两张牌", "杀", "杀", "技能选择-多牌")
+	
+	gamerun_OK_ptr = function()
+		if gamerun_status == "技能选择-目标" and gamerun_OK == true then
+			if card_if_d_limit("杀", char_current_i, gamerun_target_selected) then
+				if char_sha_add_target_able == true then
+					guankan_s = gamerun_target_selected
+					set_hints("请选择目标B或'取消'出杀")
+					gamerun_status = "技能选择-目标B"
+					gamerun_select_target("init")
+					platform.window:invalidate()
+				else
+					card_zhangba(1, false)
+				end
+			end
+
+			return
+		end
+		
+		if gamerun_status == "技能选择-目标B" then
+			if gamerun_OK == true then
+				card_zhangba(2, false)
+			else
+				card_zhangba(1, false)
+			end
+		end
+	end
+	
+	gamerun_tab_ptr = function()
+		if table.getn2(card_selected) == 2 then
+			skills_enter_target()
+
+			if char_sha_add_target_able == true then
+				set_hints("请选择目标A")
+			end
+		end
+	end
+
+	return true
 end
 
 --  装备武器  --

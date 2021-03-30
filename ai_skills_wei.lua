@@ -10,8 +10,8 @@ function ai_judge_hujia_req(ID_req)
 end
 
 --  AI决定是否响应护驾  --
-function ai_judge_hujia(ID_req, ID_res)
-	if ai_judge_same_identity(ID_res, ID_req, true) ~= 1 then
+function ai_judge_hujia(ID_laiyuan, ID_req, ID_res)
+	if ai_judge_same_identity(ID_res, ID_req, true) ~= 1 or ID_laiyuan == ID_res then
 		return false
 	end
 

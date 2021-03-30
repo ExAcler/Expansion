@@ -711,7 +711,7 @@ function _lijian_exe(ID_shoupai, ID_s, ID_first, ID_second, ai_qi_zhuangbei_id)
 		gamerun_wuqi_out_hand(char_current_i)
 
 		add_funcptr(push_message, table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
-		skills_losecard(ID_s, 1, true)
+		skills_losecard(ID_s, 0, true)
 	else
 		ai_withdraw(ID_s, {ID_shoupai}, ai_qi_zhuangbei_id, true)
 		skills_losecard(ID_s, 9999, true)
@@ -1089,4 +1089,73 @@ function _baonue_jiesuan(va_list)
 end
 function _baonue_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
+--  张角：黄天  --
+function skills_huangtian_judge(ID_shoupai, ID_s)
+	if #char_juese[ID_s].shoupai == 0 then
+		return false
+	end
+
+	if card_judge_if_shan(ID_s, ID_shoupai) == false and char_juese[ID_s].shoupai[ID_shoupai][1] ~= "闪电" then
+		return false
+	end
+	return true
+end
+function skills_huangtian_ai(ID_shoupai, ID_s, ID_zhugong)
+	if skills_huangtian_judge(ID_shoupai, ID_s) == false then
+		return false
+	end
+
+	_huangtian_exe(ID_shoupai, ID_s, ID_zhugong)
+	return true
+end
+function skills_huangtian_enter(ID_zhugong)
+	if #char_juese[char_current_i].shoupai == 0 then
+		return false
+	end
+
+	gamerun_wuqi_into_hand(char_current_i)
+	skills_enter("请选择闪或闪电", "", "黄天", "技能选择-单牌")
+	
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			if skills_huangtian_judge(char_current_i, ID_zhugong) then
+				_huangtian_exe(card_highlighted, char_current_i, ID_zhugong)
+				card_selected = {}
+				card_highlighted = 1
+			end
+		else
+			_lordskill_fangqi()
+		end
+	end
+	
+	gamerun_tab_ptr = nil
+	
+	return true
+end
+function _huangtian_exe(ID_shoupai, ID_s, ID_zhugong)
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_status = "手牌生效中"
+	set_hints("")
+
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name .. "响应了", char_juese[ID_zhugong].name, "的武将技能 '黄天'"}))
+	add_funcptr(_huangtian_geipai, {ID_shoupai, ID_s, ID_zhugong})
+	skills_losecard(ID_s, 1, true)
+	
+	lordskill_used[ID_zhugong]["黄天"] = 1
+	add_funcptr(_fanjian_sub4)
+	timer.start(0.6)
+end
+function _huangtian_geipai(va_list)
+	local ID_shoupai, ID_s, ID_zhugong
+	ID_shoupai = va_list[1]; ID_s = va_list[2]; ID_zhugong = va_list[3]
+
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+	push_message(table.concat({char_juese[ID_s].name, "将'", card[2], card[3], "的", card[1], "'交给", char_juese[ID_zhugong].name}))
+
+	card_remove({ID_s, ID_shoupai})
+	table.insert(char_juese[ID_zhugong].shoupai, card)
 end
