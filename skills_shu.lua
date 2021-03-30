@@ -1162,3 +1162,89 @@ end
 function _zaiqi_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
+
+--  刘禅：享乐  --
+function skills_xiangle(va_list)
+	local ID, ID_laiyuan
+	ID = va_list[1]; ID_laiyuan = va_list[2]
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	push_message(table.concat({char_juese[ID].name, "触发了武将技能 '享乐'"}))
+	if ID_laiyuan == char_current_i then
+		skills_xiangle_enter(ID)
+	else
+		skills_xiangle_ai(ID, ID_laiyuan)
+	end
+end
+function skills_xiangle_ai(ID, ID_laiyuan)
+	local cards = ai_card_search(ID_laiyuan, "基本", 1)
+	if #cards > 0 then
+		_xiangle_exe(cards[1], ID, ID_laiyuan)
+	else
+		_xiangle_huifu()
+		funcptr_queue = {}
+		funcptr_i = 0
+
+		add_funcptr(push_message, table.concat({char_juese[ID_laiyuan].name, "放弃"}))
+		add_funcptr(_sha_sub2)
+		timer.start(0.6)
+	end
+end
+function skills_xiangle_enter(ID)
+	skills_enter("请弃一张基本牌", "", "享乐", "技能选择-单牌")
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			if table.getn2(card_selected) ~= 1 then
+				return
+			end
+
+			local card = char_juese[char_current_i].shoupai[card_highlighted]
+			if card_get_leixing(card[1]) == "基本牌" then
+				gamerun_status = "手牌生效中"
+				set_hints("")
+
+				_xiangle_exe(card_highlighted, ID, char_current_i)
+				card_selected = {}
+				card_highlighted = 1
+			end
+		else
+			gamerun_status = "手牌生效中"
+			set_hints("")
+			push_message(table.concat({char_juese[char_current_i].name, "放弃"}))
+
+			_xiangle_huifu()
+			funcptr_queue = {}
+			funcptr_i = 0
+
+			add_funcptr(_sha_sub2)
+			timer.start(0.6)
+		end
+	end
+	
+	gamerun_tab_ptr = nil
+end
+function _xiangle_exe(ID_shoupai, ID, ID_laiyuan)
+	add_funcptr(_xiangle_sub1, {ID_shoupai, ID_laiyuan})
+	skills_losecard(ID_laiyuan, 1, true)
+	add_funcptr(_xiangle_huifu)
+	timer.start(0.6)
+end
+function _xiangle_sub1(va_list)
+	local ID_shoupai, ID_laiyuan
+	ID_shoupai = va_list[1]; ID_laiyuan = va_list[2]
+
+	local card = char_juese[ID_laiyuan].shoupai[ID_shoupai]
+
+	push_message(table.concat({char_juese[ID_laiyuan].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+	card_add_qipai(card)
+	card_remove({ID_laiyuan, ID_shoupai})
+end
+function _xiangle_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end

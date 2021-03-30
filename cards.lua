@@ -3878,6 +3878,11 @@ function _sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)	--  
 
 	if (_sha_judge_if_xiangying_2(ID_s, ID_mubiao, false) == true and wushuang_flag == true) or _sha_judge_if_xiangying_2(ID_s, ID_mubiao, false) == false then
 		push_message(table.concat({char_juese[ID_s].name, "'", hint_1, "'", char_juese[ID_mubiao].name}))
+
+		--  刘禅享乐  --
+		if char_juese[ID_mubiao].skill["享乐"] == "available" then
+			add_funcptr(skills_xiangle, {ID_mubiao, ID_s})
+		end
 	end
 
 	--  若装备防具，进行判断  --
@@ -4239,6 +4244,11 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 	
 	if (_sha_judge_if_xiangying_2(ID_s, ID_mubiao, false) == true and wushuang_flag == true) or _sha_judge_if_xiangying_2(ID_s, ID_mubiao, false) == false then
 		push_message(table.concat({char_juese[ID_s].name, "'", hint_1, "'", char_juese[ID_mubiao].name}))
+
+		--  刘禅享乐  --
+		if char_juese[ID_mubiao].skill["享乐"] == "available" then
+			add_funcptr(skills_xiangle, {ID_mubiao, ID_s})
+		end
 	end
 
     --  若装备防具，进行判断  --

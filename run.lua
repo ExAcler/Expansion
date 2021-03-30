@@ -1705,7 +1705,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" or imp_card == "享乐" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end

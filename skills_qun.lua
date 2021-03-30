@@ -1115,8 +1115,8 @@ function skills_huangtian_enter(ID_zhugong)
 		return false
 	end
 
-	gamerun_wuqi_into_hand(char_current_i)
 	skills_enter("请选择闪或闪电", "", "黄天", "技能选择-单牌")
+	gamerun_OK = false
 	
 	gamerun_OK_ptr = function()
 		if gamerun_OK == true then
