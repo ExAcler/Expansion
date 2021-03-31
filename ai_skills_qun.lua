@@ -125,3 +125,59 @@ function ai_judge_lijian(ID)
 		return true, cards[1], attack_mubiao
 	end
 end
+
+--  AI决定是否发动青囊  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_qingnang(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local shan_removed = false
+	local sha_removed = false
+
+	for i = #cards, 1, -1 do
+		if card_judge_if_shan(ID, cards[i]) and shan_removed == false then
+			table.remove(cards, i)
+			shan_removed = true
+		elseif card_judge_if_sha(ID, cards[i]) and sha_removed == false then
+			if ai_judge_random_percent(30) == 1 then
+				table.remove(cards, i)
+			end
+			sha_removed = true
+		end
+	end
+
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+	if #cards == 0 then
+		char_juese[ID].skill["青囊"] = "locked"
+		return false, 0, 0
+	end
+
+	if char_juese[ID].tili < char_juese[ID].tili_max - 1 and ai_judge_random_percent(80) == 1 then
+		return true, cards[1], ID
+	end
+
+	local help_mubiao = ai_basic_judge_mubiao(ID, 4, true, false, true)
+
+	for i = #help_mubiao, 1, -1 do
+		if char_juese[help_mubiao[i]].tili == char_juese[help_mubiao[i]].tili_max then
+			table.remove(help_mubiao, i)
+		end
+	end
+	if #help_mubiao == 0 then
+		char_juese[ID].skill["青囊"] = "locked"
+		return false, 0, 0
+	end
+
+	if #help_mubiao == 1 then
+		return true, cards[1], help_mubiao[1]
+	else
+		local mindef_ID = help_mubiao[1]
+		for i = 2, #help_mubiao do
+			if ai_judge_def(help_mubiao[i], false, false) < ai_judge_def(mindef_ID, false, false) then
+				mindef_ID = help_mubiao[i]
+			end
+		end
+		return true, cards[1], mindef_ID
+	end
+end

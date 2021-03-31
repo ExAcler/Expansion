@@ -392,6 +392,26 @@ function ai_skill_use_priority(ID)
 		end
 	end
 
+	--  黄盖苦肉  --
+	if char_juese[ID].skill["苦肉"] == "available" and (ai_skills_discard["苦肉"] ~= true or char_juese[ID].tili == char_juese[ID].tili_max) then
+		if ai_judge_kurou(ID) then
+			skills_kurou(ID)
+			timer.start(0.6)
+			return true
+		end
+	end
+
+	--  华佗青囊  --
+	if char_juese[ID].skill["青囊"] == 1 then
+		fadong, ID_shoupai, mubiao = ai_judge_qingnang(ID)
+		if fadong == true then
+			if skills_qingnang(ID_shoupai, ID, mubiao) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
 	return false
 end
 
@@ -437,6 +457,18 @@ function ai_skill_use(ID)
 		if fadong == true then
 			if card_judge_bingliang(ID, mubiao) == true then
 				add_funcptr(card_bingliang, {ID_shoupai, ID, mubiao})
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  孙权制衡  --
+	if char_juese[ID].skill["制衡"] == 1 then
+		local zhuangbei_id
+		fadong, ID_shoupai, zhuangbei_id = ai_judge_zhiheng(ID)
+		if fadong == true then
+			if skills_zhiheng_ai(ID, ID_shoupai, zhuangbei_id) then
 				timer.start(0.6)
 				return true
 			end

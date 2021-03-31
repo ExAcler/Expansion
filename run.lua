@@ -77,6 +77,8 @@ gamerun_killed = {}  --在当前回合内杀死角色的数量
 skill_temp = {}  --临时获得的技能，在自己的回合结束后失去
 lordskill_used = {}		-- 当前回合中角色是否已经使用过主公技
 
+ai_skills_discard = {}	-- 记录AI不再在本回合考虑的技能
+
 for i = 1, 5 do
 	kunfen_adjusted[i] = false
 	skill_double[i] = {}
@@ -330,6 +332,7 @@ function gamerun_huihe_start()
 	char_sha_additional_target = 0
 	char_sha_able = true
 	char_hejiu = false
+	ai_skills_discard = {}
 	lordskill_used = {}
 	for i = 1, 5 do
 		lordskill_used[i] = {}

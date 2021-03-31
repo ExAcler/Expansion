@@ -221,31 +221,62 @@ end
 function skills_qingnang_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 
-	skills_enter("请选择一张手牌", "使用桃", "桃", "技能选择-单牌")
-	
+	skills_enter("请选择一张手牌", "请选择目标", "青囊", "技能选择-单牌")
+	gamerun_OK = false
+
 	gamerun_OK_ptr = function()
-		skills_qingnang()
+		if table.getn2(card_selected) > 0 then
+			if skills_qingnang(card_highlighted, char_current_i, gamerun_target_selected) then
+				skills_cs()
+				card_selected = {}
+				card_highlighted = 1
+			end
+		end
 	end
 	
 	gamerun_tab_ptr = function()
-		if table.getn2(card_selected) == 0 then
-			set_hints(skill_text_2)
-		else
-			set_hints(skill_text_1)
-		end
+		skills_enter_target()
+		gamerun_status = "技能选择-目标B"
+		gamerun_target_selected = char_current_i
+		guankan_s = -1
+
 		platform.window:invalidate()
 	end
 	
 	return true
 end
-function skills_qingnang()
-	if table.getn2(card_selected) ~= 0 then
-		funcptr_queue = {}
-		if card_tao({card_highlighted, char_current_i, char_current_i, false}) then
-			skills_cs()
-		    consent_func_queue(0.2)
-		end
+function skills_qingnang(ID_shoupai, ID_s, ID_mubiao)
+	if char_juese[ID_mubiao].tili == char_juese[ID_mubiao].tili_max then
+		return false
 	end
+
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	char_juese[ID_s].skill["青囊"] = "locked"
+
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "发动了武将技能 '青囊'"}))
+	add_funcptr(_qingnang_sub2, {ID_shoupai, ID_s})
+	add_funcptr(_qingnang_sub1, ID_mubiao)
+	add_funcptr(_fanjian_sub4)
+	timer.start(0.6)
+
+	return true
+end
+function _qingnang_sub1(ID)
+	push_message(table.concat({char_juese[ID].name, "回复1点体力"}))
+	char_juese[ID].tili = char_juese[ID].tili + 1
+end
+function _qingnang_sub2(va_list)
+	local ID_shoupai, ID_s
+	ID_shoupai = va_list[1]; ID_s = va_list[2]
+
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+	push_message(table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+	card_add_qipai(card)
+	card_remove({ID_s, ID_shoupai})
 end
 
 --  董卓：酒池  --

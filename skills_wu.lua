@@ -565,7 +565,7 @@ function skills_kurou_enter()
 	
 	gamerun_OK_ptr = function()
 		if gamerun_OK then
-			skills_kurou()
+			skills_kurou(char_current_i)
 			skills_cs()
 		    consent_func_queue(0.6)
 		end
@@ -573,17 +573,17 @@ function skills_kurou_enter()
 	
 	return true
 end
-function skills_kurou()
+function skills_kurou(ID)
 	funcptr_queue = {}
-	add_funcptr(_kurou_sub1)
-	char_tili_deduct({1, char_current_i, char_current_i, "流失", char_current_i})
-	add_funcptr(card_fenfa, {char_current_i, 2, true})
+	add_funcptr(_kurou_sub1, ID)
+	char_tili_deduct({1, ID, -1, "流失", ID})
+	add_funcptr(card_fenfa, {ID, 2, true})
 	add_funcptr(_kurou_sub2)
 end
-function _kurou_sub1()
+function _kurou_sub1(ID)
 	set_hints("")
 	gamerun_status = "手牌生效中"
-	push_message(char_juese[char_current_i].name .. "发动了武将技能 '苦肉'")
+	push_message(char_juese[ID].name .. "发动了武将技能 '苦肉'")
 end
 function _kurou_sub2()
 	if char_acting_i == char_current_i then
@@ -816,7 +816,7 @@ function skills_zhiheng_ai(ID_s, ID_shoupai, zhuangbei_list)
 		return false
 	end
 
-	add_funcptr(_zhiheng_sub1)
+	add_funcptr(_zhiheng_sub1, ID_s)
 	ai_withdraw(ID_s, ID_shoupai, zhuangbei_list, true)
 	skills_losecard(ID_s, 9999, true)
 
@@ -852,7 +852,7 @@ function skills_zhiheng(ID)
 	if cards == 0 then return false end
 	
 	funcptr_queue = {}
-	add_funcptr(_zhiheng_sub1)
+	add_funcptr(_zhiheng_sub1, ID)
 	card_qipai_go()
 	skills_losecard(ID, 9999, true)
 
@@ -862,10 +862,10 @@ function skills_zhiheng(ID)
 	
 	return true
 end
-function _zhiheng_sub1()
+function _zhiheng_sub1(ID)
 	set_hints("")
 	gamerun_status = "手牌生效中"
-	push_message(char_juese[char_current_i].name.."发动了武将技能 '制衡'")
+	push_message(char_juese[ID].name.."发动了武将技能 '制衡'")
 end
 function _zhiheng_sub2()
 	if char_acting_i == char_current_i then

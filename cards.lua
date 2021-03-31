@@ -940,12 +940,18 @@ function card_judge_if_shan(ID, card_i)
 	end
 end
 
---  计算卡牌使用限制  --
+--  计算卡牌/技能使用限制  --
 function card_if_d_limit(card, ID_s, ID_d)
     local v, p
 
-	--  无任何使用限制，无来源限制  --
+	--  技能可以对自己使用，且需要指定目标数为1的情况  --
 	if ID_s < 0 then
+		if card == "青囊" then
+			if char_juese[ID_d].tili == char_juese[ID_d].tili_max then
+				return false
+			end
+		end
+
 		return true
 	end
 	

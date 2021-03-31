@@ -353,7 +353,7 @@ function _judge_zhijian_mubiao_for(leixing, card_ID, ID, help_mubiao)
 	return -1
 end
 
--- AI决定是否补益 --
+--  AI决定是否补益  --
 function ai_judge_buyi_mubiao(ID_s, ID_mubiao)
 	if #char_juese[ID_mubiao].shoupai == 0 then
 		return nil
@@ -391,4 +391,65 @@ function ai_judge_buyi_mubiao(ID_s, ID_mubiao)
 		end
 	end
 	return nil
+end
+
+--  AI决定是否发动制衡  --
+--  返回是否发动，手牌列表，弃装备列表  --
+function ai_judge_zhiheng(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local arms = {0, 0, 0, 0, 0}
+	local percent
+
+	percent = 100
+	for i = #cards, 1, -1 do
+		if card_judge_if_shan(ID, cards[i]) then
+			if ai_judge_random_percent(percent) == 1 then
+				table.remove(cards, i)
+				if percent == 100 then
+					percent = math.min(5 + 25 * (char_juese[ID].tili_max - char_juese[ID].tili), 100)
+				end
+			end
+		end
+	end
+
+	if #char_juese[ID].fangju > 0 then
+		if char_juese[ID].fangju[1] == "白银狮" and char_juese[ID].tili < char_juese[ID].tili_max then
+			if ai_judge_random_percent(50) == 1 then
+				arms[2] = 1
+			end
+		end
+	end
+
+	local n_cards = #cards
+	for i = 1, #arms do
+		if arms[i] == 1 then
+			n_cards = n_cards + 1
+		end
+	end
+
+	if n_cards == 0 then
+		char_juese[ID].skill["制衡"] = "locked"
+		return false, {}, arms
+	else
+		table.sort(cards)	--  ai_card_search输出倒序，而ai_withdraw希望正序
+		return true, cards, arms
+	end
+end
+
+--  AI决定是否发动苦肉  --
+function ai_judge_kurou(ID)
+	if char_juese[ID].tili >= char_juese[ID].tili_max - 1 then
+		if #char_juese[ID].shoupai < 6 then
+			return true
+		else
+			local percent = math.min(20 + 20 * (#char_juese[ID].shoupai - 6), 100)
+			if ai_judge_random_percent(percent) == 0 then
+				return true
+			else
+				ai_skills_discard["苦肉"] = true
+			end
+		end
+	end
+
+	return false
 end
