@@ -605,3 +605,67 @@ function ai_judge_jieyin(ID)
 		return true, cards, mindef_ID
 	end
 end
+
+--  AI决定是否发动奇袭  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_qixi(ID)
+	local cards_red = ai_card_search(ID, "红色", #char_juese[ID].shoupai)
+	local cards = ai_card_search(ID, "黑色", #char_juese[ID].shoupai)
+	local n_sha = 0
+	local n_sha_keep = 1
+	local n_bingliang = 0
+	local n_bingliang_keep = 0
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+
+	if #char_juese[ID].wuqi > 0 then
+		if char_juese[ID].wuqi[1] == "诸葛弩" then
+			n_sha_keep = 2
+		end
+	end
+
+	for i = 1, #attack_mubiao do
+		if card_if_d_limit("兵粮寸断", ID, attack_mubiao[i]) then
+			n_bingliang_keep = n_bingliang_keep + 1
+		end
+	end
+
+	for i = #cards_red, 1, -1 do
+		if card_judge_if_sha(ID, cards_red[i]) then
+			n_sha = n_sha + 1
+		end
+	end
+
+	for i = #cards, 1, -1 do
+		if card_judge_if_sha(ID, cards[i]) then
+			n_sha = n_sha + 1
+		elseif char_juese[ID].shoupai[cards[i]][1] == "兵粮寸断" then
+			n_bingliang = n_bingliang + 1
+		end
+
+		if card_judge_if_sha(ID, cards[i]) and n_sha <= n_sha_keep then
+			table.remove(cards, i)
+		elseif char_juese[ID].shoupai[cards[i]][1] == "兵粮寸断" and n_bingliang <= n_bingliang_keep then
+			table.remove(cards, i)
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+	if #cards == 0 then
+		return false, 0, 0
+	end
+
+	for i = #attack_mubiao, 1, -1 do
+		if card_if_d_limit("过河拆桥", ID, attack_mubiao[i]) == false then
+			table.remove(attack_mubiao, i)
+		end
+	end
+
+	if #attack_mubiao == 0 then
+		return false, 0, 0
+	end
+
+	local maxdef_ID = ai_judge_maximum_def(attack_mubiao)
+	return true, cards[1], maxdef_ID
+end

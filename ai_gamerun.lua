@@ -272,6 +272,55 @@ function ai_judge_def(ID, is_self, direct_only)
 	return def
 end
 
+--  获得防御系数最小的角色  --
+function ai_judge_minimum_def(targets)
+	if #targets == 1 then
+		return targets[1]
+	else
+		local mindef_ID = targets[1]
+		for i = 2, #targets do
+			if ai_judge_def(targets[i], false, false) < ai_judge_def(mindef_ID, false, false) then
+				mindef_ID = targets[i]
+			end
+		end
+		return mindef_ID
+	end
+end
+
+--  获得防御系数最大的角色  --
+function ai_judge_maximum_def(targets)
+	if #targets == 1 then
+		return targets[1]
+	else
+		local maxdef_ID = targets[1]
+		for i = 2, #targets do
+			if ai_judge_def(targets[i], false, false) > ai_judge_def(mindef_ID, false, false) then
+				maxdef_ID = targets[i]
+			end
+		end
+		return maxdef_ID
+	end
+end
+
+--  获得在角色攻击范围内其他角色的列表  --
+function ai_get_in_range(ID, targets)
+	local attack_mubiao = table.copy(targets)
+
+	for i = #attack_mubiao, 1, -1 do
+		if #char_juese[ID].wuqi > 0 then
+			if char_calc_distance(ID, attack_mubiao[i]) > card_wuqi_r[char_juese[ID].wuqi[1]] then
+				table.remove(attack_mubiao, i)
+			end
+		else
+			if char_calc_distance(ID, attack_mubiao[i]) > 1 then
+				table.remove(attack_mubiao, i)
+			end
+		end
+	end
+
+	return attack_mubiao
+end
+
 -- AI距离与攻击范围测算 --
 -- 第一个参数是否在指定距离内，第二个参数返回是否在攻击范围内
 function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)
@@ -407,6 +456,17 @@ function ai_skill_use_priority(ID)
 			return true
 		end
 	end
+
+	--  甘宁奇袭  --
+	if char_juese[ID].skill["奇袭"] == "available" then
+		fadong, ID_shoupai, mubiao = ai_judge_qixi(ID)
+		if fadong == true then
+			if card_chai({ID_shoupai}, ID, mubiao) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
 	
 	--  周瑜反间  --
 	if char_juese[ID].skill["反间"] == 1 then
@@ -531,6 +591,28 @@ function ai_skill_use(ID)
 		if fadong == true then
 			if card_judge_bingliang(ID, mubiao) == true then
 				add_funcptr(card_bingliang, {ID_shoupai, ID, mubiao})
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  关羽武圣  --
+	if char_juese[ID].skill["武圣"] == "available" then
+		fadong, ID_shoupai, mubiao = ai_judge_wusheng(ID)
+		if fadong == true then
+			if card_sha({ID_shoupai}, ID, {mubiao}, true) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  赵云龙胆  --
+	if char_juese[ID].skill["龙胆"] == "available" then
+		fadong, ID_shoupai, mubiao = ai_judge_longdan(ID)
+		if fadong == true then
+			if card_sha({ID_shoupai}, ID, {mubiao}, true) then
 				timer.start(0.6)
 				return true
 			end
@@ -908,7 +990,7 @@ function _ai_qipai_exe(ID)
 			end
 		end
 		add_funcptr(push_message, char_juese[char_acting_i].name .. "触发了武将技能 '庸肆'")
-		required = math.min(math.max(required, table.getn2(shili)), ai_card_stat(ID, false, true))
+		required = math.min(math.max(required, table.getn2(shili)), ai_card_stat(ID, true, false))
 		qipai_id, qizhuangbei_id = ai_judge_withdraw(ID, required, true)
 	else
 		qipai_id, qizhuangbei_id = ai_judge_withdraw(ID, required, false)

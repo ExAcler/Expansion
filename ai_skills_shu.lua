@@ -115,3 +115,69 @@ function ai_judge_rende(ID)
 		return true, cards, ID_mubiao[1]
 	end
 end
+
+--  AI决定是否发动武圣  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_wusheng(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local has_shan = false
+
+	for i = #cards, 1, -1 do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards[i]]})
+
+		if card_judge_if_shan(ID, cards[i]) and has_shan == false then
+			table.remove(cards, i)
+			has_shan = true
+		elseif yanse ~= "红色" then
+			table.remove(cards, i)
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+	if #cards == 0 then
+		return false, 0, 0
+	end
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	attack_mubiao = ai_get_in_range(ID, attack_mubiao)
+
+	if #attack_mubiao == 0 then
+		return false, 0, 0
+	end
+
+	local mindef_ID = ai_judge_minimum_def(attack_mubiao)
+	return true, cards[1], mindef_ID
+end
+
+--  AI决定是否发动龙胆  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_longdan(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local has_shan = false
+
+	for i = #cards, 1, -1 do
+		if card_judge_if_shan(ID, cards[i]) and has_shan == false then
+			table.remove(cards, i)
+			has_shan = true
+		elseif card_judge_if_sha(ID, cards[i]) == false then
+			table.remove(cards, i)
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+	if #cards == 0 then
+		return false, 0, 0
+	end
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	attack_mubiao = ai_get_in_range(ID, attack_mubiao)
+
+	if #attack_mubiao == 0 then
+		return false, 0, 0
+	end
+
+	local mindef_ID = ai_judge_minimum_def(attack_mubiao)
+	return true, cards[1], mindef_ID
+end

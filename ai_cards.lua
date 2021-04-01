@@ -121,7 +121,9 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 			return false
 		end
 	elseif name == "顺手牵羊" or name == "过河拆桥" then
-		if char_juese[ID_s].isantigovernment == nil or char_juese[ID_s].isblackjack == true then
+		if char_juese[ID_jiu].isantigovernment == nil or char_juese[ID_jiu].isblackjack == true then
+			return false
+		elseif char_juese[ID_s].isantigovernment == nil or char_juese[ID_s].isblackjack == true then
 			if ai_judge_same_identity(id, ID_jiu, false) == 1 then
 				return true
 			else

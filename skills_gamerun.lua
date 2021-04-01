@@ -6,7 +6,6 @@ skills_func =
 	["火计"] = function() return skills_huoji_enter() end, 
 	["苦肉"] = function() return skills_kurou_enter() end, 
 	["酒池"] = function() return skills_jiuchi_enter() end, 
-	["倾国"] = function() return skills_qingguo_enter() end, 
 	["武圣"] = function() return skills_wusheng_enter() end, 
 	["龙胆"] = function() return skills_longdan_enter() end, 
 	["国色"] = function() return skills_guose_enter() end, 
