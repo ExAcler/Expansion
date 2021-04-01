@@ -107,9 +107,7 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 	if (name == "万箭齐发" or name == "南蛮入侵") and char_juese[ID_jiu].fangju[1] == "藤甲" then
         return false
 	elseif name == "万箭齐发" or name == "南蛮入侵" or name == "火攻" or name == "借刀杀人" or name == "决斗" or (name == "铁锁连环" and char_juese[ID_jiu].hengzhi == false) or name == "乐不思蜀" or name == "兵粮寸断" or name == "闪电" then
-		if id == ID_jiu then
-			return true
-		elseif char_juese[id].shenfen == "内奸" and char_juese[ID_jiu].shenfen == "主公" and char_juese[ID_jiu].tili == 1 then
+		if char_juese[id].shenfen == "内奸" and char_juese[ID_jiu].shenfen == "主公" and char_juese[ID_jiu].tili == 1 then
 			return true
 		elseif ai_judge_same_identity(id, ID_jiu, false) == 1 then
 			return true
@@ -117,15 +115,19 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 			return false
 		end
 	elseif name == "桃园结义" or name == "五谷丰登" or name == "无中生有" or (name == "铁锁连环" and char_juese[ID_jiu].hengzhi == true) then
-		if id == ID_jiu then
-			return false
-		elseif ai_judge_same_identity(id, ID_jiu, false) == 2 and char_juese[id].shenfen ~= "内奸" then
+		if ai_judge_same_identity(id, ID_jiu, false) == 2 and char_juese[id].shenfen ~= "内奸" then
 			return true
 		else
 			return false
 		end
 	elseif name == "顺手牵羊" or name == "过河拆桥" then
-		if id == ID_jiu then
+		if char_juese[ID_s].isantigovernment == nil or char_juese[ID_s].isblackjack == true then
+			if ai_judge_same_identity(id, ID_jiu, false) == 1 then
+				return true
+			else
+				return false
+			end
+		elseif id == ID_jiu then
 			if ai_judge_same_identity(id, ID_s, false) == 1 then
 				return false
 			else

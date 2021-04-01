@@ -28,6 +28,10 @@ end
 --  AI判断对方是否与自己同阵营  --
 --  返回1是，返回2否，返回3未知  --
 function ai_judge_same_identity(ID, ID_mubiao, blackjack)
+	if ID == ID_mubiao then
+		return 1
+	end
+
 	if char_juese[ID].shenfen == "主公" then
 		if char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true then
 			return 1
