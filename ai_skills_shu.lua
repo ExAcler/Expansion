@@ -81,10 +81,37 @@ function ai_judge_fangquan(ID)
 	if #char_juese[ID].shoupai == 0 then
 		return {}
 	end
-	local ID_mubiao = ai_basic_judge_mubiao(ID, 1, true, false)
+	local ID_mubiao = ai_basic_judge_mubiao(ID, 1, true, true, true)
 	if ai_judge_random_percent(75 - 25 * ai_withdraw_need(ID)) == 1 then
 		return ID_mubiao
 	else
 		return {}
+	end
+end
+
+--  AI决定是否发动仁德  --
+--  返回是否发动、手牌列表、目标  --
+function ai_judge_rende(ID)
+	if char_juese[ID].tili == char_juese[ID].tili_max then
+		return false, {}, 0
+	end
+
+	if #char_juese[ID].shoupai < 2 then
+		return false, {}, 0
+	end
+
+	local cards, _ = ai_judge_withdraw(ID, 2, false)
+	for i = 1, #cards do
+		if card_judge_if_shan(ID, cards[i]) then
+			return false, {}, 0
+		end
+	end
+	table.sort(cards)
+
+	local ID_mubiao = ai_basic_judge_mubiao(ID, 1, true, true, true)
+	if #ID_mubiao == 0 then
+		return false, {}, 0
+	else
+		return true, cards, ID_mubiao[1]
 	end
 end

@@ -28,14 +28,21 @@ end
 --  AI判断对方是否与自己同阵营  --
 --  返回1是，返回2否，返回3未知  --
 function ai_judge_same_identity(ID, ID_mubiao, blackjack)
-	if char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣" then
-		if char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack == false then
+	if char_juese[ID].shenfen == "主公" then
+		if char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true then
 			return 1
 		elseif char_juese[ID_mubiao].isantigovernment == true or char_juese[ID_mubiao].isblackjack == true then
 			return 2
 		end
+	elseif char_juese[ID].shenfen == "忠臣" then
+		--  5人局1忠，除主以外都是敌方  --
+		if char_juese[ID_mubiao].shenfen == "主公" then
+			return 1
+		else
+			return 2
+		end
 	elseif char_juese[ID].shenfen == "反贼" then
-		if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack == false then
+		if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
 			return 1
 		elseif char_juese[ID_mubiao].isantigovernment == false or char_juese[ID_mubiao].isblackjack == true then
 			return 2
@@ -43,13 +50,13 @@ function ai_judge_same_identity(ID, ID_mubiao, blackjack)
 	elseif char_juese[ID].shenfen == "内奸" then
 		if blackjack then
 			if ai_judge_blackjack(ID) then
-				if char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack == false then
+				if char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true then
 					return 1
 				elseif char_juese[ID_mubiao].isantigovernment == true or char_juese[ID_mubiao].isblackjack == true then
 					return 2
 				end
 			else
-				if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack == false then
+				if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
 					return 1
 				elseif char_juese[ID_mubiao].isantigovernment == false or char_juese[ID_mubiao].isblackjack == true then
 					return 2
@@ -72,10 +79,6 @@ function ai_basic_judge_mubiao(ID, required, is_help, exclude_self, exclude_unkn
 		possible_target = table.copy(target_list)
 	end
 
-	if exclude_self == true then
-		table.remove(possible_target, ID)
-	end
-
 	for i = #possible_target, 1, -1 do
 		if char_juese[possible_target[i]].siwang == true then
 			table.remove(possible_target, i)
@@ -83,16 +86,41 @@ function ai_basic_judge_mubiao(ID, required, is_help, exclude_self, exclude_unkn
 	end
 
 	for i = #possible_target, 1, -1 do
-		if exclude_unknown and char_juese[possible_target[i]].isantigovernment == nil then
+		if exclude_self and possible_target[i] == ID then
+			table.remove(possible_target, i)
+		elseif exclude_unknown and char_juese[possible_target[i]].isantigovernment == nil and char_juese[ID].shenfen ~= "忠臣" then
 			table.remove(possible_target, i)
 		else
-			if char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣" then
-				if char_juese[possible_target[i]].isantigovernment == is_help or (is_help == true and char_juese[possible_target[i]].isblackjack == true) then
-					table.remove(possible_target, i)
+			if char_juese[ID].shenfen == "主公" then
+				if is_help then
+					if char_juese[possible_target[i]].isantigovernment == true or char_juese[possible_target[i]].isblackjack == true then
+						table.remove(possible_target, i)
+					end
+				else
+					if char_juese[possible_target[i]].isantigovernment == false and char_juese[possible_target[i]].isblackjack ~= true then
+						table.remove(possible_target, i)
+					end
+				end
+			elseif char_juese[ID].shenfen == "忠臣" then
+				--  5人局1忠，除主以外都是敌方  --
+				if is_help then
+					if char_juese[ID].shenfen ~= "主公" and possible_target[i] ~= ID then
+						table.remove(possible_target, i)
+					end
+				else
+					if char_juese[ID].shenfen == "主公" or possible_target[i] == ID then
+						table.remove(possible_target, i)
+					end
 				end
 			elseif char_juese[ID].shenfen == "反贼" then
-				if char_juese[possible_target[i]].isantigovernment == not is_help or (is_help == true and char_juese[possible_target[i]].isblackjack == true) then
-					table.remove(possible_target, i)
+				if is_help then
+					if char_juese[possible_target[i]].isantigovernment == false or char_juese[possible_target[i]].isblackjack == true then
+						table.remove(possible_target, i)
+					end
+				else
+					if char_juese[possible_target[i]].isantigovernment == true and char_juese[possible_target[i]].isblackjack ~= true then
+						table.remove(possible_target, i)
+					end
 				end
 			elseif char_juese[ID].shenfen == "内奸" then
 				if ai_judge_blackjack(ID) then
@@ -129,12 +157,16 @@ function ai_init_shenfen()
 	for i = 1, 5 do
 		if char_juese[i].shenfen == "反贼" then
 			char_juese[i].isantigovernment = true
+			char_juese[i].isblackjack = false
 		elseif char_juese[i].shenfen == "主公" then
 			char_juese[i].isantigovernment = false
+			char_juese[i].isblackjack = false
 		elseif char_juese[i].shenfen == "忠臣" then
 			char_juese[i].isantigovernment = false
+			char_juese[i].isblackjack = false
 		elseif char_juese[i].shenfen == "内奸" then
 			char_juese[i].isantigovernment = true
+			char_juese[i].isblackjack = true
 		end
 	end
 end
@@ -366,9 +398,10 @@ function ai_skill_use_priority(ID)
 	
 	--  神吕蒙攻心  --
 	if char_juese[ID].skill["攻心"] == 1 then
-		skills_gongxin_ai(ID)
-		timer.start(0.6)
-		return true
+		if skills_gongxin_ai(ID) then
+			timer.start(0.6)
+			return true
+		end
 	end
 	
 	--  周瑜反间  --
@@ -412,6 +445,52 @@ function ai_skill_use_priority(ID)
 		end
 	end
 
+	--  荀彧驱虎  --
+	if char_juese[ID].skill["驱虎"] == 1 then
+		local mubiao_1, mubiao_2
+		fadong, ID_shoupai, mubiao_1, mubiao_2 = ai_judge_quhu(ID)
+		if fadong == true then
+			if skills_quhu_ai(ID, mubiao_1, mubiao_2) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  太史慈天义  --
+	if char_juese[ID].skill["天义"] == 1 then
+		fadong, ID_shoupai, mubiao = ai_judge_tianyi(ID)
+		if fadong == true then
+			if skills_tianyi_ai(ID, mubiao, ID_shoupai) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  孙尚香结姻  --
+	if char_juese[ID].skill["结姻"] == 1 then
+		fadong, ID_shoupai, mubiao = ai_judge_jieyin(ID)
+		if fadong == true then
+			if skills_jieyin_ai(ID, mubiao, ID_shoupai) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  刘备仁德  --
+	if char_juese[ID].skill["仁德"] == "available" then
+		fadong, ID_shoupai, mubiao = ai_judge_rende(ID)
+		if fadong == true then
+			if skills_rende_ai(ID, mubiao, ID_shoupai) then
+				ai_skills_discard["仁德"] = true
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
 	return false
 end
 
@@ -423,16 +502,7 @@ function ai_skill_use(ID)
 	if char_juese[ID].skill["离间"] == 1 then
 		fadong, ID_shoupai, mubiao = ai_judge_lijian(ID)
 		if fadong == true then
-			local mubiao1, mubiao2
-			if ai_judge_random_percent(50) == 1 then
-				mubiao1 = mubiao[1]
-				mubiao2 = mubiao[2]
-			else
-				mubiao1 = mubiao[2]
-				mubiao2 = mubiao[1]
-			end
-
-			if skills_lijian_ai(ID_shoupai, ID, mubiao1, mubiao2, {}) then
+			if skills_lijian_ai(ID_shoupai, ID, mubiao[1], mubiao[2], {}) then
 				timer.start(0.6)
 				return true
 			end
@@ -685,7 +755,12 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
-		targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
+
+		if char_sha_add_target_able == false then
+			targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
+		else
+			targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1 + char_sha_additional_target)
+		end
 
 		if #targets > 0 and char_hejiu == false then
 			if char_juese[targets[1]].fangju ~= "白银狮" then
@@ -699,10 +774,15 @@ function ai_card_use(ID)
 			end
 		end
 
-		if #targets > 0 then
+		if #targets == 1 then
 			ID_mubiao = targets[1]
 			if card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "杀") then
 				--  杀后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		elseif #targets > 1 then
+			if card_sha({card_use[1]}, ID, targets, true) then
 				timer.start(0.6)
 				return
 			end

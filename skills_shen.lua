@@ -440,7 +440,7 @@ function skills_gongxin_ai(ID_s)
 			return true
 		end
 	end
-	return true
+	return false
 end
 function skills_gongxin_enter()
 	skills_enter("请选择目标", "", "攻心", "技能选择-目标")

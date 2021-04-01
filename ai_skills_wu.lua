@@ -453,3 +453,155 @@ function ai_judge_kurou(ID)
 
 	return false
 end
+
+--  AI决定是否发动天义  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_tianyi(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local has_sha = false
+	local has_sha_large_dianshu = false
+	local n_sha = 0
+
+	for i = #cards, 1, -1 do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards[i]]})
+
+		if (dianshu >= "2" and dianshu <= "9") or dianshu == "A" then
+			if card_judge_if_sha(ID, cards[i]) then
+				has_sha = true
+				n_sha = n_sha + 1
+			end
+			table.remove(cards, i)
+		else	
+			if card_judge_if_sha(ID, cards[i]) then
+				has_sha_large_dianshu = true
+				n_sha = n_sha + 1
+			end
+		end
+	end
+
+	if has_sha == false and has_sha_large_dianshu == false then
+		return false, 0, 0
+	end
+
+	if has_sha == false and has_sha_large_dianshu == true then
+		for i = #cards, 1, -1 do
+			if card_judge_if_sha(ID, cards[i]) then
+				table.remove(cards, i)
+				n_sha = n_sha - 1
+				break
+			end
+		end
+	end
+	if #cards == 0 then
+		return false, 0, 0
+	end
+	
+	local highest = cards[1]
+	for i = 2, #cards do
+		if _pindian_convert_dianshu(char_juese[ID].shoupai[cards[i]][3]) > _pindian_convert_dianshu(char_juese[ID].shoupai[highest][3]) then
+			highest = cards[i]
+		end
+	end
+	
+	cards = {highest}
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	local help_mubiao = ai_basic_judge_mubiao(ID, 4, true, true, true)
+
+	if #attack_mubiao == 1 then
+		local inrange = card_if_d_limit("杀", ID, attack_mubiao[1])
+		if inrange and n_sha < 2 then
+			return false, 0, 0
+		end
+	end
+
+	local lowest_def = attack_mubiao[1]
+	for i = 2, #attack_mubiao do
+		if #char_juese[attack_mubiao[i]].shoupai < #char_juese[lowest_def].shoupai then
+			lowest_def = attack_mubiao[i]
+		end
+	end
+
+	for i = #help_mubiao, 1, -1 do
+		if #char_juese[help_mubiao[i]].shoupai <= 4 then
+			table.remove(help_mubiao, i)
+		end
+	end
+
+	while #help_mubiao > 1 do
+		table.remove(help_mubiao, math.random(#help_mubiao))
+	end
+
+	if #attack_mubiao + #help_mubiao == 0 then
+		return false, 0, 0
+	end
+
+	if ai_judge_random_percent(30) == 1 and #help_mubiao > 0 then
+		return true, cards[1], help_mubiao[1]
+	elseif #attack_mubiao > 0 then
+		return true, cards[1], lowest_def
+	else
+		return false, 0, 0
+	end
+end
+
+--  AI决定是否发动结姻  --
+--  返回是否发动、手牌列表、目标  --
+function ai_judge_jieyin(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local has_shan = false
+	local percent = 30
+
+	for i = #cards, 1, -1 do
+		if card_judge_if_shan(ID, cards[i]) and has_shan == false then
+			table.remove(cards, i)
+			has_shan = true
+		elseif card_judge_if_sha(ID, cards[i]) and ai_judge_random_percent(percent) == 1 then
+			table.remove(cards, i)
+			percent = 0
+		end
+	end
+	while #cards > 2 do
+		table.remove(cards, math.random(#cards))
+	end
+	if #cards < 2 then
+		return false, {}, 0
+	end
+	table.sort(cards)
+
+	local help_mubiao = ai_basic_judge_mubiao(ID, 4, true, true, true)
+	local minimum_tili = 100
+	for i = #help_mubiao, 1, -1 do
+		if char_juese[help_mubiao[i]].xingbie ~= "男" or char_juese[help_mubiao[i]].tili == char_juese[help_mubiao[i]].tili_max then
+			table.remove(help_mubiao, i)
+		else
+			if char_juese[help_mubiao[i]].tili < minimum_tili then
+				minimum_tili = char_juese[help_mubiao[i]].tili
+			end
+		end
+	end
+
+	if #help_mubiao == 0 then
+		return false, {}, 0
+	end
+
+	percent = 90
+	if minimum_tili <= 1 then
+		percent = 30
+	end
+	if char_juese[ID].tili == char_juese[ID].tili_max and ai_judge_random_percent(percent) == 1 then
+		return false, {}, 0
+	end
+
+	if #help_mubiao == 1 then
+		return true, cards, help_mubiao[1]
+	else
+		local mindef_ID = help_mubiao[1]
+		for i = 2, #help_mubiao do
+			if ai_judge_def(help_mubiao[i], false, false) < ai_judge_def(mindef_ID, false, false) then
+				mindef_ID = help_mubiao[i]
+			end
+		end
+		return true, cards, mindef_ID
+	end
+end

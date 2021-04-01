@@ -103,58 +103,50 @@ function ai_judge_zhuque()
 end
 
 --  AI决定是否出无懈可击  --
---  凡是敌人拥护的，我们就要去反对；凡是敌人反对的，我们就要去拥护。
 function ai_judge_wuxie(id, ID_s, ID_jiu, name)
-    local help = false
-    local use = true
-    if id == ID_jiu then
-        help = true
-    elseif char_juese[id].shenfen == "主公" or char_juese[id].shenfen == "忠臣" then
-        if char_juese[ID_jiu].shenfen == "主公" or (char_juese[ID_jiu].isantigovernment == false and char_juese[ID_jiu].isblackjack == false) then 
-            if char_juese[ID_s].shenfen == "主公" or (char_juese[ID_s].isantigovernment == false and char_juese[ID_s].isblackjack == false) then 
-                help = false
-            else
-                help = true
-            end
-        end
-    elseif char_juese[id].shenfen == "反贼" then
-        if char_juese[ID_jiu].isantigovernment == true and char_juese[ID_jiu].isblackjack ~= true then 
-            if char_juese[ID_s].isantigovernment == true and char_juese[ID_s].isblackjack ~= true then 
-                help = false
-            else
-                help = true
-            end
-        elseif char_juese[ID_s].isblackjack == true then 
-            use = false
-        end
-    elseif char_juese[id].shenfen == "内奸" then
-        if char_juese[ID_jiu].shenfen == "主公" and char_juese[ID_s].isantigovernment == true and char_juese[ID_jiu].tili == 1 then
-            help = true
-        else
-            use = false
-        end
-    end
-    if use == false then
+	if (name == "万箭齐发" or name == "南蛮入侵") and char_juese[ID_jiu].fangju[1] == "藤甲" then
         return false
-    elseif (name == "万箭齐发" or name == "南蛮入侵") and char_juese[ID_jiu].fangju[1] == "藤甲" then
-        return false
-    elseif name == "万箭齐发" or name == "南蛮入侵" or name == "火攻" or name == "借刀杀人" or name == "决斗" then
-        return help
-    elseif name == "桃园结义" or name == "五谷丰登" or name == "无中生有" then
-        return not help
-    elseif (name == "顺手牵羊" or name == "过河拆桥") and #char_juese[ID_jiu].panding > 0 then
-        return not help
-    elseif name == "顺手牵羊" or name == "过河拆桥" then
-        return help
-    elseif name == "铁锁连环" and char_juese[ID_jiu].hengzhi then
-        return not help
-    elseif name == "铁锁连环" or name == "乐不思蜀" or name == "兵粮寸断" or name == "闪电" then
-        return help
-    elseif name == "无懈可击" then
-        return help
-    else
-        return false
-    end
+	elseif name == "万箭齐发" or name == "南蛮入侵" or name == "火攻" or name == "借刀杀人" or name == "决斗" or (name == "铁锁连环" and char_juese[ID_jiu].hengzhi == false) or name == "乐不思蜀" or name == "兵粮寸断" or name == "闪电" then
+		if id == ID_jiu then
+			return true
+		elseif char_juese[id].shenfen == "内奸" and char_juese[ID_jiu].shenfen == "主公" and char_juese[ID_jiu].tili == 1 then
+			return true
+		elseif ai_judge_same_identity(id, ID_jiu, false) == 1 then
+			return true
+		else
+			return false
+		end
+	elseif name == "桃园结义" or name == "五谷丰登" or name == "无中生有" or (name == "铁锁连环" and char_juese[ID_jiu].hengzhi == true) then
+		if id == ID_jiu then
+			return false
+		elseif ai_judge_same_identity(id, ID_jiu, false) == 2 and char_juese[id].shenfen ~= "内奸" then
+			return true
+		else
+			return false
+		end
+	elseif name == "顺手牵羊" or name == "过河拆桥" then
+		if id == ID_jiu then
+			if ai_judge_same_identity(id, ID_s, false) == 1 then
+				return false
+			else
+				return true
+			end
+		elseif ai_judge_same_identity(id, ID_s, false) == 2 and char_juese[id].shenfen ~= "内奸" then
+			return true
+		else
+			return false
+		end
+	elseif name == "无懈可击" then
+		if id == ID_jiu then
+			return true
+		elseif ai_judge_same_identity(id, ID_s, false) == 2 and char_juese[id].shenfen ~= "内奸" then
+			return true
+		else
+			return false
+		end
+	else
+		return false
+	end
 end
 
 --  AI计算要弃的牌数  --
@@ -254,16 +246,22 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 			
 		elseif ID == possible_target[i] then
 			table.remove(possible_target,i)
-		elseif char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣" then
-			if char_juese[possible_target[i]].isantigovernment == false and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
+		elseif char_juese[ID].shenfen == "主公" then
+			if (char_juese[possible_target[i]].isantigovernment == false and char_juese[possible_target[i]].isblackjack ~= true) and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
 				
-			elseif char_juese[possible_target[i]].isantigovernment == false then
+			elseif char_juese[possible_target[i]].isantigovernment == false and char_juese[possible_target[i]].isblackjack ~= true then
 				table.remove(possible_target,i)
 			end
+		elseif char_juese[ID].shenfen == "忠臣" then
+			if (char_juese[possible_target[i]].shenfen == "主公") and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
+
+			elseif char_juese[possible_target[i]].shenfen == "主公" then
+				table.remove(possible_target, i)
+			end
 		elseif char_juese[ID].shenfen == "反贼" then
-			if char_juese[possible_target[i]].isantigovernment == true and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
+			if (char_juese[possible_target[i]].isantigovernment == true and char_juese[possible_target[i]].isblackjack ~= true) and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
 			
-			elseif char_juese[possible_target[i]].isantigovernment ~= false then
+			elseif char_juese[possible_target[i]].isantigovernment == true and char_juese[possible_target[i]].isblackjack ~= true then
 				table.remove(possible_target,i)
 			end
 		elseif char_juese[ID].shenfen == "内奸" then
@@ -277,7 +275,7 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 				
 			elseif char_juese[i].shenfen == "主公" and char_juese[i].tili == 1 then
 				table.remove(possible_target,i)
-			elseif ai_judge_blackjack(ID) == true then
+			elseif ai_judge_blackjack(ID) == false then
 				if char_juese[possible_target[i]].isantigovernment ~= false then
 					table.remove(possible_target,i)
 				end
@@ -401,10 +399,12 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 		end
 	elseif string.find(card_treated,"杀") ~= nil then
 		--剔除距离不够的目标
-		for i=#possible_target,1,-1 do
-			local _,inrange = ai_judge_distance(ID,possible_target[i],1)
-			if inrange == false then
-				table.remove(possible_target,i)
+		if char_distance_infinity == false then
+			for i=#possible_target,1,-1 do
+				local _,inrange = ai_judge_distance(ID,possible_target[i],1)
+				if inrange == false then
+					table.remove(possible_target,i)
+				end
 			end
 		end
 		--剔除空城
@@ -1227,6 +1227,7 @@ end
 function ai_pindian_judge(ID,is_enemy)
 	local card_pindian = 1
 	local card_pindian_dianshu = 0
+
 	if char_juese[ID].shoupai[1][3] == "A" then
 		card_pindian_dianshu = 1
 	elseif char_juese[ID].shoupai[1][3] == "J" then
@@ -1253,7 +1254,7 @@ function ai_pindian_judge(ID,is_enemy)
 		end
 		if card_pindian_dianshu < j and is_enemy then
 			card_pindian, card_pindian_dianshu = i, j
-		elseif card_pindian_dianshu > j then
+		elseif card_pindian_dianshu > j and not is_enemy then
 			card_pindian, card_pindian_dianshu = i, j
 		end
 	end

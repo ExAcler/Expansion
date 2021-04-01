@@ -3,9 +3,9 @@
 function ai_judge_hujia_req(ID_req)
 	local c_pos = ai_chazhao_shan(ID_req, char_juese[ID_req].shoupai)
 	if c_pos < 0 then
-		return false
-	else
 		return true
+	else
+		return false
 	end
 end
 
@@ -706,4 +706,120 @@ end
 --  AI决定遗计的目标  --
 function ai_judge_yiji_mubiao(ID)
 	return ID
+end
+
+--  AI决定是否发动驱虎  --
+--  返回是否发动、手牌ID、目标A、目标B
+function ai_judge_quhu(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+
+	for i = #cards, 1, -1 do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards[i]]})
+		dianshu = _pindian_convert_dianshu(dianshu)
+
+		if dianshu >= 1 and dianshu <= 9 then
+			table.remove(cards, i)
+		end
+	end
+
+	if #cards == 0 then
+		char_juese[ID].skill["驱虎"] = "locked"
+		return false, 0, 0, 0
+	end
+
+	local highest = cards[1]
+	for i = 2, #cards do
+		if _pindian_convert_dianshu(char_juese[ID].shoupai[cards[i]][3]) > _pindian_convert_dianshu(char_juese[ID].shoupai[highest][3]) then
+			highest = cards[i]
+		end
+	end
+
+	cards = {highest}
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	local help_mubiao = ai_basic_judge_mubiao(ID, 4, true, true, true)
+	local possible_combinations_enemy = {}
+	local possible_combinations_friend = {}
+
+	for ii = 1, #attack_mubiao do
+		local chosen_mubiao = attack_mubiao[ii]
+		if #char_juese[chosen_mubiao].shoupai > 0 and #char_juese[chosen_mubiao].shoupai <= 4 then
+			for i = 1, 5 do
+				if i ~= chosen_mubiao and _quhu_find(attack_mubiao, i) then
+					if #char_juese[chosen_mubiao].wuqi > 0 then
+						if char_calc_distance(chosen_mubiao, i) <= card_wuqi_r[char_juese[chosen_mubiao].wuqi[1]] then
+							table.insert(possible_combinations_enemy, {chosen_mubiao, i})
+						end
+					else
+						if char_calc_distance(chosen_mubiao, i) <= 1 then
+							table.insert(possible_combinations_enemy, {chosen_mubiao, i})
+						end
+					end
+				end
+			end
+		end
+	end
+
+	for ii = 1, #help_mubiao do
+		local chosen_mubiao = help_mubiao[ii]
+		if #char_juese[chosen_mubiao].shoupai > 0 then
+			for i = 1, 5 do
+				if i ~= chosen_mubiao and _quhu_find(attack_mubiao, i) and (char_juese[i].tili == 1 or #char_juese[chosen_mubiao].shoupai >= 3 or #char_juese[chosen_mubiao].fangju > 0) then
+					if #char_juese[chosen_mubiao].wuqi > 0 then
+						if char_calc_distance(chosen_mubiao, i) <= card_wuqi_r[char_juese[chosen_mubiao].wuqi[1]] then
+							table.insert(possible_combinations_friend, {chosen_mubiao, i})
+						end
+					else
+						if char_calc_distance(chosen_mubiao, i) <= 1 then
+							table.insert(possible_combinations_friend, {chosen_mubiao, i})
+						end
+					end
+				end
+			end
+		end
+	end
+
+	if #possible_combinations_enemy + #possible_combinations_friend == 0 then
+		char_juese[ID].skill["驱虎"] = "locked"
+		return false, 0, 0, 0
+	end
+
+	local lowest_def_comb = possible_combinations_enemy[1]
+	for i = 2, #possible_combinations_enemy do
+		if #char_juese[possible_combinations_enemy[i][1]].shoupai < #char_juese[lowest_def_comb[1]].shoupai then
+			lowest_def_comb = possible_combinations_enemy[i]
+		end
+	end
+
+	while #possible_combinations_friend > 1 do
+		table.remove(possible_combinations_friend, math.random(#possible_combinations_friend))
+	end
+
+	if #possible_combinations_enemy > 0 then
+		return true, cards[1], lowest_def_comb[1], lowest_def_comb[2]
+	else
+		return true, cards[1], possible_combinations_friend[1][1], possible_combinations_friend[1][2]
+	end
+end
+function _pindian_convert_dianshu(dianshu)
+	if dianshu == "A" then
+		return 1
+	elseif dianshu == "J" then
+		return 11
+	elseif dianshu == "Q" then
+		return 12
+	elseif dianshu == "K" then
+		return 13
+	else
+		return tonumber(dianshu)
+	end
+end
+
+function _quhu_find(attack_mubiao, ID)
+	for i = 1, #attack_mubiao do
+		if attack_mubiao[i] == ID then
+			return true
+		end
+	end
+	return false
 end

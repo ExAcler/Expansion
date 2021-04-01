@@ -106,7 +106,7 @@ function ai_judge_lijian(ID)
 		if card_judge_if_shan(ID, cards[i]) then
 			if ai_judge_random_percent(percent) == 1 then
 				table.remove(cards, i)
-				percent = 40
+				percent = 30
 			end
 		end
 	end
@@ -116,6 +116,14 @@ function ai_judge_lijian(ID)
 	end
 	while #cards > 1 do
 		table.remove(cards, math.random(#cards))
+	end
+
+	if #char_juese[attack_mubiao[1]].shoupai > #char_juese[attack_mubiao[2]].shoupai then
+		local _attack_mubiao = {attack_mubiao[1], attack_mubiao[2]}
+		attack_mubiao = _attack_mubiao
+	else
+		local _attack_mubiao = {attack_mubiao[2], attack_mubiao[1]}
+		attack_mubiao = _attack_mubiao
 	end
 
 	if #cards == 0 then

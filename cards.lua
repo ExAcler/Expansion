@@ -741,8 +741,9 @@ end
 
 --  拼点结算  --
 function card_pindian(va_list)
-	local ID_s, ID_mubiao, win_fp, keep_card
-	ID_s = va_list[1]; ID_mubiao = va_list[2]; win_fp = va_list[3]; keep_card = va_list[4]
+	local ID_s, ID_mubiao, win_fp, keep_card, chosen_pindian_card_id
+
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; win_fp = va_list[3]; keep_card = va_list[4]; chosen_pindian_card_id = va_list[5]
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
@@ -759,10 +760,14 @@ function card_pindian(va_list)
 			if ID_s == char_current_i then
 				add_funcptr(card_into_pindian, {ID_s, card_highlighted})
 				skills_losecard(ID_s, 1, true)
-				add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, true)})
+				add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, ai_judge_same_identity(ID_mubiao, ID_s, false) ~= 1)})
 				skills_losecard(ID_mubiao, 1, true)
 			elseif ID_mubiao == char_current_i then
-				add_funcptr(card_into_pindian, {ID_s, ai_pindian_judge(ID_s, true)})
+				if chosen_pindian_card_id == nil then
+					add_funcptr(card_into_pindian, {ID_s, ai_pindian_judge(ID_s, true)})
+				else
+					add_funcptr(card_into_pindian, {ID_s, chosen_pindian_card_id})
+				end
 				skills_losecard(ID_s, 1, true)
 				add_funcptr(card_into_pindian, {ID_mubiao, card_highlighted})
 				skills_losecard(ID_mubiao, 1, true)
@@ -776,9 +781,13 @@ function card_pindian(va_list)
 			timer.start(0.6)
 		end
 	else
-		add_funcptr(card_into_pindian, {ID_s, ai_pindian_judge(ID_s, true)})
+		if chosen_pindian_card_id == nil then
+			add_funcptr(card_into_pindian, {ID_s, ai_pindian_judge(ID_s, true)})
+		else
+			add_funcptr(card_into_pindian, {ID_s, chosen_pindian_card_id})
+		end
 		skills_losecard(ID_s, 1, true)
-		add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, true)})
+		add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, ai_judge_same_identity(ID_mubiao, ID_s, false) ~= 1)})
 		skills_losecard(ID_mubiao, 1, true)
 		
 		add_funcptr(card_pindian_judge, {ID_s, ID_mubiao, win_fp, keep_card})

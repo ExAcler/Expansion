@@ -167,7 +167,7 @@ function skills_hunzi()
 end
 
 --  太史慈：天义  --
-function skills_tianyi_ai(ID_s, ID_mubiao)	--  AI发动天义
+function skills_tianyi_ai(ID_s, ID_mubiao, chosen_pindian_card_id)	--  AI发动天义
 	if #char_juese[ID_s].shoupai == 0 or #char_juese[ID_mubiao].shoupai == 0 then
 		return false
 	end
@@ -182,7 +182,7 @@ function skills_tianyi_ai(ID_s, ID_mubiao)	--  AI发动天义
 
 	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '天义'")
 	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "与", char_juese[ID_mubiao].name, "进行拼点"}))
-	add_funcptr(card_pindian, {ID_s, ID_mubiao, win, false})
+	add_funcptr(card_pindian, {ID_s, ID_mubiao, win, false, chosen_pindian_card_id})
 	add_funcptr(_quhu_sub2)
 	timer.start(0.6)
 
@@ -657,7 +657,6 @@ function skills_jieyin_enter()
 	
 	return true
 end
-
 function skills_judge_jieyin_1()
 	local i
 	
@@ -673,33 +672,43 @@ function skills_judge_jieyin_2(ID_mubiao)
 	return false
 end
 function skills_jieyin(ID_s, ID_mubiao, ID_shoupai)
-	if skills_judge_jieyin_1() == false or skills_judge_jieyin_2(ID_mubiao) == false then return false end
+	if ID_s == char_current_i and skills_judge_jieyin_1() == false then
+		return false
+	end
+	if skills_judge_jieyin_2(ID_mubiao) == false then
+		return false
+	end
+
 	funcptr_queue = {}
 	
-	add_funcptr(_jieyin_sub1, {ID_s, ID_shoupai})
+	add_funcptr(_jieyin_sub1, ID_s)
+	for i = #ID_shoupai, 1, -1 do
+		add_funcptr(_jieyin_sub2, {ID_s, ID_shoupai[i]})
+	end
 	skills_losecard(ID_s, #ID_shoupai, true)
 
 	if char_juese[ID_s].tili < char_juese[ID_s].tili_max then
-		add_funcptr(_tao_sub, {ID_s, false})
+		add_funcptr(_qingnang_sub1, ID_s)
 	end
-	add_funcptr(_tao_sub, {ID_mubiao, false})
-	
+	add_funcptr(_qingnang_sub1, ID_mubiao)
+	add_funcptr(_fanjian_sub4)
+
 	return true
 end
-function _jieyin_sub1(va_list)
-	local i
-	local ID_s, ID_shoupai
-	ID_s = va_list[1]; ID_shoupai = va_list[2]
-	
+function _jieyin_sub1(ID_s)
 	set_hints("")
 	gamerun_status = "手牌生效中"
 	
 	push_message(char_juese[ID_s].name .. "发动了武将技能 '结姻'")
-
-	for i = #ID_shoupai, 1, -1 do
-		card_shanchu({ID_s, ID_shoupai[i]})
-	end
 	char_juese[ID_s].skill["结姻"] = "locked"
+end
+function _jieyin_sub2(va_list)
+	local ID_s, ID_shoupai
+	ID_s = va_list[1]; ID_shoupai = va_list[2]
+
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+	push_message(table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+	card_shanchu({ID_s, ID_shoupai})
 end
 
 --  张昭张纮：直谏  --
