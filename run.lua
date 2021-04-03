@@ -818,7 +818,7 @@ function gamerun_enter_qipai()
 	if char_juese[char_current_i].tili + extra < #char_juese[char_current_i].shoupai then
 		local msg = {char_juese[char_current_i].name, "弃牌阶段"}
 		push_message(table.concat(msg))
-		msg = {"您须弃", #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili - extra, "张牌"}
+		msg = {"您须弃", math.min(#char_juese[char_current_i].shoupai - char_juese[char_current_i].tili - extra, #char_juese[char_current_i].shoupai), "张牌"}
 		set_hints(table.concat(msg))
 	else
 		set_hints("")
@@ -1133,10 +1133,10 @@ function on.timer()
 	end
 	
 	if funcptr_i <= #funcptr_queue then
-		if funcptr_queue[funcptr_i].func ~= nil then
-			funcptr_queue[funcptr_i].func(funcptr_queue[funcptr_i].va_list)
-		end
 		funcptr_i = funcptr_i + 1
+		if funcptr_queue[funcptr_i - 1].func ~= nil then
+			funcptr_queue[funcptr_i - 1].func(funcptr_queue[funcptr_i - 1].va_list)
+		end
 	else
 		timer.stop()
 	end
@@ -1437,6 +1437,11 @@ function on.enterKey()
 			return
 		end
 
+		if string.find(gamerun_status, "不屈") then
+			_buqu_remove_card_exe(char_current_i, gamerun_guankan_selected)
+			return
+		end
+
 		return
 	end
 	
@@ -1587,7 +1592,7 @@ function on.enterKey()
 		extra = skills_judge_xueyi(char_current_i)
 	
 	    --  确认已选择足够的牌  --
-		if table.getn2(card_selected) == #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili - extra then
+		if table.getn2(card_selected) == math.min(#char_juese[char_current_i].shoupai - char_juese[char_current_i].tili - extra, #char_juese[char_current_i].shoupai) then
 		    set_hints("")
 			funcptr_queue = {}; card_highlighted = 1
 			wugucards = {}
@@ -2155,8 +2160,8 @@ function on.tabKey()
 			if table.getn2(card_selected) < #char_juese[char_current_i].shoupai - char_juese[char_current_i].tili then
 		    	card_selected[card_highlighted] = 0
 				platform.window:invalidate()
-				return
 			end
+			return
 		end
 
 		--  技能选择  --

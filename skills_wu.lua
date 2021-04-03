@@ -30,7 +30,7 @@ function skills_xiaoji_enter(ID, n_arm)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -67,7 +67,7 @@ function skills_jiang_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -113,7 +113,7 @@ function skills_lianying_enter(ID, not_in_queue)
 		gamerun_status = old_gamerun_status
 		set_hints("")
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 
 		if not_in_queue then
 			_lianying_shangshi_status_restore()
@@ -286,7 +286,7 @@ function skills_yinghun_enter(ID)
 			gamerun_status = ""
 
 			funcptr_queue, funcptr_i = pop_zhudong_queue()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 			return
 		end
@@ -385,7 +385,7 @@ function skills_buyi_enter(ID_mubiao)
 			end
 	    else
 			_buyi_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -439,7 +439,7 @@ function _buyi_huifu()
 end
 function _buyi_huifu_2()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
-	funcptr_i = funcptr_i + 1
+	--funcptr_i = funcptr_i + 1
 end
 function buyi_tili_huifu(ID)
 	char_juese[ID].tili = char_juese[ID].tili + 1
@@ -473,7 +473,7 @@ function skills_yingzi_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -688,9 +688,9 @@ function skills_jieyin(ID_s, ID_mubiao, ID_shoupai)
 	skills_losecard(ID_s, #ID_shoupai, true)
 
 	if char_juese[ID_s].tili < char_juese[ID_s].tili_max then
-		add_funcptr(_qingnang_sub1, ID_s)
+		char_tili_huifu(ID_s, 1)
 	end
-	add_funcptr(_qingnang_sub1, ID_mubiao)
+	char_tili_huifu(ID_mubiao, 1)
 	add_funcptr(_fanjian_sub4)
 
 	return true
@@ -799,7 +799,7 @@ function _zhijian_sub2(va_list)
 	end
 	
 	if card_get_leixing(card[1]) == "防具" then
-		char_juese[ID_mubiao].fangju = card
+		card_arm_fangju(ID_mubiao, card)
 	end
 	
 	if card_get_leixing(card[1]) == "+1马" then
@@ -1164,7 +1164,7 @@ function skills_haoshi_stage_1_enter()
 		
 		gamerun_status = ""
 		_haoshi_huifu()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 
@@ -1304,7 +1304,7 @@ function skills_tianxiang_enter(dianshu, shuxing, deduct_va)
 		else
 			gamerun_status = old_gamerun_status
 			_tianxiang_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 	end
@@ -1328,7 +1328,7 @@ function _tianxiang_select_target(dianshu, shuxing, deduct_va, old_gamerun_statu
 				gamerun_status = old_gamerun_status
 				set_hints("")
 				_tianxiang_huifu()
-				funcptr_i = funcptr_i + 1
+				--funcptr_i = funcptr_i + 1
 				timer.start(0.6)
 			end
 			return
@@ -1460,7 +1460,7 @@ function skills_guzheng_enter(ID_mubiao)
 			_guzheng_paidui_select(ID_mubiao)
 	    else
 			_guzheng_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.2)
 		end
 		platform.window:invalidate()
@@ -1570,7 +1570,7 @@ function skills_liuli_enter(card_shoupai, ID_sha, sha_mubiao_i)
 		else
 			gamerun_status = old_gamerun_status
 			_liuli_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 	end
@@ -1596,7 +1596,7 @@ function _liuli_select_target(ID_sha, sha_mubiao_i, old_gamerun_status)
 				gamerun_status = old_gamerun_status
 				set_hints("")
 				_liuli_huifu()
-				funcptr_i = funcptr_i + 1
+				--funcptr_i = funcptr_i + 1
 				timer.start(0.6)
 			end
 			return
@@ -1693,4 +1693,200 @@ function _zhiba_sub1()
 	end
 
 	platform.window:invalidate()
+end
+
+--  周泰：不屈  --
+function skills_buqu(va_list)		--  不屈：进入不屈状态
+	local ID, _tili_deduct_va
+	ID = va_list[1]; _tili_deduct_va = va_list[2]
+
+	if char_juese[ID].tili > 0 or 1 - char_juese[ID].tili == #card_buqu[ID] then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID == char_current_i then
+		skills_buqu_enter(_tili_deduct_va)
+	else
+		_buqu_exe(ID, _tili_deduct_va)
+	end
+end
+function skills_buqu_enter(_tili_deduct_va)
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '不屈'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		gamerun_status = old_gamerun_status
+		set_hints("")
+
+		if gamerun_OK then
+			_buqu_exe(char_current_i, _tili_deduct_va)
+	    else
+			_buqu_huifu()
+			--funcptr_i = funcptr_i + 1
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function _buqu_exe(ID, _tili_deduct_va)
+	local buqu_needed = 1 - char_juese[ID].tili - #card_buqu[ID]
+
+	push_message(char_juese[ID].name .. "发动了武将技能 '不屈'")
+	for i = 1, buqu_needed do
+		add_funcptr(_buqu_get_new_card, ID)
+	end
+	add_funcptr(_buqu_jiesuan, {ID, _tili_deduct_va})
+	add_funcptr(_buqu_huifu)
+	timer.start(0.6)
+end
+function _buqu_get_new_card(ID)
+	if #card_yixi == 0 then
+	    card_xipai(true)
+	end
+
+	local card = card_yixi[1]
+    table.insert(card_buqu[ID], card)
+	table.remove(card_yixi, 1)
+	push_message(table.concat({char_juese[ID].name .. "获得了不屈牌'", card[2], card[3], "的", card[1], "'"}))
+end
+function _buqu_check_condition(ID)
+	local dianshu_present = {}
+
+	for i = 1, #card_buqu[ID] do
+		local dianshu = card_buqu[ID][i][3]
+		if dianshu_present[dianshu] ~= nil then
+			return false
+		else
+			dianshu_present[dianshu] = true
+		end
+	end
+
+	return true
+end
+function _buqu_jiesuan(va_list)
+	local ID, _tili_deduct_va
+	ID = va_list[1]; _tili_deduct_va = va_list[2]
+
+	if _buqu_check_condition(ID) then
+		if char_buqu[ID] == false then
+			push_message(char_juese[ID].name .. "进入不屈状态")
+			char_buqu[ID] = true
+		else
+			push_message(char_juese[ID].name .. "的不屈状态维持成功")
+		end
+	else
+		push_message(char_juese[ID].name .. "的不屈状态维持失败")
+	end
+	
+	_buqu_enter_binsi(ID, _tili_deduct_va)
+end
+function _buqu_enter_binsi(ID, _tili_deduct_va)		--  不屈：不屈结算后重新进入濒死结算
+	_buqu_huifu()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local va = table.copy(_tili_deduct_va)
+	va[3] = char_juese[ID].tili
+	va[7] = true
+
+	char_binsi(va)
+end
+function skills_buqu_remove_card(ID)		--  不屈：体力恢复后移除不屈牌
+	local remove_needed = binsi_tili_recovered
+
+	if remove_needed == 0 then
+		_baiyin_skip()
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	for i = 1, remove_needed do
+		add_funcptr(_buqu_remove_card, ID)
+	end
+
+	add_funcptr(_buqu_huifu)
+	timer.start(0.6)
+end
+function _buqu_remove_card(ID)
+	if #card_buqu[ID] == 0 then
+		--  已脱离不屈状态  --
+		char_buqu[ID] = false
+		return
+	end
+
+	if ID == char_current_i then
+		_buqu_remove_card_enter()
+	else
+		_buqu_remove_card_ai(ID)
+	end
+end
+function _buqu_remove_card_enter()
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	wugucards = table.copy(card_buqu[char_current_i])
+
+	gamerun_status = "牌堆选择-不屈"
+	jiaohu_text = "请选择要移除的不屈牌"
+	gamerun_guankan_selected = 1
+
+	txt_messages:setVisible(false)
+	platform.window:invalidate()
+end
+function _buqu_remove_card_ai(ID)
+	_buqu_remove_card_exe(ID, #card_buqu[ID])
+end
+function _buqu_remove_card_exe(ID, ID_buqu)
+	set_hints("")
+	gamerun_status = "手牌生效中"
+	txt_messages:setVisible(true)
+
+	wugucards = {}
+	local card = card_buqu[ID][ID_buqu]
+	push_message(table.concat({char_juese[ID].name, "移除了不屈牌'", card[2], card[3], "的", card[1], "'"}))
+	table.remove(card_buqu[ID], ID_buqu)
+	card_add_qipai(card)
+
+	if #card_buqu[ID] == 0 then
+		char_buqu[ID] = false
+	end
+
+	if ID == char_current_i then
+		_buqu_huifu()
+		--funcptr_i = funcptr_i + 1
+		timer.start(0.6)
+	end
+end
+function _buqu_siwang_qipai(ID)		--  不屈：死亡后弃掉所有不屈牌
+	for i = #card_buqu[ID], 1, -1 do
+		add_funcptr(_buqu_qipai_exe, {ID, i})
+	end
+end
+function _buqu_qipai_exe(va_list)
+	local ID, ID_buqu
+	ID = va_list[1]; ID_buqu = va_list[2]
+
+	local card = card_buqu[ID][ID_buqu]
+	push_message(table.concat({char_juese[ID].name, "丢弃不屈牌'", card[2], card[3], "的", card[1], "'"}))
+	table.remove(card_buqu[ID], ID_buqu)
+	card_add_qipai(card)
+end
+function _buqu_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end

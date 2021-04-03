@@ -27,7 +27,7 @@ function skills_fenxin_enter(ID, ID_mubiao)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -94,7 +94,7 @@ function skills_biyue_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -259,15 +259,11 @@ function skills_qingnang(ID_shoupai, ID_s, ID_mubiao)
 
 	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "发动了武将技能 '青囊'"}))
 	add_funcptr(_qingnang_sub2, {ID_shoupai, ID_s})
-	add_funcptr(_qingnang_sub1, ID_mubiao)
+	char_tili_huifu(ID_mubiao, 1)
 	add_funcptr(_fanjian_sub4)
 	timer.start(0.6)
 
 	return true
-end
-function _qingnang_sub1(ID)
-	push_message(table.concat({char_juese[ID].name, "回复1点体力"}))
-	char_juese[ID].tili = char_juese[ID].tili + 1
 end
 function _qingnang_sub2(va_list)
 	local ID_shoupai, ID_s
@@ -458,7 +454,7 @@ function skills_huashen_1(ID, jieduan, old_gamerun_status)
 end
 function _huashen_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
-	funcptr_i = funcptr_i + 1
+	--funcptr_i = funcptr_i + 1
 end
 
 --  左慈：新生 --
@@ -485,7 +481,7 @@ function skills_xinsheng_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -586,7 +582,7 @@ function skills_leiji_enter()
 			gamerun_status = old_gamerun_status
 			
 			_leiji_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -953,7 +949,7 @@ function skills_mengjin_enter(ID_mubiao)
 			gamerun_status = old_gamerun_status
 			
 			_fankui_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1067,7 +1063,7 @@ function skills_baonue_enter(ID_zhugong)
 			_baonue_exe(char_current_i, ID_zhugong)
 		else
 			_baonue_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end
@@ -1109,7 +1105,7 @@ function _baonue_jiesuan(va_list)
 	if huase == "黑桃" then
 		push_message(char_juese[ID_zhugong].name .. "的 '暴虐' 判定成功")
 		skills_card_qi_panding(ID)
-		add_funcptr(_kuanggu_sub1, ID_zhugong)
+		char_tili_huifu(ID_zhugong, 1)
 	else
 		push_message(char_juese[ID_zhugong].name .. "的 '暴虐' 判定失败")
 		skills_card_qi_panding(ID)

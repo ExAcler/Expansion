@@ -36,7 +36,7 @@ function skills_shangshi_enter(ID, not_in_queue)
 		gamerun_status = old_gamerun_status
 		set_hints("")
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 
 		if not_in_queue then
 			_lianying_shangshi_status_restore()
@@ -313,7 +313,7 @@ function skills_jushou_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -365,7 +365,7 @@ function skills_fankui_enter(laiyuan)
 			_fankui_exe({char_current_i, laiyuan})
 	    else
 			_fankui_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -473,7 +473,7 @@ function skills_ganglie_enter(laiyuan)
 			gamerun_status = old_gamerun_status
 			
 			_ganglie_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -674,7 +674,7 @@ function skills_tiandu_enter(ID,card_panding)
 		gamerun_status = ""
 		set_hints("")
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -800,7 +800,7 @@ function skills_luoyi_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 
@@ -847,7 +847,7 @@ function skills_jiangchi_enter(ID)
 		gamerun_status = ""
 		set_hints("")
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -922,7 +922,7 @@ function skills_tuxi_enter()
 	    else
 			gamerun_status = ""
 			_tuxi_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.2)
 		end
 		platform.window:invalidate()
@@ -1097,7 +1097,7 @@ function skills_guicai_guidao_zhudong_enter()	--  询问己方是否发动鬼才
 			push_message(char_juese[id].name .. "放弃改判")
 			
 			_guicai_guidao_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1146,7 +1146,7 @@ function skills_guicai_guidao_zhudong_choose(old_gamerun_status)
 			push_message(char_juese[id].name .. "放弃改判")
 			
 			_guicai_guidao_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 	end
@@ -1260,7 +1260,7 @@ function skills_fangzhu_enter()
 			gamerun_status = old_gamerun_status
 			
 			_fangzhu_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1369,7 +1369,7 @@ function skills_yiji_enter()
 			gamerun_status = old_gamerun_status
 			
 			_yiji_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1499,7 +1499,7 @@ function skills_jieming_enter()
 			gamerun_status = old_gamerun_status
 			
 			_jieming_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1591,7 +1591,7 @@ function skills_luoshen_enter(old_gamerun_status)
 			gamerun_status = old_gamerun_status
 			
 			_luoshen_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.2)
 		end
 		platform.window:invalidate()
@@ -1687,7 +1687,7 @@ function skills_jianxiong_enter()
 			_jianxiong_exe(char_current_i)
 	    else
 			_jianxiong_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1767,7 +1767,7 @@ function skills_shensu_enter(is_panding)
 			skills_shensu_choose_mubiao(is_panding)
 	    else
 			_shensu_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1812,7 +1812,7 @@ function skills_shensu_choose_mubiao(is_panding)
 			if gamerun_OK == false then
 				char_distance_infinity = false
 				_shensu_huifu()
-				funcptr_i = funcptr_i + 1
+				--funcptr_i = funcptr_i + 1
 				timer.start(0.6)
 			end
 		end
@@ -1924,7 +1924,7 @@ function skills_qiaobian_enter(jieduan)
 	    else
 			if jieduan ~= "弃牌" then
 				_qiaobian_huifu()
-				funcptr_i = funcptr_i + 1
+				--funcptr_i = funcptr_i + 1
 				timer.start(0.6)
 			else
 				gamerun_huihe_set("弃牌")
@@ -1983,7 +1983,7 @@ function skills_qiaobian_withdraw(jieduan)
 			_qiaobian_exe(card_highlighted, char_current_i, jieduan)
 		elseif gamerun_OK == false then
 			_qiaobian_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		return true
@@ -2200,19 +2200,28 @@ function skills_qiaobian_chupai_set(va_list)
 	if ID_card == 1 then
 		push_message(table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的武器"}))
 		char_juese[ID_s].wuqi, char_juese[ID_mubiao].wuqi = char_juese[ID_mubiao].wuqi, char_juese[ID_s].wuqi
-		skills_losecard(ID_mubiao, 9999, true)
+		skills_losecard(ID_s, -1, true)
+		skills_losecard(ID_mubiao, -1, true)
 	elseif ID_card == 2 then
 		push_message(table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的防具"}))
-		char_juese[ID_s].fangju, char_juese[ID_mubiao].fangju = char_juese[ID_mubiao].fangju, char_juese[ID_s].fangju
-		skills_losecard(ID_mubiao, 9999, true)
+
+		local s_fangju = table.copy(char_juese[ID_s].fangju)
+		local mubiao_fangju = table.copy(char_juese[ID_mubiao].fangju)
+		card_arm_fangju(ID_s, mubiao_fangju)
+		card_arm_fangju(ID_mubiao, s_fangju)
+
+		skills_losecard(ID_s, -1, true)
+		skills_losecard(ID_mubiao, -1, true)
 	elseif ID_card == 3 then
 		push_message(table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的-1马"}))
 		char_juese[ID_s].gongma, char_juese[ID_mubiao].gongma = char_juese[ID_mubiao].gongma, char_juese[ID_s].gongma
-		skills_losecard(ID_mubiao, 9999, true)
+		skills_losecard(ID_s, -1, true)
+		skills_losecard(ID_mubiao, -1, true)
 	elseif ID_card == 4 then
 		push_message(table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的+1马"}))
 		char_juese[ID_s].fangma, char_juese[ID_mubiao].fangma = char_juese[ID_mubiao].fangma, char_juese[ID_s].fangma
-		skills_losecard(ID_mubiao, 9999, true)
+		skills_losecard(ID_s, -1, true)
+		skills_losecard(ID_mubiao, -1, true)
 	else
 		push_message(table.concat({char_juese[ID_mubiao].name, "判定区的一张牌被转移给"..char_juese[ID_s].name}))
 		card = char_juese[ID_mubiao].panding[ID_card - 4]
@@ -2300,7 +2309,7 @@ function skills_songwei_enter(ID_zhugong)
 			_songwei_exe(char_current_i, ID_zhugong)
 		else
 			_songwei_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end
@@ -2360,7 +2369,7 @@ function skills_hujia_req_side_enter(mode, va)
 			skills_hujia_add(char_current_i, mode, va)
 		else
 			_hujia_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end
@@ -2427,7 +2436,7 @@ function skills_hujia_enter(ID_req, mode, va)
 			gamerun_status = old_gamerun_status
 			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
 			_hujia_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end
@@ -2453,7 +2462,7 @@ function _hujia_select_card(ID_req, mode, va, old_gamerun_status)
 			set_hints("")
 			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
 			_hujia_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end

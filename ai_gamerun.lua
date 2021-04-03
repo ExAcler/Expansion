@@ -108,11 +108,11 @@ function ai_basic_judge_mubiao(ID, required, is_help, exclude_self, exclude_unkn
 			elseif char_juese[ID].shenfen == "忠臣" then
 				--  5人局1忠，除主以外都是敌方  --
 				if is_help then
-					if char_juese[ID].shenfen ~= "主公" and possible_target[i] ~= ID then
+					if char_juese[possible_target[i]].shenfen ~= "主公" and possible_target[i] ~= ID then
 						table.remove(possible_target, i)
 					end
 				else
-					if char_juese[ID].shenfen == "主公" or possible_target[i] == ID then
+					if char_juese[possible_target[i]].shenfen == "主公" or possible_target[i] == ID then
 						table.remove(possible_target, i)
 					end
 				end
@@ -443,7 +443,7 @@ function ai_skill_use_priority(ID)
 	local fadong, ID_shoupai, mubiao
 
 	--  神司马懿极略  --
-	if char_juese[ID].skill["极略"] == "available" and mark_ren > 0 then
+	if char_juese[ID].skill["极略"] == "available" and mark_ren[ID] > 0 then
 		skills_jilve_ai(ID)
 		timer.start(0.6)
 		return true
@@ -982,6 +982,7 @@ function _ai_qipai_exe(ID)
 
 	local qipai_id, i, qizhuangbei_id
 	local required = math.max(#char_juese[ID].shoupai - char_juese[ID].tili - extra, 0)
+	required = math.min(required, #char_juese[ID].shoupai)
 	if char_juese[ID].skill["庸肆"] == "available" then
 		local shili = {}
 		for i = 1, 5 do

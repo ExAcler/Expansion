@@ -68,35 +68,45 @@ function draw_opponent(gc)
 	    gc:setFont("sansserif", "r", 11)
 	
 	    -- 体力数 --
-		if char_juese[id].tili_max < 5 then
-	        for i = 1, char_juese[id].tili_max do
-	            if i <= char_juese[id].tili then
-	                gc:drawImage(hongxin_on_img, x1 + 77, y1 + 1 + 11 * (i - 1))  -- (82, 6 + 11 * (i - 1))
-		        else
-		            gc:drawImage(hongxin_off_img, x1 + 77, y1 + 1 + 11 * (i - 1))
-		        end
-	        end
-		else
-			if char_juese[id].siwang == false then
-				gc:drawImage(hongxin_on_img, x1 + 77, y1 + 1)
-				gc:setColorRGB(255, 0, 0)
-			else
-				gc:drawImage(hongxin_off_img, x1 + 77, y1 + 1)
-				gc:setColorRGB(192, 192, 192)
-			end
+		if char_buqu[id] == true then
+			gc:drawImage(hongxin_on_img, x1 + 77, y1 + 1)
+			gc:setColorRGB(255, 0, 0)
 			gc:setFont("sansserif", "r", 7)
-			if char_juese[id].tili < 0 then
-				gc:drawString("0", x1 + 81, y1 + 10 + 11)
-			else
-				gc:drawString(tostring(char_juese[id].tili), x1 + 81, y1 + 10 + 11)
-			end
-			gc:drawString("/", x1 + 81, y1 + 10 + 11 + 8)
-			gc:drawString(tostring(char_juese[id].tili_max), x1 + 81, y1 + 10 + 11 + 8 * 2)
+			gc:drawString("R", x1 + 79, y1 + 10 + 11)
+			gc:drawString(tostring(#card_buqu[id]), x1 + 81, y1 + 10 + 11 + 8)
 			gc:setFont("sansserif", "r", 11)
-			if char_juese[id].siwang == false then
-				gc:setColorRGB(0, 0, 0)
+			gc:setColorRGB(0, 0, 0)
+		else
+			if char_juese[id].tili_max < 5 then
+				for i = 1, char_juese[id].tili_max do
+					if i <= char_juese[id].tili then
+						gc:drawImage(hongxin_on_img, x1 + 77, y1 + 1 + 11 * (i - 1))  -- (82, 6 + 11 * (i - 1))
+					else
+						gc:drawImage(hongxin_off_img, x1 + 77, y1 + 1 + 11 * (i - 1))
+					end
+				end
 			else
-				gc:setColorRGB(192, 192, 192)
+				if char_juese[id].siwang == false then
+					gc:drawImage(hongxin_on_img, x1 + 77, y1 + 1)
+					gc:setColorRGB(255, 0, 0)
+				else
+					gc:drawImage(hongxin_off_img, x1 + 77, y1 + 1)
+					gc:setColorRGB(192, 192, 192)
+				end
+				gc:setFont("sansserif", "r", 7)
+				if char_juese[id].tili < 0 then
+					gc:drawString("0", x1 + 81, y1 + 10 + 11)
+				else
+					gc:drawString(tostring(char_juese[id].tili), x1 + 81, y1 + 10 + 11)
+				end
+				gc:drawString("/", x1 + 81, y1 + 10 + 11 + 8)
+				gc:drawString(tostring(char_juese[id].tili_max), x1 + 81, y1 + 10 + 11 + 8 * 2)
+				gc:setFont("sansserif", "r", 11)
+				if char_juese[id].siwang == false then
+					gc:setColorRGB(0, 0, 0)
+				else
+					gc:setColorRGB(192, 192, 192)
+				end
 			end
 		end
 	
@@ -249,19 +259,10 @@ function draw_opponent(gc)
 			
 				if id == gamerun_target_selected then
 					--  显示焦点  --
-					local fun, wuqi
-			
-					if #char_juese[char_current_i].wuqi ~= 0 then
-						wuqi = char_juese[char_current_i].wuqi[1]
-					else
-						wuqi = ""
-					end
+					local fun
 			
 					if gamerun_status == "选择目标-B" or ((card == "驱虎2" or card == "节命" or card == "好施" or card == "遗计") and gamerun_status == "技能选择-目标B") then
 						fun = function(card) return card_if_d_limit(card, guankan_s, gamerun_target_selected) end
-					elseif wuqi == "丈八矛" then
-						card = {}
-						fun = function(card) return card_if_d_limit(card, char_current_i, id) end
 					else
 						fun = function(card) return card_if_d_limit(card, char_current_i, id) end
 					end
@@ -418,27 +419,37 @@ function draw_self(gc)
 	end
 	
 	-- 体力 --
-	if char_juese[char_current_i].tili_max < 5 then
-	    for i = 1, char_juese[char_current_i].tili_max do
-	        if i <= char_juese[char_current_i].tili then
-		        gc:drawImage(hongxin_on_img, 224 + 77, 151 + 15 + 11 * (i - 1))
-		    else
-		        gc:drawImage(hongxin_off_img, 224 + 77, 151 + 15 + 11 * (i - 1))
-		    end
-	    end
-	else
-	    gc:drawImage(hongxin_on_img, 224 + 77, 151 + 15)
-		gc:setFont("sansserif", "r", 7)
+	if char_buqu[char_current_i] == true then
+		gc:drawImage(hongxin_on_img, 224 + 77, 151 + 15)
 		gc:setColorRGB(255, 0, 0)
-		if char_juese[char_current_i].tili < 0 then
-			gc:drawString("0", 224 + 81, 151 + 24 + 11)
-		else
-			gc:drawString(tostring(char_juese[char_current_i].tili), 224 + 81, 151 + 24 + 11)
-		end
-		gc:drawString("/", 224 + 81, 151 + 24 + 11 + 8)
-		gc:drawString(tostring(char_juese[char_current_i].tili_max), 224 + 81, 151 + 24 + 11 + 8 * 2)
+		gc:setFont("sansserif", "r", 7)
+		gc:drawString("R", 224 + 79, 151 + 24 + 11)
+		gc:drawString(tostring(#card_buqu[char_current_i]), 224 + 81, 151 + 24 + 11 + 8)
 		gc:setFont("sansserif", "r", 11)
 		gc:setColorRGB(0, 0, 0)
+	else
+		if char_juese[char_current_i].tili_max < 5 then
+			for i = 1, char_juese[char_current_i].tili_max do
+				if i <= char_juese[char_current_i].tili then
+					gc:drawImage(hongxin_on_img, 224 + 77, 151 + 15 + 11 * (i - 1))
+				else
+					gc:drawImage(hongxin_off_img, 224 + 77, 151 + 15 + 11 * (i - 1))
+				end
+			end
+		else
+			gc:drawImage(hongxin_on_img, 224 + 77, 151 + 15)
+			gc:setFont("sansserif", "r", 7)
+			gc:setColorRGB(255, 0, 0)
+			if char_juese[char_current_i].tili < 0 then
+				gc:drawString("0", 224 + 81, 151 + 24 + 11)
+			else
+				gc:drawString(tostring(char_juese[char_current_i].tili), 224 + 81, 151 + 24 + 11)
+			end
+			gc:drawString("/", 224 + 81, 151 + 24 + 11 + 8)
+			gc:drawString(tostring(char_juese[char_current_i].tili_max), 224 + 81, 151 + 24 + 11 + 8 * 2)
+			gc:setFont("sansserif", "r", 11)
+			gc:setColorRGB(0, 0, 0)
+		end
 	end
 	
 	-- 身份 --

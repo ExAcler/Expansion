@@ -218,10 +218,18 @@ card_qipai = {}    -- 弃牌堆
 card_panding_card = {}    -- 翻开的判定牌
 card_jiesuan = {{}, "", 0}		--  正在结算的牌 (参数1为牌，参数2为实际的牌名，参数3为手牌来源ID)
 wugucards = {}		--  五谷丰登/弃牌阶段牌堆
+card_buqu = {}		--  不屈牌牌堆
+card_tian = {}		--  "田"牌牌堆
 
 -- 界面上高亮/已选取 (凸起) 的牌
 card_selected = {}
 card_highlighted = 1
+
+for i = 1, 5 do
+	card_buqu[i] = {}
+	card_tian[i] = {}
+end
+
 end
 
 --  定义变量  --
@@ -586,15 +594,6 @@ function _qipai_sub5(ID, hide_msg, is_passive)    --  丢弃防具
 		msg = nil; --collectgarbage()
 	end
 
-	if char_juese[ID].siwang == false then
-		--  失去白银狮子，回复一点体力  --
-		if char_juese[ID].fangju[1] == "白银狮" and char_juese[ID].tili < char_juese[ID].tili_max then
-			push_message(table.concat({char_juese[ID].name, "失去白银狮子，回复1点体力"}))
-			char_juese[ID].tili = char_juese[ID].tili + 1
-			platform.window:invalidate()
-		end
-	end
-
 	card_add_qipai(char_juese[ID].fangju)
     char_juese[ID].fangju = {}
 end
@@ -677,13 +676,7 @@ function _napai_sub5(ID, ID_get, hide_msg, is_passive)    --  获得防具
 		push_message(table.concat(msg))
 		msg = nil; --collectgarbage()
 	end
-	card = char_juese[ID].fangju
-	--  失去白银狮子，回复一点体力  --
-	if card[1] == "白银狮" and char_juese[ID].tili < char_juese[ID].tili_max then
-		push_message(table.concat({char_juese[ID].name, "失去白银狮子，回复1点体力"}))
-		char_juese[ID].tili = char_juese[ID].tili + 1
-		platform.window:invalidate()
-	end
+	local card = char_juese[ID].fangju
 	table.insert(char_juese[ID_get].shoupai,card)
     char_juese[ID].fangju = {}
 end
@@ -1564,10 +1557,62 @@ function card_zhangba_enter()
 	return true
 end
 
---  装备武器  --
+--  失去白银狮子  --
+function card_lost_baiyin(ID)
+	if char_juese[ID].arm_baiyin == false then
+		_baiyin_skip()
+		return
+	end
+
+	if #char_juese[ID].fangju > 0 then
+		if char_juese[ID].fangju[1] == "白银狮" then
+			_baiyin_skip()
+			return
+		end
+	end
+
+	char_juese[ID].arm_baiyin = false
+
+	if char_juese[ID].tili == char_juese[ID].tili_max then
+		_baiyin_skip()
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	add_funcptr(push_message, table.concat({char_juese[ID].name, "失去白银狮子"}))
+	char_tili_huifu(ID, 1)
+
+	add_funcptr(_baiyin_huifu)
+	timer.start(0.6)
+end
+function _baiyin_skip()
+	on.timer()
+end
+function _baiyin_huifu()
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+	on.timer()
+end
+
+--  装备防具  --
+function card_arm_fangju(ID, card)
+	char_juese[ID].fangju = card
+	if card[1] == "白银狮" then
+		char_juese[ID].arm_baiyin = true
+	end
+end
+
+--  安装装备  --
 function card_arm(va_list)
 	local ID_shoupai, ID
 	ID_shoupai = va_list[1]; ID = va_list[2]
+
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
 
 	gamerun_status = "手牌生效中"
 	set_hints("")
@@ -1587,16 +1632,10 @@ function card_arm(va_list)
         char_juese[ID].wuqi = card
 	elseif card_get_leixing(card[1]) == "防具" then
 	    if #char_juese[ID].fangju ~= 0 then
-		    --  失去白银狮子，回复一点体力  --
-			if char_juese[ID].fangju[1] == "白银狮" and char_juese[ID].tili < char_juese[ID].tili_max then
-			    push_message(table.concat({char_juese[ID].name, "失去白银狮子，回复1点体力"}))
-				char_juese[ID].tili = char_juese[ID].tili + 1
-				platform.window:invalidate()
-			end
 		    table.insert(card_qipai, char_juese[ID].fangju)
 			char_juese[ID].last_n_arm = char_juese[ID].last_n_arm + 1	--  触发枭姬
 		end
-	    char_juese[ID].fangju = card
+		card_arm_fangju(ID, card)
 	elseif card_get_leixing(card[1]) == "+1马" then
 	    if #char_juese[ID].fangma ~= 0 then
 		    table.insert(card_qipai, char_juese[ID].fangma)
@@ -1613,10 +1652,6 @@ function card_arm(va_list)
 	
 	msg = {char_juese[ID].name, "装备'", card[2], card[3], "的", card[1], "'"}
 	push_message(table.concat(msg))
-	
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
 
 	skills_losecard(ID, 0, true)
 	add_funcptr(_arm_sub1)
@@ -1930,14 +1965,14 @@ end
 function _wuxie_prepare()
 	timer.start(0.2)
 
-	push_message("等待其他玩家响应")
+	push_message("请等待无懈可击")
 	wuxie_in_effect = false
 	wuxie_queue_jinnang = table.copy(funcptr_queue)
 end
 function _wuxie_prepare_2()
 	timer.start(0.2)
 
-	push_message("等待其他玩家响应")
+	push_message("请等待无懈可击")
 end
 function card_wuxie_query(actual_name, ID_s, ID_mubiao)	--  无懈可击：从锦囊作用目标开始，轮询确定各方是否出无懈可击
 	local id = ID_mubiao
@@ -1945,9 +1980,9 @@ function card_wuxie_query(actual_name, ID_s, ID_mubiao)	--  无懈可击：从�
 		if char_juese[id].siwang == false then
 			if id == char_current_i then
 				--  轮到己方出无懈可击，插入主动响应  --
-				add_funcptr(card_wuxie_zhudong, {actual_name, ID_s, ID_mubiao})
+				add_funcptr(card_wuxie_zhudong, {actual_name, ID_s, ID_mubiao, i})
 			else
-				add_funcptr(card_wuxie_ai, {id, actual_name, ID_s, ID_mubiao})
+				add_funcptr(card_wuxie_ai, {id, actual_name, ID_s, ID_mubiao, i})
 			end
 		end
 
@@ -1959,9 +1994,9 @@ function card_wuxie_query(actual_name, ID_s, ID_mubiao)	--  无懈可击：从�
 	add_funcptr(_wuxie_exe)
 end
 function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判断
-	local id, actual_name, ID_s, ID_mubiao
+	local id, actual_name, ID_s, ID_mubiao, order
 	local msg
-	id = va_list[1]; actual_name = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]
+	id = va_list[1]; actual_name = va_list[2]; ID_s = va_list[3]; ID_mubiao = va_list[4]; order = va_list[5]
 
 	if char_juese[id].siwang == true then
 		return
@@ -2016,7 +2051,11 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		timer.start(0.2)
 	else
 		msg = {char_juese[id].name, "放弃无懈"}
-		push_message(table.concat(msg))
+		print(table.concat(msg))
+		--push_message(table.concat(msg))
+		if order < 5 then
+			_baiyin_skip()
+		end
 	end
 end
 function _wuxie_yanshi()
@@ -2028,7 +2067,8 @@ function card_wuxie_zhudong(va_list)	--  无懈可击：轮到己方出无懈可
 	actual_name = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]
 
 	wuxie_queue_xiangying = table.copy(funcptr_queue)
-	wuxie_queue_xiangying_i = funcptr_i + 1
+	--wuxie_queue_xiangying_i = funcptr_i + 1
+	wuxie_queue_xiangying_i = funcptr_i
 	wuxie_va = {ID_s, ID_mubiao}
 	timer.stop()
 	funcptr_queue = {}
@@ -2066,8 +2106,8 @@ end
 function _wuxie_zhudong_fangqi()	--  无懈可击：己方放弃出无懈可击
 	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
-	msg = {char_juese[char_current_i].name, "放弃无懈"}
-	push_message(table.concat(msg))
+	--msg = {char_juese[char_current_i].name, "放弃无懈"}
+	--push_message(table.concat(msg))
 
 	--  恢复原有的函数队列，继续原有轮询  --
 	funcptr_queue = wuxie_queue_xiangying
@@ -2135,28 +2175,15 @@ function card_tao(ID_shoupai, ID_s, ID_mubiao)
 	
 	gamerun_status = "手牌生效中"
 	set_hints("")
-	local card = char_juese[ID_s].shoupai[ID_shoupai]
 	
-	if card[1] ~= "桃" then
-		add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '青囊'")
-	end
-
 	add_funcptr(_tao_show, {ID_shoupai, ID_s, nil})
 	skills_losecard(ID_s, 1, true)
-	add_funcptr(_tao_sub, {ID_mubiao, false})
+	char_tili_huifu(ID_mubiao, 1)
+	add_funcptr(_tao_sub)
 
 	return true
 end
-function _tao_sub(va_list)
-	local ID_mubiao, binsi
-    local msg
-	
-	ID_mubiao = va_list[1]; binsi = va_list[2]
-	char_juese[ID_mubiao].tili = char_juese[ID_mubiao].tili + 1
-	msg = {char_juese[ID_mubiao].name, "回复1点体力"}
-	push_message(table.concat(msg))
-	msg = nil; --collectgarbage()
-	
+function _tao_sub()
 	if char_acting_i == char_current_i then
 		gamerun_status = ""
 		set_hints("请您出牌")
@@ -2385,7 +2412,7 @@ function card_taoyuan(ID_shoupai, ID_s)
 				card_wuxie("桃园结义", ID_s, id)
 
 				funcptr_add_tag = "无懈无效结算"
-				add_funcptr(_taoyuan_sub1, id)
+				char_tili_huifu(id, 1)
 				funcptr_add_tag = nil
 			end
 		end
@@ -2714,13 +2741,6 @@ function card_chai_shun_exe(va_list)
 			msg = {char_juese[ID_s].name, "获得", char_juese[ID_d].name, "的防具'", card[2], card[3], "的", card[1], "'"}
 			push_message(table.concat(msg))
 			msg = nil; --collectgarbage()
-		end
-		
-		--  失去白银狮子，回复一点体力  --
-		if card[1] == "白银狮" and char_juese[ID_d].tili < char_juese[ID_d].tili_max then
-			push_message(table.concat({char_juese[ID_d].name, "失去白银狮子，回复1点体力"}))
-			char_juese[ID_d].tili = char_juese[ID_d].tili + 1
-			platform.window:invalidate()
 		end
 	end
 	if gamerun_guankan_type[ID_selected][1] == "判定牌" then
@@ -3167,7 +3187,7 @@ function _wugu_zhudong_enter()		--  五谷丰登：进入己方选择模式
 end
 function _wugu_huifu()	--  无懈可击：己方执行完毕恢复原有函数队列
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
-	funcptr_i = funcptr_i + 1
+	--funcptr_i = funcptr_i + 1
 	timer.start(0.6)
 end
 function _wugu_mopai()	--  五谷丰登：从主牌堆摸一张牌到五谷丰登牌堆
@@ -4692,7 +4712,7 @@ function _sha_qilin_enter(ID)    --  杀：麒麟弓进入选牌界面
 		    consent_func_queue(0.6)
 	    else
 		    _sha_qilin_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 	end
@@ -4959,6 +4979,7 @@ function _jiedao_beidong_fangqi(va_list)	--  借刀杀人：己方放弃
 
 	add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "放弃"})
 	add_funcptr(_jiedao_swap, {ID_req, ID_s})
+	skills_losecard(ID_s, 9999, true)
 	add_funcptr(_jiedao_sub2)
 end
 function _jiedao_swap(va_list)    --  借刀杀人：将目标A的武器交给借刀者

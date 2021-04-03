@@ -142,6 +142,12 @@ function ai_judge_wusheng(ID)
 	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
 	attack_mubiao = ai_get_in_range(ID, attack_mubiao)
 
+	for i = #attack_mubiao, 1, -1 do
+		if char_juese[attack_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青钢剑" then
+			table.remove(attack_mubiao, i)
+		end
+	end
+
 	if #attack_mubiao == 0 then
 		return false, 0, 0
 	end
@@ -173,6 +179,12 @@ function ai_judge_longdan(ID)
 
 	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
 	attack_mubiao = ai_get_in_range(ID, attack_mubiao)
+
+	for i = #attack_mubiao, 1, -1 do
+		if char_juese[attack_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青钢剑" then
+			table.remove(attack_mubiao, i)
+		end
+	end
 
 	if #attack_mubiao == 0 then
 		return false, 0, 0

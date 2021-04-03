@@ -163,7 +163,7 @@ function skills_shelie_ai(ID)
 	skills_shelie_set()
 	gamerun_status = ""
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
-	funcptr_i = funcptr_i + 1
+	--funcptr_i = funcptr_i + 1
 	timer.start(0.6)
 end
 function skills_shelie_enter(ID)
@@ -195,7 +195,7 @@ function skills_shelie_enter(ID)
 			gamerun_status = ""
 
 			funcptr_queue, funcptr_i = pop_zhudong_queue()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 			return
 		end
@@ -246,7 +246,7 @@ function _shelie_exe(ID_s)
 			skills_shelie_set()
 			gamerun_status = ""
 			funcptr_queue, funcptr_i = pop_zhudong_queue()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.2)
 		end
 	end
@@ -287,7 +287,7 @@ function skills_lianpo_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -350,7 +350,7 @@ function skills_guixin_enter()
 			gamerun_status = old_gamerun_status
 			
 			_guixin_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -409,7 +409,7 @@ function _guixin_sub2(va_list)
 		gamerun_status = guixin_gamerun_status
 		char_fanmian(char_current_i)
 		_guixin_huifu()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.6)
 		return
 	else

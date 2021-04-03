@@ -20,7 +20,7 @@ function skills_jizhi_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
@@ -51,7 +51,7 @@ function skills_zhiji(ID)
 			skills_zhiji_set(char_acting_i, 2)
 			gamerun_status = ""
 			funcptr_queue, funcptr_i = pop_zhudong_queue()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.2)
 		end
 	else
@@ -73,16 +73,17 @@ function skills_zhiji_enter(ID)
 		
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	
 	platform.window:invalidate()
 end
 function skills_zhiji_set(ID, option)
+	--  注：和不屈不兼容！  --
 	if option == 1 then
 		push_message(char_juese[ID].name .. "选择回复一点体力")
-		_tao_sub({ID, false})
+		_kuanggu_sub1(ID)
 	elseif option == 2 then
 		push_message(char_juese[ID].name .. "选择摸两张牌")
 		card_fenfa({char_acting_i,2,false})
@@ -152,7 +153,7 @@ function skills_guanxing_enter(ID)
 			gamerun_status = ""
 
 			funcptr_queue, funcptr_i = pop_zhudong_queue()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 			return
 		end
@@ -189,7 +190,7 @@ function _guanxing_exe(ID_s)
 		skills_guanxing_set()
 		gamerun_status = ""
 		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.2)
 	end
 	platform.window:invalidate()
@@ -211,7 +212,7 @@ end
 --  魏延：狂骨  --
 function skills_kuanggu(ID_s)
 	add_funcptr(push_message, char_juese[ID_s].name .. "触发了武将技能 '狂骨'")
-	add_funcptr(_kuanggu_sub1, ID_s)
+	char_tili_huifu(ID_s, 1)
 end
 function _kuanggu_sub1(ID_s)
 	push_message(char_juese[ID_s].name.."回复1点体力")
@@ -373,7 +374,7 @@ function skills_liegong_enter(ID_mubiao)
 	    	_liegong_exe(char_current_i, ID_mubiao)
 		end
 		_liegong_huifu()
-		funcptr_i = funcptr_i + 1
+		--funcptr_i = funcptr_i + 1
 		timer.start(0.6)
 	end
 	
@@ -427,7 +428,7 @@ function skills_tieqi_enter(card_shoupai, ID_shoupai, ID_s, ID_mubiao)
 			_tieqi_exe(card_shoupai, ID_shoupai, char_current_i, ID_mubiao)
 	    else
 			_liegong_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end
@@ -611,6 +612,7 @@ function skills_rende(ID_s, ID_mubiao, ID_shoupai)
 	return true
 end
 function skills_rende_exe(va_list)
+	--  注：和不屈不兼容！  --
 	local ID_s, ID_mubiao
 	ID_s = va_list[1]; ID_mubiao = va_list[2]; ID_shoupai = va_list[3]
 	
@@ -625,7 +627,7 @@ function skills_rende_exe(va_list)
 	push_message(table.concat({char_juese[ID_s].name, "将", tostring(#ID_shoupai), "张手牌交给", char_juese[ID_mubiao].name}))
 	if char_rende_given >= 2 then
 		if char_juese[ID_s].tili < char_juese[ID_s].tili_max then
-			_tao_sub({ID_s, true})
+			_kuanggu_sub1(ID_s)
 		end
 		char_rende_given = -1
 	end
@@ -715,7 +717,7 @@ function skills_fuli(id)
 
 	if char_juese[id].skill["伏枥"] ~= 1 then
 		_fuli_huifu()
-		--funcptr_i = funcptr_i + 1
+		----funcptr_i = funcptr_i + 1
 		timer.start(0.6)
 		return
 	end
@@ -781,7 +783,7 @@ function skills_fuli_set(ID,gamerun_OK)
 		end
 	else
 		_fuli_huifu()
-		--funcptr_i = funcptr_i + 1
+		----funcptr_i = funcptr_i + 1
 		timer.start(0.6)
 	end
 	jiaohu_text = ""
@@ -847,7 +849,7 @@ function skills_niepan_enter(id)
 			timer.start(0.2)
 		else
 			_niepan_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 	end
@@ -911,7 +913,7 @@ function skills_fangquan_enter()
 			_fangquan_exe(char_current_i)
 	    else
 			_fangquan_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -992,7 +994,7 @@ function skills_fangquan_enter_2()
 			skills_fangquan_choose_mubiao()
 	    else
 			_fangquan_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1015,7 +1017,7 @@ function skills_fangquan_choose_mubiao()
 		if gamerun_status == "技能选择-单牌" then
 			if gamerun_OK == false then
 				_fangquan_huifu()
-				funcptr_i = funcptr_i + 1
+				--funcptr_i = funcptr_i + 1
 				timer.start(0.6)
 			end
 		end
@@ -1098,7 +1100,7 @@ function skills_zaiqi_enter()
 			_zaiqi_exe(char_current_i)
 	    else
 			_zaiqi_huifu()
-			funcptr_i = funcptr_i + 1
+			--funcptr_i = funcptr_i + 1
 			timer.start(0.2)
 		end
 		platform.window:invalidate()
@@ -1130,6 +1132,7 @@ function _zaiqi_into_paidui(ID)
 	table.insert(wugucards, card)
 end
 function _zaiqi_get_from_paidui(ID)
+	--  注：和不屈不兼容！  --
 	local tili_add = 0
 	local shoupai_add = 0
 

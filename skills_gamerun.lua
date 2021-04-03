@@ -189,6 +189,13 @@ function skills_losecard(ID_juese, n_card, in_queue)
 			add_funcptr(skills_xuanfeng, ID_juese)
 		end
 	end]]
+
+	--  失去白银狮子，回复1点体力  --
+	if char_juese[ID_juese].arm_baiyin == true then
+		if in_queue then
+			add_funcptr(card_lost_baiyin, ID_juese)
+		end
+	end
 end
 
 --  进入选择主公技状态  --
