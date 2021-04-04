@@ -1,3 +1,4 @@
+--  剩余技能：激将、烈刃、若愚、征南、撷芳、甘露、旋风、双雄、悲歌、乱武、帷幕、竭缘  --
 
 -- 各角色拥有技能 --
 char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
@@ -8,7 +9,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["马超"] = {{4,4}, "蜀", false, {"马术", "铁骑"}, "男", {"锁定",""}, true}, 
 	["诸葛亮"] = {{3,3}, "蜀", false, {"观星", "空城"}, "男", {"","锁定"}, true}, 
 	["黄月英"] = {{3,3}, "蜀", false, {"集智", "奇才"}, "女", {"","锁定"}, true}, 
-	["黄忠"] = {{4,4}, "蜀", false, {"烈弓"}, "男", {"锁定"}, true},
+	["黄忠"] = {{4,4}, "蜀", false, {"烈弓"}, "男", {""}, true},
     ["魏延"] = {{4,4}, "蜀", false, {"狂骨"}, "男", {"锁定"}, true},
     ["庞统"] = {{3,3}, "蜀", false, {"连环", "涅槃"}, "男", {"","限定"}, true},  
 	["卧龙诸葛"] = {{3,3}, "蜀", false, {"火计", "看破", "八阵"}, "男", {"","","锁定"}, true},  
@@ -31,7 +32,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["典韦"] = {{4,4}, "魏", false, {"强袭"}, "男", {""}, true}, 
     ["曹丕"] = {{3,3}, "魏", true, {"放逐", "行殇", "颂威"}, "男", {"","","主公"}, true},    
     ["徐晃"] = {{4,4}, "魏", false, {"断粮"}, "男", {""}, true}, 
-    ["邓艾"] = {{4,4}, "魏", false, {"屯田", "凿险"}, "男", {"","觉醒"}, false}, 
+    ["邓艾"] = {{4,4}, "魏", false, {"屯田", "凿险"}, "男", {"","觉醒"}, true}, 
     ["张郃"] = {{4,4}, "魏", false, {"巧变"}, "男", {""}, true}, 
 	["张春华"] = {{3,3}, "魏", false, {"绝情", "伤逝"}, "女", {"锁定",""}, true},
 	["于禁"] = {{4,4}, "魏", false, {"毅重"}, "男", {"锁定"}, true}, 
@@ -73,7 +74,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
 	["神司马懿"] = {{4,4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定","觉醒",""}, true},
 	--["孙笑川"] = {{4,4}, "神", false, {"攻心","涉猎","苦肉","驱虎","天义","享乐","黄天","制霸"}, "男", {"","","","","","锁定","主公","主公"}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"苦肉","武圣","不屈"}, "男", {"","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"苦肉","屯田","凿险","不屈"}, "男", {"","","觉醒",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -123,6 +124,7 @@ char_juese = {
 		siwang = false, 
 		shenfen_unknown = true,
 		last_n_arm = 0,
+		last_n_pai = 0,
 		arm_baiyin = false,
 	}, 
 	{
@@ -150,6 +152,7 @@ char_juese = {
 		siwang = false, 
 		shenfen_unknown = true,
 		last_n_arm = 0,
+		last_n_pai = 0,
 		arm_baiyin = false,
 	}, 
 	{
@@ -177,6 +180,7 @@ char_juese = {
 		siwang = false, 
 		shenfen_unknown = true,
 		last_n_arm = 0,
+		last_n_pai = 0,
 		arm_baiyin = false,
 	}, 
 	{
@@ -204,6 +208,7 @@ char_juese = {
 		siwang = false, 
 		shenfen_unknown = true,
 		last_n_arm = 0,
+		last_n_pai = 0,
 		arm_baiyin = false,
 	}, 
 	{
@@ -231,6 +236,7 @@ char_juese = {
 		siwang = false, 
 		shenfen_unknown = true,
 		last_n_arm = 0,
+		last_n_pai = 0,
 		arm_baiyin = false,
 	}, 
 }
@@ -574,9 +580,11 @@ function char_calc_distance(_ID_s, _ID_d)
 	if #char_juese[_ID_d].fangma ~= 0 then
 	    dist = dist + 1
 	end
+
 	if (char_juese[_ID_d].skill["飞影"] == "available") then
 		dist = dist + 1
 	end	
+
 	--  公孙瓒拥有义从，体力小于等于2距离加1  --
 	if char_juese[_ID_d].skill["义从"] == "available" and char_juese[_ID_d].tili <= 2 then
 		dist = dist + 1
@@ -595,6 +603,11 @@ function char_calc_distance(_ID_s, _ID_d)
 	--  公孙瓒拥有义从，体力大于等于3距离减1  --
 	if char_juese[_ID_s].skill["义从"] == "available" and char_juese[_ID_s].tili >= 3 and dist > 1 then
 		dist = dist - 1
+	end
+
+	--  邓艾拥有屯田，距离减'田'的数量  --
+	if char_juese[_ID_s].skill["屯田"] == "available" then
+		dist = math.max(dist - #card_tian[_ID_s], 1)
 	end
 	
 	return dist
@@ -1403,8 +1416,7 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	end
 
 	--  丢弃所有移出游戏的牌  --
-	--  不屈牌  --
-	_buqu_siwang_qipai(id)
+	skills_withdraw_outgame(id)
 
 	--  灵雎发动焚心  --
 	if ID_shanghai ~= -1 and shuxing ~= "流失" and ID_shanghai ~= id then

@@ -814,7 +814,7 @@ function _lihun_exe(ID_shoupai, ID_s, ID_mubiao)
 	char_juese[ID_s].skill["离魂"] = "locked"
 
 	for i = #char_juese[ID_mubiao].shoupai, 1, -1 do
-		table.insert(char_juese[ID_s].shoupai,char_juese[ID_mubiao].shoupai[i])
+		card_insert(ID_s, char_juese[ID_mubiao].shoupai[i])
 		table.remove(char_juese[ID_mubiao].shoupai,i)
 	end
 	skills_losecard(ID_mubiao, 9999, true)
@@ -876,29 +876,29 @@ function _lihun_exe_2(va_list)
 	card_selected = {}
 	local n_zhuangbei = 0
 	for i = #ID_shoupai, 1, -1 do
-		table.insert(char_juese[ID_mubiao].shoupai, char_juese[ID_s].shoupai[ID_shoupai[i]])
+		card_insert(ID_mubiao, char_juese[ID_s].shoupai[ID_shoupai[i]])
 		card_remove({ID_s, ID_shoupai[i]})
 	end
 	if ID_zhuangbei[1] == 1 then
-		table.insert(char_juese[ID_mubiao].shoupai, char_juese[ID_s].wuqi)
+		card_insert(ID_mubiao, char_juese[ID_s].wuqi)
 		char_juese[ID_s].wuqi = {}
 		n_zhuangbei = n_zhuangbei + 1
 	end
 
 	if ID_zhuangbei[2] == 1 then
-		table.insert(char_juese[ID_mubiao].shoupai, char_juese[ID_s].fangju)
+		card_insert(ID_mubiao, char_juese[ID_s].fangju)
 		char_juese[ID_s].fangju = {}
 		n_zhuangbei = n_zhuangbei + 1
 	end
 
 	if ID_zhuangbei[3] == 1 then
-		table.insert(char_juese[ID_mubiao].shoupai, char_juese[ID_s].gongma)
+		card_insert(ID_mubiao, char_juese[ID_s].gongma)
 		char_juese[ID_s].gongma = {}
 		n_zhuangbei = n_zhuangbei + 1
 	end
 
 	if ID_zhuangbei[4] == 1 then
-		table.insert(char_juese[ID_mubiao].shoupai, char_juese[ID_s].fangma)
+		card_insert(ID_mubiao, char_juese[ID_s].fangma)
 		char_juese[ID_s].fangma = {}
 		n_zhuangbei = n_zhuangbei + 1
 	end
@@ -1184,5 +1184,5 @@ function _huangtian_geipai(va_list)
 	push_message(table.concat({char_juese[ID_s].name, "将'", card[2], card[3], "的", card[1], "'交给", char_juese[ID_zhugong].name}))
 
 	card_remove({ID_s, ID_shoupai})
-	table.insert(char_juese[ID_zhugong].shoupai, card)
+	card_insert(ID_zhugong, card)
 end

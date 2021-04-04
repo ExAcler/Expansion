@@ -1,3 +1,24 @@
+function random_pick(_array, n)
+	local array = table.copy(_array)
+    local currentIndex = #array
+    local temporaryValue, randomIndex
+
+    for currentIndex = #array, 1, -1 do
+        randomIndex = math.floor(math.random() * currentIndex) + 1
+
+        temporaryValue = array[currentIndex]
+        array[currentIndex] = array[randomIndex]
+        array[randomIndex] = temporaryValue
+    end
+
+	local result = {}
+	for i = 1, math.min(n, #array) do
+		table.insert(result, array[i])
+	end
+
+    return result
+end
+
 --  AI决定是否出桃解救濒死角色  --
 function ai_judge_jiejiu(ID_s, ID_jiu)
 	local jiejiu = false
@@ -140,9 +161,7 @@ function ai_basic_judge_mubiao(ID, required, is_help, exclude_self, exclude_unkn
 		end
 	end
 
-	while #possible_target > required do
-		table.remove(possible_target, math.random(#possible_target))
-	end
+	possible_target = random_pick(possible_target, required)
 
 	return possible_target
 end
@@ -294,7 +313,7 @@ function ai_judge_maximum_def(targets)
 	else
 		local maxdef_ID = targets[1]
 		for i = 2, #targets do
-			if ai_judge_def(targets[i], false, false) > ai_judge_def(mindef_ID, false, false) then
+			if ai_judge_def(targets[i], false, false) > ai_judge_def(maxdef_ID, false, false) then
 				maxdef_ID = targets[i]
 			end
 		end
@@ -352,6 +371,9 @@ function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)
 	end
 	if char_juese[ID_d].skill["飞影"] == "available" and ID_s ~= ID_d then
 		distance = distance+1
+	end
+	if char_juese[ID_s].skill["屯田"] == "available" then
+		distance = math.max(distance - #card_tian[ID_s], 1)
 	end
 	if #char_juese[ID_s].wuqi ~= 0 and weapon_ignore == nil then
 		range = card_wuqi_r[char_juese[ID_s].wuqi[1]]
@@ -550,6 +572,22 @@ function ai_skill_use_priority(ID)
 			if skills_rende_ai(ID, mubiao, ID_shoupai) then
 				ai_skills_discard["仁德"] = true
 				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  邓艾急袭  --
+	if char_juese[ID].skill["急袭"] == "available" and #card_tian[ID] > 0 and ai_skills_discard["急袭"] ~= true then
+		local shoupai = {"顺手牵羊", "方块", "4"}
+		mubiao = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
+
+		if #mubiao > 0 then
+			if skills_jixi_ai(ID, mubiao[1], #card_tian[ID]) then
+				local percent = math.floor(100 / (3 ^ math.min(3 - #card_tian[ID], 0)))
+				if ai_judge_random_percent(percent) == 0 then 
+					ai_skills_discard["急袭"] = true
+				end
 				return true
 			end
 		end

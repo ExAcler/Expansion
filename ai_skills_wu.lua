@@ -259,9 +259,7 @@ function ai_judge_guose(ID)
 	if #cards == 0 then
 		return false, 0, 0
 	end
-	while #cards > 1 do
-		table.remove(cards, math.random(#cards))
-	end
+	cards = random_pick(cards, 1)
 	
 	local targets = ai_judge_target(ID, "乐不思蜀", {s[cards[1]]}, 1)
 	if #targets == 0 then
@@ -528,9 +526,7 @@ function ai_judge_tianyi(ID)
 		end
 	end
 
-	while #help_mubiao > 1 do
-		table.remove(help_mubiao, math.random(#help_mubiao))
-	end
+	help_mubiao = random_pick(help_mubiao, 1)
 
 	if #attack_mubiao + #help_mubiao == 0 then
 		return false, 0, 0
@@ -561,9 +557,7 @@ function ai_judge_jieyin(ID)
 			percent = 0
 		end
 	end
-	while #cards > 2 do
-		table.remove(cards, math.random(#cards))
-	end
+	cards = random_pick(cards, 2)
 	if #cards < 2 then
 		return false, {}, 0
 	end
@@ -649,9 +643,7 @@ function ai_judge_qixi(ID)
 			table.remove(cards, i)
 		end
 	end
-	while #cards > 1 do
-		table.remove(cards, math.random(#cards))
-	end
+	cards = random_pick(cards, 1)
 	if #cards == 0 then
 		return false, 0, 0
 	end

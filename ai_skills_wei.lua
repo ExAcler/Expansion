@@ -237,9 +237,7 @@ function ai_judge_shensu(ID, is_panding)
 		return {}, 0, {}
 	end
 
-	while #ID_mubiao > 1 do
-		table.remove(ID_mubiao, math.random(#ID_mubiao))
-	end
+	ID_mubiao = random_pick(ID_mubiao, 1)
 
 	return ID_shoupai, ID_zhuangbei, {ID_mubiao[1]}
 end
@@ -413,9 +411,7 @@ function ai_judge_duanliang(ID)
 			table.remove(cards_jiben, i)
 		end
 	end
-	while #cards_jiben > 1 do
-		table.remove(cards_jiben, math.random(#cards_jiben))
-	end
+	cards_jiben = random_pick(cards_jiben, 1)
 
 	for i = #cards_arm, 1, -1 do
 		local ys, hs, ds = ai_judge_cardinfo(ID, {s[cards_jiben[i]]})
@@ -423,9 +419,7 @@ function ai_judge_duanliang(ID)
 			table.remove(cards_arm, i)
 		end
 	end
-	while #cards_arm > 1 do
-		table.remove(cards_arm, math.random(#cards_arm))
-	end
+	cards_arm = random_pick(cards_arm, 1)
 
 	local selected_card
 	if #cards_jiben == 0 and #cards_arm == 0 then
@@ -791,9 +785,7 @@ function ai_judge_quhu(ID)
 		end
 	end
 
-	while #possible_combinations_friend > 1 do
-		table.remove(possible_combinations_friend, math.random(#possible_combinations_friend))
-	end
+	possible_combinations_friend = random_pick(possible_combinations_friend, 1)
 
 	if #possible_combinations_enemy > 0 then
 		return true, cards[1], lowest_def_comb[1], lowest_def_comb[2]

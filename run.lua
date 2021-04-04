@@ -371,6 +371,10 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["魂姿"] == "available" and char_juese[char_acting_i].tili == 1 then
 		add_funcptr(skills_hunzi)
 	end
+
+	if char_juese[char_acting_i].skill["凿险"] == "available" and #card_tian[char_acting_i] > 2 then
+		add_funcptr(skills_zaoxian)
+	end
 	
 	if char_juese[char_acting_i].skill["志继"] == "available" and #char_juese[char_acting_i].shoupai == 0 then
 		add_funcptr(skills_hunzi)
@@ -550,7 +554,7 @@ function gamerun_huihe_panding()
 			funcptr_add_tag = nil
 
 			funcptr_add_tag = "无懈有效结算"
-			add_funcptr(_panding_wuxie)
+			add_funcptr(_panding_wuxie, i)
 			funcptr_add_tag = nil
 		end
 
@@ -704,13 +708,13 @@ function _panding_pass(id)    -- 将闪电传给下一个玩家
 	table.insert(char_juese[p].panding, 1, char_juese[char_acting_i].panding[id])
 	table.remove(char_juese[char_acting_i].panding, id)
 end
-function _panding_wuxie()	-- 判定被无懈
-	push_message("判定牌被无懈，无需判定")
-	if char_juese[char_acting_i].panding[1][1] == "闪电" then
-		_panding_pass(1)
+function _panding_wuxie(id)	-- 判定被无懈
+	push_message("锦囊被无懈，无需判定")
+	if char_juese[char_acting_i].panding[id][1] == "闪电" then
+		_panding_pass(id)
 	else
-		card_add_qipai(char_juese[char_acting_i].panding[1])
-		table.remove(char_juese[char_acting_i].panding, 1)
+		card_add_qipai(char_juese[char_acting_i].panding[id])
+		table.remove(char_juese[char_acting_i].panding, id)
 	end
 end
 
@@ -1238,7 +1242,7 @@ function on.enterKey()
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
 			add_funcptr(_sha_qilin_huifu)
 
-		elseif string.find(gamerun_status, "寒") then
+		elseif string.find(gamerun_status, "寒1") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_sha_sub3)
@@ -1439,6 +1443,11 @@ function on.enterKey()
 
 		if string.find(gamerun_status, "不屈") then
 			_buqu_remove_card_exe(char_current_i, gamerun_guankan_selected)
+			return
+		end
+
+		if string.find(gamerun_status, "急袭") then
+			_jixi_exe(char_current_i, gamerun_target_selected, gamerun_guankan_selected)
 			return
 		end
 

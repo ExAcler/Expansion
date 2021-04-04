@@ -617,7 +617,7 @@ function skills_rende_exe(va_list)
 	ID_s = va_list[1]; ID_mubiao = va_list[2]; ID_shoupai = va_list[3]
 	
 	for i = #ID_shoupai, 1, -1 do
-		table.insert(char_juese[ID_mubiao].shoupai, char_juese[ID_s].shoupai[ID_shoupai[i]])
+		card_insert(ID_mubiao, char_juese[ID_s].shoupai[ID_shoupai[i]])
 		card_remove({ID_s, ID_shoupai[i]})
 		if char_rende_given >= 0 then
 			char_rende_given = char_rende_given + 1
@@ -642,7 +642,7 @@ function _rende_sub()
 		set_hints("")
 		gamerun_status = "AI出牌"
 
-		ai_card_use(char_current_i)
+		ai_card_use(char_acting_i)
 	end
 end
 
@@ -1145,7 +1145,7 @@ function _zaiqi_get_from_paidui(ID)
 			table.remove(wugucards, i)
 		else
 			shoupai_add = shoupai_add + 1
-			table.insert(char_juese[ID].shoupai, wugucards[i])
+			card_insert(ID, wugucards[i])
 			table.remove(wugucards, i)
 		end
 	end

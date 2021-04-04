@@ -504,9 +504,8 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 		end
 		judge_time = judge_time + 1
 	end
-	while #possible_target > target_number do
-		table.remove(possible_target,math.random(#possible_target))
-	end
+
+	possible_target = random_pick(possible_target, target_number)
 	return possible_target
 end
 
@@ -812,9 +811,12 @@ function ai_card_search(ID, kind, required, alt_shoupai)
 			end
 		end
 	end
-	while #card_searched > required do
-		table.remove(card_searched,math.random(1,#card_searched))
-	end
+
+	card_searched = random_pick(card_searched, required)
+	-- while #card_searched > required do
+	-- 	table.remove(card_searched, math.random(#card_searched))
+	-- end
+
 	return card_searched
 end
 
@@ -894,7 +896,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "装备", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "装备", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil
@@ -905,7 +907,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "普通杀", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "普通杀", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil
@@ -916,7 +918,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "雷杀", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "雷杀", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil
@@ -927,7 +929,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "火杀", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "火杀", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil
@@ -938,7 +940,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "酒", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "酒", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil
@@ -949,7 +951,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "无懈可击", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "无懈可击", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil
@@ -960,7 +962,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "闪", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "闪", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil
@@ -971,7 +973,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "桃", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "桃", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil
@@ -982,7 +984,7 @@ function ai_judge_withdraw(ID, required, discard_arm)
 				break
 			end
 
-			local withdrawed = ai_card_search(ID, "随便", withdraw_needed, shoupai_copy)
+			withdrawed = ai_card_search(ID, "随便", withdraw_needed, shoupai_copy)
 			for i = 1, #withdrawed do
 				table.insert(qipai_id, shoupai_copy[withdrawed[i]][4])
 				shoupai_copy[withdrawed[i]][4] = nil

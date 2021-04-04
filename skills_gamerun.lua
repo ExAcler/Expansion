@@ -25,7 +25,8 @@ skills_func =
 	["离间"] = function() return skills_lijian_enter() end, 
 	["离魂"] = function() return skills_lihun_enter() end,
 	["极略"] = function() return skills_jilve_enter() end,
-	["攻心"] = function() return skills_gongxin_enter() end
+	["攻心"] = function() return skills_gongxin_enter() end,
+	["急袭"] = function() return skills_jixi_enter() end,
 }
 
 --  主公技触发函数表  --
@@ -157,6 +158,13 @@ end
 function skills_losecard(ID_juese, n_card, in_queue)
 	local sub = false
 
+	--  失去白银狮子，回复1点体力  --
+	if char_juese[ID_juese].arm_baiyin == true then
+		if in_queue then
+			add_funcptr(card_lost_baiyin, ID_juese)
+		end
+	end
+
 	--  张春华在手牌不足时摸牌  --
 	if char_juese[ID_juese].skill["伤逝"] == "available" and #char_juese[ID_juese].shoupai - n_card < char_juese[ID_juese].tili_max - char_juese[ID_juese].tili then
 		if in_queue then
@@ -190,10 +198,10 @@ function skills_losecard(ID_juese, n_card, in_queue)
 		end
 	end]]
 
-	--  失去白银狮子，回复1点体力  --
-	if char_juese[ID_juese].arm_baiyin == true then
+	--  邓艾发动屯田  --
+	if char_juese[ID_juese].skill["屯田"] == "available" then
 		if in_queue then
-			add_funcptr(card_lost_baiyin, ID_juese)
+			add_funcptr(skills_tuntian, ID_juese)
 		end
 	end
 end
@@ -267,4 +275,13 @@ function _lordskill_fangqi()
 	gamerun_status = ""
 	set_hints("请您出牌")
 	skills_cs()
+end
+
+--  角色死亡/被断肠丢弃所有移出游戏的牌  --
+function skills_withdraw_outgame(ID)
+	--  不屈牌  --
+	_buqu_siwang_qipai(ID)
+
+	--  '田'  --
+	_tuntian_siwang_qipai(ID)
 end

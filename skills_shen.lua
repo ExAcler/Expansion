@@ -258,7 +258,7 @@ function skills_shelie_set()
 		push_message(char_juese[char_acting_i].name .. "弃置了'" .. card_dealed_1[i][2] .. card_dealed_1[i][3] .. "'的'"..card_dealed_1[i][1].."'")
 	end
 	for i = 1,#card_dealed_2 do
-		table.insert(char_juese[char_acting_i].shoupai,card_dealed_2[i])
+		card_insert(char_acting_i, card_dealed_2[i])
 		push_message(char_juese[char_acting_i].name .. "获得了'" .. card_dealed_2[i][2] .. card_dealed_2[i][3] .. "'的'"..card_dealed_2[i][1].."'")
 	end
 	game_skip_mopai = true

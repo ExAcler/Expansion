@@ -132,9 +132,7 @@ function ai_judge_wusheng(ID)
 			table.remove(cards, i)
 		end
 	end
-	while #cards > 1 do
-		table.remove(cards, math.random(#cards))
-	end
+	cards = random_pick(cards, 1)
 	if #cards == 0 then
 		return false, 0, 0
 	end
@@ -170,9 +168,7 @@ function ai_judge_longdan(ID)
 			table.remove(cards, i)
 		end
 	end
-	while #cards > 1 do
-		table.remove(cards, math.random(#cards))
-	end
+	cards = random_pick(cards, 1)
 	if #cards == 0 then
 		return false, 0, 0
 	end

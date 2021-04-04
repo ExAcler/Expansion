@@ -192,7 +192,7 @@ function _xingshang_card_transfer(ID_s, ID_siwang, panding)    --  行殇：将�
 	if max_select > 0 then
 		for i = 1, max_select do
 			if char_juese[ID_siwang].shoupai[i] ~= nil then
-				table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].shoupai[i])
+				card_insert(ID_s, char_juese[ID_siwang].shoupai[i])
 			end
 		end
 	end
@@ -201,29 +201,29 @@ function _xingshang_card_transfer(ID_s, ID_siwang, panding)    --  行殇：将�
 	if panding and #char_juese[ID_siwang].panding ~= 0 then
 		for i = 1, #char_juese[ID_siwang].panding do
 			if char_juese[ID_siwang].panding[i] ~= nil then
-				table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].panding[i])
+				card_insert(ID_s, char_juese[ID_siwang].panding[i])
 			end
 		end
 	end
 	char_juese[ID_siwang].panding = {}
 	
 	if #char_juese[ID_siwang].wuqi ~= 0 then
-		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].wuqi)
+		card_insert(ID_s, char_juese[ID_siwang].wuqi)
 	end
 	char_juese[ID_siwang].wuqi = {}
 	
 	if #char_juese[ID_siwang].fangju ~= 0 then
-		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].fangju)
+		card_insert(ID_s, char_juese[ID_siwang].fangju)
 	end
 	char_juese[ID_siwang].fangju = {}
 	
 	if #char_juese[ID_siwang].gongma ~= 0 then
-		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].gongma)
+		card_insert(ID_s, char_juese[ID_siwang].gongma)
 	end
 	char_juese[ID_siwang].gongma = {}
 	
 	if #char_juese[ID_siwang].fangma ~= 0 then
-		table.insert(char_juese[ID_s].shoupai, char_juese[ID_siwang].fangma)
+		card_insert(ID_s, char_juese[ID_siwang].fangma)
 	end
 	char_juese[ID_siwang].fangma = {}
 end
@@ -683,7 +683,7 @@ end
 function skills_tiandu_set(ID,gamerun_OK,card_panding)
 	if gamerun_OK then
 		push_message(char_juese[ID].name .. "发动了武将技能 '天妒'")
-		table.insert(char_juese[ID].shoupai, card_panding)
+		card_insert(ID, card_panding)
 		push_message(table.concat({char_juese[ID].name, "获得了'", card_panding[2], card_panding[3], "的", card_panding[1], "'"}))
 	else
 		card_add_qipai(card_panding)
@@ -981,7 +981,7 @@ function _tuxi_sub1(va_list)
 	t = math.random(#char_juese[ID_mubiao].shoupai)
 	card = char_juese[ID_mubiao].shoupai[t]
 	card_remove({ID_mubiao, t})
-	table.insert(char_juese[ID_s].shoupai, card)
+	card_insert(ID_s, card)
 end
 function _tuxi_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -1156,7 +1156,7 @@ function _guicai_guidao_exe(va_list)
 
 	if skills_judge_guicai_guidao(id) == "鬼道" then
 		--  张角可将原有判定牌收入手牌  --
-		table.insert(char_juese[id].shoupai, card_panding_card)
+		card_insert(id, card_panding_card)
 	else
 		--  否则原有判定牌进入弃牌堆  --
 		card_add_qipai(card_panding_card)
@@ -1444,7 +1444,7 @@ function _yiji_exe(va_list)
 	gamerun_status = "手牌生效中"
 	set_hints("")
 	push_message(table.concat({char_juese[ID_s].name, "令", char_juese[ID_mubiao].name, "获得牌堆顶的一张牌"}))
-    table.insert(char_juese[ID_mubiao].shoupai, card_yixi[1])
+	card_insert(ID_mubiao, card_yixi[1])
 	table.remove(card_yixi, 1)
 	if yiji_first_time == false then
 		funcptr_queue = {}
@@ -1628,7 +1628,7 @@ function _luoshen_jiesuan(va_list)		--  洛神：结算判定牌
 	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card_panding_card})
 	if huase == "黑桃" or huase == "草花" then
 		push_message(char_juese[ID].name .. "的 '洛神' 判定成功")
-		table.insert(char_juese[ID].shoupai, card_panding_card)
+		card_insert(ID, card_panding_card)
 
 		if ID == char_current_i then
 			timer.stop()
@@ -1710,7 +1710,7 @@ function _jianxiong_exe(ID)
 	add_funcptr(push_message, msg)
 
 	for i = 1, #card_jiesuan[1] do
-		table.insert(char_juese[ID].shoupai, card_jiesuan[1][i])
+		card_insert(ID, card_jiesuan[1][i])
 	end
 	card_jiesuan[1] = {}
 
@@ -2121,7 +2121,7 @@ function _qiaobian_mopai_sub1(va_list)
 	t = math.random(#char_juese[ID_mubiao].shoupai)
 	card = char_juese[ID_mubiao].shoupai[t]
 	card_remove({ID_mubiao, t})
-	table.insert(char_juese[ID_s].shoupai, card)
+	card_insert(ID_s, card)
 end
 function _qiaobian_chupai_target1(ID_s)
 	skills_enter("请选择目标A", "", "巧变", "技能选择-目标")
@@ -2504,4 +2504,212 @@ function _hujia_get_ids(va, mode)
 end
 function _hujia_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
+end
+
+--  邓艾：屯田  --
+function skills_tuntian(ID)
+	local n_pai = ai_card_stat(ID, true, false)
+	local last_n_pai = char_juese[ID].last_n_pai
+	char_juese[ID].last_n_pai = n_pai
+
+	if ID == char_acting_i then
+		_baiyin_skip()
+		return
+	end
+
+	if n_pai < last_n_pai then
+		n_pai = last_n_pai - n_pai
+	else
+		_baiyin_skip()
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if ID == char_current_i then
+		local old_gamerun_status = gamerun_status
+		skills_tuntian_enter(old_gamerun_status)
+	else
+		skills_tuntian_ai(ID)
+	end
+end
+function skills_tuntian_ai(ID)
+	skills_tuntian_exe(ID, nil)
+end
+function skills_tuntian_enter(old_gamerun_status)
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '屯田'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		if gamerun_OK then
+			gamerun_status = "手牌生效中"
+			set_hints("")
+
+			skills_tuntian_exe(char_current_i, old_gamerun_status)
+	    else
+			set_hints("")
+			gamerun_status = old_gamerun_status
+			
+			_luoshen_huifu()
+			timer.start(0.2)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function skills_tuntian_exe(ID, old_gamerun_status)
+	push_message(table.concat({char_juese[ID].name .. "发动了武将技能 '屯田'"}))
+	add_funcptr(_tuntian_fan_panding, ID)
+
+	--  如场上有司马懿或张角，询问其改判技能  --
+	skills_guicai_guidao_ask(ID, nil, ID, "屯田")
+	
+	add_funcptr(_tuntian_jiesuan, {ID, old_gamerun_status})
+	timer.start(0.6)
+end
+function _tuntian_fan_panding(ID)
+	--  翻开判定牌  --
+	if #card_yixi == 0 then
+	    card_xipai(true)
+	end
+    card_panding_card = card_yixi[1]
+	table.remove(card_yixi, 1)
+	push_message(table.concat({char_juese[ID].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
+end
+function _tuntian_jiesuan(va_list)
+	local ID, old_gamerun_status
+	ID = va_list[1]; old_gamerun_status = va_list[2]
+
+	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card_panding_card})
+
+	--  曹丕颂威  --
+	skills_judge_songwei(ID)
+
+	if huase ~= "红桃" then
+		push_message(char_juese[ID].name .. "的 '屯田' 判定成功")
+		add_funcptr(_tuntian_get_tian, {ID, card_panding_card})
+	else
+		push_message(char_juese[ID].name .. "的 '屯田' 判定失败")
+		skills_card_qi_panding(ID)
+	end
+
+	add_funcptr(_luoshen_huifu)
+	timer.stop()
+	timer.start(0.6)
+end
+function _tuntian_get_tian(va_list)
+	local ID, card
+	ID = va_list[1]; card = va_list[2]
+
+	push_message(table.concat({char_juese[ID].name, "获得了'田'牌'", card[2], card[3], "的", card[1], "'"}))
+	table.insert(card_tian[ID], card)
+end
+function _tuntian_siwang_qipai(ID)		--  屯田：死亡后弃掉所有'田'
+	for i = #card_tian[ID], 1, -1 do
+		add_funcptr(_tuntian_qipai_exe, {ID, i})
+	end
+end
+function _tuntian_qipai_exe(va_list)
+	local ID, ID_tian
+	ID = va_list[1]; ID_tian = va_list[2]
+
+	local card = card_tian[ID][ID_tian]
+	push_message(table.concat({char_juese[ID].name, "丢弃'田'牌'", card[2], card[3], "的", card[1], "'"}))
+	table.remove(card_tian[ID], ID_tian)
+	card_add_qipai(card)
+end
+
+--  邓艾：凿险  --
+function skills_zaoxian()
+	push_message(char_juese[char_acting_i].name.."触发了武将技能 '凿险'")
+	
+	char_juese[char_acting_i].tili_max = char_juese[char_acting_i].tili_max - 1
+	char_juese[char_acting_i].tili = math.min(char_juese[char_acting_i].tili, char_juese[char_acting_i].tili_max)
+	push_message(char_juese[char_acting_i].name .. "失去1点体力上限")
+	
+	if char_juese[char_acting_i].skill["急袭"] ~= nil then
+		skill_double[char_acting_i]["急袭"] = true
+	else
+		char_juese[char_acting_i].skill["急袭"] = "available"
+	end
+	table.insert(char_juese[char_acting_i].skillname, "急袭")
+
+	char_juese[char_acting_i].skill["凿险"] = "locked_whole_game"
+end
+
+--  邓艾：急袭  --
+function skills_jixi_enter()
+	if #card_tian[char_current_i] == 0 then
+		return false
+	end
+
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local msg = table.concat({"请选择目标 (剩余", #card_tian[char_current_i], ")"})
+
+	skills_enter(msg, "", "顺手牵羊", "技能选择-目标")
+	gamerun_select_target("init")
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		if _jixi_select_tian(char_current_i, gamerun_target_selected) then
+			skills_cs()
+		end
+	end
+
+	return true
+end
+function skills_jixi_ai(ID_s, ID_mubiao, ID_tian)
+	if #card_tian[ID_s] == 0 or card_if_d_limit("顺手牵羊", ID_s, ID_mubiao) == false then
+		return false
+	end
+
+	_jixi_exe(ID_s, ID_mubiao, ID_tian)
+	return true
+end
+function _jixi_select_tian(ID_s, ID_mubiao)
+	if card_if_d_limit("顺手牵羊", ID_s, ID_mubiao) == false then
+		return false
+	end
+
+	wugucards = table.copy(card_tian[char_current_i])
+
+	gamerun_status = "牌堆选择-急袭"
+	jiaohu_text = "请选择要使用的'田'"
+	gamerun_guankan_selected = 1
+
+	txt_messages:setVisible(false)
+	platform.window:invalidate()
+
+	return true
+end
+function _jixi_exe(ID_s, ID_mubiao, ID_tian)
+	set_hints("")
+	gamerun_status = "手牌生效中"
+	txt_messages:setVisible(true)
+
+	wugucards = {}
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '急袭'")
+
+	local card = card_tian[ID_s][ID_tian]
+	table.remove(card_tian[ID_s], ID_tian)
+	card_insert(ID_s, card)
+
+	if card_shun({#char_juese[ID_s].shoupai}, ID_s, ID_mubiao) then
+		timer.start(0.6)
+	else
+		--  不可能发生！ --
+		table.remove(char_juese[ID_s].shoupai)
+		card_add_qipai(card)
+	end
 end

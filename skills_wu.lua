@@ -991,7 +991,7 @@ function _fanjian_sub3(va_list)
 	
 	push_message(table.concat({char_juese[ID_mubiao].name, "获得了 '", card[2], card[3], "的", card[1], "'"}))
 	
-	table.insert(char_juese[ID_mubiao].shoupai, card)
+	card_insert(ID_mubiao, card)
 	card_remove({ID_s, t})
 end
 function _fanjian_sub4()
@@ -1100,12 +1100,12 @@ function _dimeng_exchange_shoupai(va_list)
 
 	push_message(table.concat({char_juese[ID_first].name, "获得了", char_juese[ID_second].name, "的所有手牌"}))
 	for i = 1, #dimeng_shoupai_2 do
-		table.insert(char_juese[ID_first].shoupai, dimeng_shoupai_2[i])
+		card_insert(ID_first, dimeng_shoupai_2[i])
 	end
 
 	push_message(table.concat({char_juese[ID_second].name, "获得了", char_juese[ID_first].name, "的所有手牌"}))
 	for i = 1, #dimeng_shoupai_1 do
-		table.insert(char_juese[ID_second].shoupai, dimeng_shoupai_1[i])
+		card_insert(ID_second, dimeng_shoupai_1[i])
 	end
 end
 
@@ -1241,7 +1241,7 @@ function _haoshi_exe(va_list)
 	ID_s = va_list[1]; ID_mubiao = va_list[2]; ID_shoupai = va_list[3]
 
 	for i = #ID_shoupai, 1, -1 do
-		table.insert(char_juese[ID_mubiao].shoupai, char_juese[ID_s].shoupai[ID_shoupai[i]])
+		card_insert(ID_mubiao, char_juese[ID_s].shoupai[ID_shoupai[i]])
 		card_remove({ID_s, ID_shoupai[i]})
 	end
 	
@@ -1499,7 +1499,7 @@ function _guzheng_return_card(va_list)
 	local card = wugucards[ID_paidui]
 
 	push_message(table.concat({char_juese[ID_s].name, "将", "'", card[2], card[3], "的", card[1], "'交给", char_juese[ID_mubiao].name}))
-	table.insert(char_juese[ID_mubiao].shoupai, card)
+	card_insert(ID_mubiao, card)
 	table.remove(wugucards, ID_paidui)
 end
 function _guzheng_get_cards(va_list)
@@ -1508,7 +1508,7 @@ function _guzheng_get_cards(va_list)
 
 	push_message(table.concat({char_juese[ID_s].name, "获得了其余弃牌"}))
 	for i = 1, #wugucards do
-		table.insert(char_juese[ID_s].shoupai, wugucards[i])
+		card_insert(ID_s, wugucards[i])
 	end
 	wugucards = {}
 end
@@ -1665,8 +1665,8 @@ function skills_zhiba(ID_s, ID_zhugong)
 			pindianing = {}
 		else
 			push_message(table.concat({char_juese[ID_zhugong].name, "获得了双方的拼点牌"}))
-			table.insert(char_juese[ID_zhugong].shoupai, pindianing[1])
-			table.insert(char_juese[ID_zhugong].shoupai, pindianing[2])
+			card_insert(ID_zhugong, pindianing[1])
+			card_insert(ID_zhugong, pindianing[2])
 			pindianing = {}
 		end
 	end

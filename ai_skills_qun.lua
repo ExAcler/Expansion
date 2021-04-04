@@ -114,9 +114,7 @@ function ai_judge_lijian(ID)
 		char_juese[ID].skill["离间"] = "locked"
 		return false, 0, 0
 	end
-	while #cards > 1 do
-		table.remove(cards, math.random(#cards))
-	end
+	cards = random_pick(cards, 1)
 
 	if #char_juese[attack_mubiao[1]].shoupai > #char_juese[attack_mubiao[2]].shoupai then
 		local _attack_mubiao = {attack_mubiao[1], attack_mubiao[2]}
@@ -153,9 +151,7 @@ function ai_judge_qingnang(ID)
 		end
 	end
 
-	while #cards > 1 do
-		table.remove(cards, math.random(#cards))
-	end
+	cards = random_pick(cards, 1)
 	if #cards == 0 then
 		char_juese[ID].skill["青囊"] = "locked"
 		return false, 0, 0
