@@ -617,7 +617,7 @@ function ai_judge_fangzhu_mubiao(ID_s,ID_mubiao)
 				
 			elseif char_juese[i].siwang == true then
 				
-			elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_s) == true) then
+			elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "内奸" and ai_judge_blackjack(ID_s) == true) then
 				if char_juese[i].shenfen == "主公" or (char_juese[i].isantigovernment == false and char_juese[i].isblackjack ~= true) then
 					if benefit == 1 then
 						return i
@@ -658,7 +658,7 @@ function ai_judge_fankui_mubiao(ID_s, ID_mubiao)
 			return ID_mubiao
 		elseif char_juese[ID_mubiao].siwang == true then
 			
-		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_mubiao) == true) then
+		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "内奸" and ai_judge_blackjack(ID_s) == true) then
 			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
 				
 			else
@@ -684,7 +684,7 @@ function ai_judge_ganglie_mubiao(ID_s, ID_mubiao)
 			
 		elseif char_juese[ID_mubiao].siwang == true then
 			
-		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "反贼" and ai_judge_blackjack(ID_mubiao) == true) then
+		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "内奸" and ai_judge_blackjack(ID_s) == true) then
 			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
 				
 			else

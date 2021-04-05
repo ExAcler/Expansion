@@ -394,7 +394,7 @@ function ai_skill_use_priority(ID)
 	local fadong, ID_shoupai, mubiao
 
 	--  神司马懿极略  --
-	if char_juese[ID].skill["极略"] == "available" and mark_ren > 0 then
+	if char_juese[ID].skill["极略"] == "available" and mark_ren[ID] > 0 then
 		skills_jilve_ai(ID)
 		timer.start(0.6)
 		return true
@@ -908,7 +908,7 @@ function _ai_qipai_exe(ID)
 			end
 		end
 		add_funcptr(push_message, char_juese[char_acting_i].name .. "触发了武将技能 '庸肆'")
-		required = math.min(math.max(required, table.getn2(shili)), ai_card_stat(ID, false, true))
+		required = math.min(math.max(required, table.getn2(shili)), ai_card_stat(ID, true, false))
 		qipai_id, qizhuangbei_id = ai_judge_withdraw(ID, required, true)
 	else
 		qipai_id, qizhuangbei_id = ai_judge_withdraw(ID, required, false)
