@@ -414,8 +414,9 @@ function _guixin_sub2(va_list)
 		return
 	else
 		funcptr_queue = {}
+		funcptr_i = 0
 		add_funcptr(_guixin_sub1,{false, char_current_i, p_next})
-		consent_func_queue(0.6)
+		timer.start(0.6)
 	end
 end
 
@@ -483,7 +484,7 @@ function _gongxin_exe(ID_s, ID_mubiao)
 	gamerun_guankan_selected = 1
 	card_dealed_selected = 0
 	card_paidui_dealed = 1
-	push_message(char_juese[ID].name .. "查看了"..char_juese[ID_mubiao].name.."的手牌")
+	push_message(char_juese[ID_s].name .. "查看了"..char_juese[ID_mubiao].name.."的手牌")
 	gamerun_deal = function()
 		if #card_dealed_2 == 0 then
 			txt_messages:setVisible(true)
