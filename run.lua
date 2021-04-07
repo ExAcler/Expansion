@@ -375,6 +375,10 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["凿险"] == "available" and #card_tian[char_acting_i] > 2 then
 		add_funcptr(skills_zaoxian)
 	end
+
+	if char_juese[char_acting_i].skill["若愚"] == "available" and skills_judge_ruoyu() then
+		add_funcptr(skills_ruoyu)
+	end
 	
 	if char_juese[char_acting_i].skill["志继"] == "available" and #char_juese[char_acting_i].shoupai == 0 then
 		add_funcptr(skills_hunzi)
@@ -695,6 +699,11 @@ function _panding_pass(id)    -- 将闪电传给下一个玩家
 		if char_juese[p].siwang == true then
 			j = true
 		else
+			local yanse, huase, dianshu = ai_judge_cardinfo(p, {char_juese[char_acting_i].panding[id]})
+			if yanse == "黑色" and char_juese[p].skill["帷幕"] == "available" then
+				j = true
+			end
+
 			--  若下家判定区中已有闪电，则跳过之传给再下家  --
 			for _, v in ipairs(char_juese[p].panding) do
 				if v[1] == "闪电" then
@@ -1485,7 +1494,7 @@ function on.enterKey()
 			if gamerun_status == "选择目标" then
 				if carda == "借刀杀人" or carda == "铁锁连环" or fangtian == true then
 					--  多目标出牌  --
-					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
+					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected, {card_highlighted}) then
 						if carda == "借刀杀人" then
 							set_hints("请选择目标B")
 						elseif carda == "铁锁连环" then
@@ -1543,7 +1552,7 @@ function on.enterKey()
 					end
 
 					--  杀第二目标  --
-					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
+					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected, {card_highlighted}) then
 						set_hints("请选择目标C或'取消'出杀")
 						selected_target_b = gamerun_target_selected
 						gamerun_status = "选择目标-C"
@@ -1566,7 +1575,7 @@ function on.enterKey()
 				end
 
 				--  杀第三目标  --
-				if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected) then
+				if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected, {card_highlighted}) then
 					set_hints("请选择目标D或'取消'出杀")
 					selected_target_c = gamerun_target_selected
 					gamerun_status = "选择目标-D"

@@ -1584,7 +1584,7 @@ function _liuli_select_target(ID_sha, sha_mubiao_i, old_gamerun_status)
 	gamerun_OK_ptr = function()
 		if gamerun_status == "技能选择-目标" then
 			if gamerun_OK == true then
-				if table.getn2(card_selected) == 1 and card_if_d_limit("流离", char_current_i, gamerun_target_selected) then
+				if table.getn2(card_selected) == 1 and card_if_d_limit("流离", char_current_i, gamerun_target_selected, nil) then
 					_liuli_exe(card_highlighted, ID_sha, char_current_i, gamerun_target_selected, sha_mubiao_i)
 				end
 			end

@@ -1259,7 +1259,7 @@ function skills_jijiang_current_enter()
 	gamerun_OK = false
 
 	gamerun_OK_ptr = function()
-		if gamerun_OK == true and card_if_d_limit("杀", char_current_i, gamerun_target_selected) then
+		if gamerun_OK == true and card_if_d_limit("杀", char_current_i, gamerun_target_selected, nil) then
 			gamerun_status = "手牌生效中"
 			set_hints("")
 			skills_cs()
@@ -1523,4 +1523,42 @@ function _jijiang_get_idd(va, mode)
 		return va[3]
 	end
 	return nil
+end
+
+--  刘禅：若愚  --
+function skills_judge_ruoyu()
+	local acting_tili = char_juese[char_acting_i].tili
+
+	for i = 1, 5 do
+		if char_juese[i].siwang == false and char_juese[i].tili < acting_tili then
+			return false
+		end
+	end
+
+	return true
+end
+function skills_ruoyu()
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	push_message(char_juese[char_acting_i].name.."触发了武将技能 '若愚'")
+	add_funcptr(_ruoyu_add_tili_max)
+	char_tili_huifu(char_acting_i, 1)
+	
+	if char_juese[char_acting_i].skill["激将"] ~= nil then
+		skill_double[char_acting_i]["激将"] = true
+	else
+		char_juese[char_acting_i].skill["激将"] = "available"
+	end
+	table.insert(char_juese[char_acting_i].skillname, "激将")
+
+	char_juese[char_acting_i].skill["若愚"] = "locked_whole_game"
+
+	add_funcptr(_hujia_huifu)
+	timer.start(0.6)
+end
+function _ruoyu_add_tili_max()
+	char_juese[char_acting_i].tili_max = char_juese[char_acting_i].tili_max + 1
+	push_message(char_juese[char_acting_i].name .. "增加1点体力上限")
 end

@@ -61,7 +61,7 @@ function ai_judge_liuli(ID_sha, ID_sha_mubiao)
 		if possible_targets[i] == ID_sha_mubiao then
 			table.remove(possible_targets, i)
 		else
-			local inrange = card_if_d_limit("流离", ID_sha_mubiao, possible_targets[i])
+			local inrange = card_if_d_limit("流离", ID_sha_mubiao, possible_targets[i], nil)
 			--local _, inrange = ai_judge_distance(ID_sha_mubiao, possible_targets[i], 1)
 			if inrange == false or possible_targets[i] == ID_sha_mubiao or possible_targets[i] == ID_sha then
 				table.remove(possible_targets, i)
@@ -507,7 +507,7 @@ function ai_judge_tianyi(ID)
 	local help_mubiao = ai_basic_judge_mubiao(ID, 4, true, true, true)
 
 	if #attack_mubiao == 1 then
-		local inrange = card_if_d_limit("杀", ID, attack_mubiao[1])
+		local inrange = card_if_d_limit("杀", ID, attack_mubiao[1], nil)
 		if inrange and n_sha < 2 then
 			return false, 0, 0
 		end
@@ -621,7 +621,7 @@ function ai_judge_qixi(ID)
 	end
 
 	for i = 1, #attack_mubiao do
-		if card_if_d_limit("兵粮寸断", ID, attack_mubiao[i]) then
+		if card_if_d_limit("兵粮寸断", ID, attack_mubiao[i], nil) then
 			n_bingliang_keep = n_bingliang_keep + 1
 		end
 	end
@@ -651,7 +651,7 @@ function ai_judge_qixi(ID)
 	end
 
 	for i = #attack_mubiao, 1, -1 do
-		if card_if_d_limit("过河拆桥", ID, attack_mubiao[i]) == false then
+		if card_if_d_limit("过河拆桥", ID, attack_mubiao[i], nil) == false then
 			table.remove(attack_mubiao, i)
 		end
 	end

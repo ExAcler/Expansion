@@ -180,6 +180,14 @@ function ai_withdraw_need(ID)
 	return need + math.max(#char_juese[ID].shoupai - limit, 0)
 end
 
+function ai_get_cards_from_id(ID, ID_shoupai)
+	local cards = {}
+	for i = 1, #ID_shoupai do
+		table.insert(cards, char_juese[ID].shoupai[ID_shoupai[i]])
+	end
+	return cards
+end
+
 -- AI使用牌颜色、花色与点数判断 --
 function ai_judge_cardinfo(ID,cards)
 	local yanse,huase,dianshu = "无","无",0

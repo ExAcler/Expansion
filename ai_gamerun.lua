@@ -733,9 +733,10 @@ function ai_card_use(ID)
 
 	local card_use = ai_card_search(ID, "五谷丰登", 1)
 	if #card_use ~= 0 and ai_judge_AOE(ID,"五谷丰登") >= 0.5 then
-		card_chupai_ai({card_use[1]}, ID, nil, nil, "五谷丰登")
-		ai_next_card(ID)
-		return
+		if card_chupai_ai({card_use[1]}, ID, nil, nil, "五谷丰登") then
+			ai_next_card(ID)
+			return
+		end
 	end
 
 	local card_use = ai_card_search(ID, "过河拆桥", 1)
@@ -793,17 +794,19 @@ function ai_card_use(ID)
 
 	local card_use = ai_card_search(ID, "南蛮入侵", 1)
 	if #card_use ~= 0 and ai_judge_AOE(ID,"南蛮入侵") >= 0.5 then
-		card_chupai_ai({card_use[1]}, ID, nil, nil, "南蛮入侵")
-		--  南蛮后处理ai_next_card --
-		timer.start(0.6)
+		if card_chupai_ai({card_use[1]}, ID, nil, nil, "南蛮入侵") then
+			--  南蛮后处理ai_next_card --
+			timer.start(0.6)
+		end
 		return
 	end
 
 	local card_use = ai_card_search(ID, "万箭齐发", 1)
 	if #card_use ~= 0 and ai_judge_AOE(ID,"万箭齐发") >= 0.5 then
-		card_chupai_ai({card_use[1]}, ID, nil, nil, "万箭齐发")
-		--  万箭后处理ai_next_card --
-		timer.start(0.6)
+		if card_chupai_ai({card_use[1]}, ID, nil, nil, "万箭齐发") then
+			--  万箭后处理ai_next_card --
+			timer.start(0.6)
+		end
 		return
 	end
 
@@ -864,16 +867,18 @@ function ai_card_use(ID)
 
 	local card_use = ai_card_search(ID, "无中生有", 1)
 	if #card_use ~= 0 then
-		card_chupai_ai({card_use[1]}, ID, nil, nil, "无中生有")
-		ai_next_card(ID)
-		return
+		if card_chupai_ai({card_use[1]}, ID, nil, nil, "无中生有") then
+			ai_next_card(ID)
+			return
+		end
 	end
 
 	local card_use = ai_card_search(ID, "桃园结义", 1)
 	if #card_use ~= 0 and ai_judge_AOE(ID,"桃园结义") >= 0.5 then
-		card_chupai_ai({card_use[1]}, ID, nil, nil, "桃园结义")
-		ai_next_card(ID)
-		return
+		if card_chupai_ai({card_use[1]}, ID, nil, nil, "桃园结义") then
+			ai_next_card(ID)
+			return
+		end
 	end
 
 	local card_use = ai_card_search(ID, "杀", 1)

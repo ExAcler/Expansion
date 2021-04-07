@@ -147,7 +147,7 @@ function _quhu_sub1()
 	gamerun_select_target("init")
 	
 	gamerun_OK_ptr = function()
-		if card_if_d_limit("驱虎2", guankan_s, gamerun_target_selected) then
+		if card_if_d_limit("驱虎2", guankan_s, gamerun_target_selected, nil) then
 			set_hints("")
 			gamerun_status = "手牌生效中"
 
@@ -2670,7 +2670,7 @@ function skills_jixi_enter()
 	return true
 end
 function skills_jixi_ai(ID_s, ID_mubiao, ID_tian)
-	if #card_tian[ID_s] == 0 or card_if_d_limit("顺手牵羊", ID_s, ID_mubiao) == false then
+	if #card_tian[ID_s] == 0 or card_if_d_limit("顺手牵羊", ID_s, ID_mubiao, nil) == false then
 		return false
 	end
 
@@ -2678,7 +2678,7 @@ function skills_jixi_ai(ID_s, ID_mubiao, ID_tian)
 	return true
 end
 function _jixi_select_tian(ID_s, ID_mubiao)
-	if card_if_d_limit("顺手牵羊", ID_s, ID_mubiao) == false then
+	if card_if_d_limit("顺手牵羊", ID_s, ID_mubiao, nil) == false then
 		return false
 	end
 
@@ -2698,12 +2698,22 @@ function _jixi_exe(ID_s, ID_mubiao, ID_tian)
 	gamerun_status = "手牌生效中"
 	txt_messages:setVisible(true)
 
-	wugucards = {}
-	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '急袭'")
-
 	local card = card_tian[ID_s][ID_tian]
 	table.remove(card_tian[ID_s], ID_tian)
 	card_insert(ID_s, card)
+
+	--  贾诩帷幕的情况  --
+	if card_if_d_limit("顺手牵羊", ID_s, ID_mubiao, {#char_juese[ID_s].shoupai}) == false then
+		table.remove(char_juese[ID_s].shoupai)
+		table.insert(card_tian[ID_s], card)
+
+		add_funcptr(_chai_sub2)
+		timer.start(0.6)
+		return
+	end
+
+	wugucards = {}
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '急袭'")
 
 	if card_shun({#char_juese[ID_s].shoupai}, ID_s, ID_mubiao) then
 		timer.start(0.6)

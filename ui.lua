@@ -260,11 +260,15 @@ function draw_opponent(gc)
 				if id == gamerun_target_selected then
 					--  显示焦点  --
 					local fun
+					local ID_shoupai = skills_get_selected_shoupai()
+					if #ID_shoupai == 0 then
+						ID_shoupai = nil
+					end
 			
 					if gamerun_status == "选择目标-B" or ((card == "驱虎2" or card == "节命" or card == "好施" or card == "遗计") and gamerun_status == "技能选择-目标B") then
-						fun = function(card) return card_if_d_limit(card, guankan_s, gamerun_target_selected) end
+						fun = function(card) return card_if_d_limit(card, guankan_s, gamerun_target_selected, ID_shoupai) end
 					else
-						fun = function(card) return card_if_d_limit(card, char_current_i, id) end
+						fun = function(card) return card_if_d_limit(card, char_current_i, id, ID_shoupai) end
 					end
 					
 					if char_acting_i == id and fun(card) then
@@ -602,11 +606,16 @@ function draw_self(gc)
 				card = imp_card
 			end
 
-			if char_acting_i == char_current_i and card_if_d_limit(card, guankan_s, gamerun_target_selected) then
+			local ID_shoupai = skills_get_selected_shoupai()
+			if #ID_shoupai == 0 then
+				ID_shoupai = nil
+			end
+
+			if char_acting_i == char_current_i and card_if_d_limit(card, guankan_s, gamerun_target_selected, ID_shoupai) then
 				gc:setColorRGB(195, 195, 0)
 			elseif char_acting_i == char_current_i then
 				gc:setColorRGB(17, 69, 20)
-			elseif card_if_d_limit(card, guankan_s, gamerun_target_selected) then
+			elseif card_if_d_limit(card, guankan_s, gamerun_target_selected, ID_shoupai) then
 				--  选择的角色可作为目标  --
 				gc:setColorRGB(255, 0, 0)
 			else
