@@ -2811,17 +2811,19 @@ function card_nanman(ID_shoupai, _ID_s)
 	
 	for i = 1, 4 do
 		if char_juese[id].siwang == false and char_juese[id].skill["祸首"] ~= "available" and char_juese[id].skill["巨象"] ~= "available" and id ~= _ID_s then
+			funcptr_add_tag = "无懈执行前"
+			add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了南蛮入侵"})
+			funcptr_add_tag = nil
+
 			if _nanman_judge_mian(id) == false then
-				funcptr_add_tag = "无懈执行前"
-				add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了南蛮入侵"})
-				funcptr_add_tag = nil
-
 				card_wuxie("南蛮入侵", ID_s, id)
-
-				funcptr_add_tag = "无懈无效结算"
-				add_funcptr(_nanman_exe, {ID_s, id})
-				funcptr_add_tag = nil
+			else
+				_nanman_tengjia(id)
 			end
+
+			funcptr_add_tag = "无懈无效结算"
+			add_funcptr(_nanman_exe, {ID_s, id})
+			funcptr_add_tag = nil
 		end
 	    id = id + 1
 		if id > 5 then id = 1 end
@@ -2831,12 +2833,24 @@ function card_nanman(ID_shoupai, _ID_s)
 	add_funcptr(_nanman_sub1)
 	funcptr_add_tag = nil
 end
+function _nanman_tengjia(ID_mubiao)
+	funcptr_add_tag = "无懈轮询开始"
+	add_funcptr(_nanman_tengjia_prepare, ID_mubiao)
+	funcptr_add_tag = nil
+
+	add_funcptr(_wuxie_exe)
+end
+function _nanman_tengjia_prepare(ID_mubiao)
+	_nanman_send_msg({char_juese[ID_mubiao].name, "触发了'藤甲'效果"})
+
+	wuxie_in_effect = false
+	wuxie_queue_jinnang = table.copy(funcptr_queue)
+end
 function _nanman_judge_mian(ID_mubiao)	--  南蛮入侵：判断是否可以免除出杀
 	--  若装备藤甲，不用出杀  --
 	card = char_juese[ID_mubiao].fangju
 	if #card ~= 0 then
 	    if card[1] == "藤甲" then
-	        add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "装备藤甲，不用出杀"})
 		    return true
 	    end
 	end
@@ -2846,6 +2860,11 @@ end
 function _nanman_exe(va_list)
 	local ID_s, ID_mubiao
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	if _nanman_judge_mian(ID_mubiao) then
+		_baiyin_skip()
+		return
+	end
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
@@ -2979,17 +2998,19 @@ function card_wanjian(ID_shoupai, ID_s)
 	if id > 5 then id = 1 end
 	for i = 1, 4 do
 	    if char_juese[id].siwang == false then
+			funcptr_add_tag = "无懈执行前"
+			add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了万箭齐发"})
+			funcptr_add_tag = nil
+
 			if _wanjian_judge_mian(id) == false then
-				funcptr_add_tag = "无懈执行前"
-				add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了万箭齐发"})
-				funcptr_add_tag = nil
-
 				card_wuxie("万箭齐发", ID_s, id)
-
-				funcptr_add_tag = "无懈无效结算"
-				add_funcptr(_wanjian_exe, {ID_s, id})
-				funcptr_add_tag = nil
+			else
+				_nanman_tengjia(id)
 			end
+
+			funcptr_add_tag = "无懈无效结算"
+			add_funcptr(_wanjian_exe, {ID_s, id})
+			funcptr_add_tag = nil
 	    end
 		id = id + 1
 		if id > 5 then id = 1 end
@@ -3005,7 +3026,6 @@ function _wanjian_judge_mian(ID)	--  万箭齐发：判断是否可以不用出�
 	local card = char_juese[ID].fangju
 	if #card ~= 0 then
 	    if card[1] == "藤甲" then
-	        add_funcptr(_nanman_send_msg, {char_juese[ID].name, "装备藤甲，不用出闪"})
 			return true
 	    end
 	end
@@ -3014,6 +3034,11 @@ end
 function _wanjian_exe(va_list)
 	local ID_s, ID_mubiao
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	if _wanjian_judge_mian(ID_mubiao) then
+		_baiyin_skip()
+		return
+	end
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
@@ -3885,13 +3910,13 @@ function _sha_get_leixing(card_shoupai)		--  杀：根据牌面返回杀的类�
 end
 function _sha_judge_fangju_ying(card_zhuangbei, card_shoupai, sha_leixing, ID_s, ID_mubiao)		--  杀：判断是否装备硬防具（100%概率抵御，即藤甲仁王盾）
 	if card_zhuangbei[1] == "藤甲" and sha_leixing == "杀" then
-		add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "装备藤甲，此杀无效"})
+		add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了'藤甲'效果，此杀无效"})
 		return true
 	end
 
 	local yanse, huase, dianshu = ai_judge_cardinfo(ID_s, card_shoupai)
 	if card_zhuangbei[1] == "仁王盾" and yanse == "黑色" then
-		add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "装备仁王盾，此杀无效"})
+		add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了'仁王盾'效果，此杀无效"})
 		return true
 	end
 	return false
