@@ -189,3 +189,44 @@ function ai_judge_longdan(ID)
 	local mindef_ID = ai_judge_minimum_def(attack_mubiao)
 	return true, cards[1], mindef_ID
 end
+
+--  AI决定是否发动激将  --
+--  true发动，false不发动  --
+function ai_judge_jijiang_req(ID_req)
+	local c_pos = ai_chazhao_sha(ID_req, char_juese[ID_req].shoupai)
+	if c_pos < 0 then
+		return true
+	else
+		return false
+	end
+end
+
+--  AI决定是否响应激将  --
+function ai_judge_jijiang(ID_laiyuan, ID_mubiao, ID_req, ID_res, mode)
+	if ai_judge_same_identity(ID_res, ID_req, true) ~= 1 or ID_mubiao == ID_res then
+		return false
+	end
+
+	local percent
+	if mode == "南蛮入侵" or mode == "决斗" then
+		if char_juese[ID_req].shenfen == "主公" then
+			percent = 20 + 30 * (char_juese[ID_req].tili_max - char_juese[ID_req].tili)
+		else
+			percent = 20 + 10 * (char_juese[ID_req].tili_max - char_juese[ID_req].tili)
+		end
+		if percent < 0 then
+			percent = 0
+		end
+		if percent > 100 then
+			percent = 100
+		end
+	else
+		percent = 50
+	end
+
+	if ai_judge_random_percent(percent) == 1 then
+		return true
+	else
+		return false
+	end
+end

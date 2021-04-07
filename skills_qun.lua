@@ -675,7 +675,7 @@ end
 
 --  貂蝉：离间  --
 function skills_lijian_ai(ID_shoupai, ID_s, ID_first, ID_second, ai_qi_zhuangbei_id)
-	if char_juese[ID_first].xingbie ~= "男" or char_juese[ID_second].xingbie ~= "男" then
+	if char_juese[ID_first].xingbie ~= "男" or char_juese[ID_second].xingbie ~= "男" or card_if_d_limit("决斗", ID_first, ID_second) == false then
 		return false
 	end
 
@@ -714,7 +714,7 @@ function skills_lijian_enter()
 		end
 		
 		if gamerun_status == "技能选择-目标B" then
-			if char_juese[gamerun_target_selected].xingbie == "男" and gamerun_OK == true then
+			if char_juese[gamerun_target_selected].xingbie == "男" and card_if_d_limit("决斗", guankan_s, gamerun_target_selected) and gamerun_OK == true then
 				_lijian_exe(card_highlighted, char_current_i, guankan_s, gamerun_target_selected)
 			end
 		end

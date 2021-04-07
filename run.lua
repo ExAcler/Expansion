@@ -970,7 +970,7 @@ function gamerun_card_select_zhuangbei(i)
 				return
 			end
 		else	
-			if gamerun_status ~= "技能选择-单牌" and gamerun_status ~= "技能选择-多牌" then
+			if gamerun_status ~= "技能选择-单牌" and gamerun_status ~= "技能选择-多牌" and gamerun_status ~= "主动出牌-贯石" then
 				return
 			end
 
@@ -1361,9 +1361,8 @@ function on.enterKey()
 		if string.find(gamerun_status, "借刀") then
 			if table.getn2(card_selected) ~= 0 then
 				card = char_juese[char_current_i].shoupai[card_highlighted]
-				if card_judge_if_sha(char_current_i, card_highlighted) then
-					funcptr_queue = {}
-					_jiedao_beidong_chu(card_highlighted, wuxie_va)
+				funcptr_queue = {}
+				if _jiedao_zhudong_chu(wuxie_va) then
 					consent_func_queue(0.6)
 				end
 			end
@@ -1687,7 +1686,7 @@ function on.escapeKey()
 
 			if string.find(gamerun_status, "借刀") then
 				funcptr_queue = {}
-				_jiedao_beidong_fangqi(wuxie_va)
+				_jiedao_zhudong_fangqi(wuxie_va)
 				consent_func_queue(0.6)
 				return
 			end
@@ -1911,7 +1910,7 @@ function on.arrowKey(key)
 		    --  选取手牌状态  --
 			--  已选取牌的情况下不允许移动  --
 			--  允许移动的情况  --
-		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
+		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or string.find(gamerun_status, "借刀") or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
 		        if card_highlighted > 1 then
 		            card_highlighted = card_highlighted - 1
 			    end
@@ -1952,7 +1951,7 @@ function on.arrowKey(key)
 				end
 			end
 		else
-		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
+		    if table.getn2(card_selected) == 0 or gamerun_huihe == "弃牌" or string.find(gamerun_status, "贯石") or string.find(gamerun_status, "借刀") or gamerun_status == "技能选择-多牌" or gamerun_status == "主动出牌-刚烈" then
 	            if card_highlighted < #char_juese[char_current_i].shoupai then
 		            card_highlighted = card_highlighted + 1
 			    end

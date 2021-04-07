@@ -557,7 +557,9 @@ function ai_judge_jieyin(ID)
 			percent = 0
 		end
 	end
-	cards = random_pick(cards, 2)
+	while #cards > 2 do
+		table.remove(cards, math.random(#cards))
+	end
 	if #cards < 2 then
 		return false, {}, 0
 	end

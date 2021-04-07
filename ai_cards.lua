@@ -812,10 +812,9 @@ function ai_card_search(ID, kind, required, alt_shoupai)
 		end
 	end
 
-	card_searched = random_pick(card_searched, required)
-	-- while #card_searched > required do
-	-- 	table.remove(card_searched, math.random(#card_searched))
-	-- end
+	while #card_searched > required do
+	 	table.remove(card_searched, math.random(#card_searched))
+	end
 
 	return card_searched
 end

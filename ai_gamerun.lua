@@ -817,10 +817,11 @@ function ai_card_use(ID)
 			if #targets > 0 then
 				if ai_judge_random_percent(20*(#char_juese[ID].shoupai - #char_juese[targets[1]].shoupai) + 60) == 1 or #char_juese[targets[1]].shoupai == 0 then
 					ID_mubiao = targets[1]
-					card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "决斗")
-					--  决斗后处理ai_next_card --
-					timer.start(0.6)
-					return
+					if card_chupai_ai({card_use[1]}, ID, ID_mubiao, nil, "决斗") then
+						--  决斗后处理ai_next_card --
+						timer.start(0.6)
+						return
+					end
 				end
 			end
 		end

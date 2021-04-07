@@ -1251,3 +1251,276 @@ end
 function _xiangle_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
+
+--  刘备：激将  --
+function skills_jijiang_current_enter()
+	skills_enter("请选择杀的目标", "", "杀", "技能选择-目标")
+	gamerun_select_target("init")
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true and card_if_d_limit("杀", char_current_i, gamerun_target_selected) then
+			gamerun_status = "手牌生效中"
+			set_hints("")
+			skills_cs()
+
+			funcptr_queue = {}
+			funcptr_i = 0
+			add_funcptr(_rende_sub)
+
+			push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+			timer.stop()
+			funcptr_queue = {}
+			funcptr_i = 0
+
+			skills_jijiang_add(char_current_i, "杀", {-1, char_current_i, gamerun_target_selected})
+			timer.start(0.6)
+		end
+	end
+
+	platform.window:invalidate()
+	return true
+end
+function skills_jijiang_req_side(va_list)
+	local ID_req, mode, va
+	ID_req = va_list[1]; mode = va_list[2]; va = va_list[3]
+
+	if ID_req == char_current_i then
+		skills_jijiang_req_side_enter(mode, va)
+	else
+		skills_jijiang_req_side_ai(ID_req, mode, va)
+	end
+end
+function skills_jijiang_req_side_ai(ID_req, mode, va)
+	if ai_judge_jijiang_req(ID_req) == false then
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	skills_jijiang_add(ID_req, mode, va)
+	timer.start(0.6)
+end
+function skills_jijiang_req_side_enter(mode, va)
+	local old_gamerun_status = gamerun_status
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '激将'?"
+	gamerun_OK = false
+	gamerun_OK_ptr = function()
+		set_hints("")
+		gamerun_status = old_gamerun_status
+
+		if gamerun_OK == true then
+			skills_jijiang_add(char_current_i, mode, va)
+		else
+			_hujia_huifu()
+		end
+		timer.start(0.6)
+	end
+	
+	platform.window:invalidate()
+end
+function skills_jijiang_add(ID_req, mode, va)
+	push_message(table.concat({char_juese[ID_req].name, "发动了武将技能 '激将'"}))
+	for i = 1, 5 do
+		--if char_juese[i].shili == "蜀" and ID_req ~= i and char_juese[i].siwang == false then
+		if ID_req ~= i and char_juese[i].siwang == false then
+			add_funcptr(skills_jijiang, {ID_req, i, mode, va})
+		end
+	end
+	add_funcptr(_hujia_huifu)
+end
+function skills_jijiang(va_list)
+	local ID_req, ID_res, mode, va
+	ID_req = va_list[1]; ID_res = va_list[2]; mode = va_list[3]; va = va_list[4]
+
+	if ID_res == char_current_i then
+		skills_jijiang_enter(ID_req, mode, va)
+	else
+		skills_jijiang_ai(ID_req, ID_res, mode, va)
+	end
+end
+function skills_jijiang_ai(ID_req, ID_res, mode, va)
+	if ai_judge_jijiang(_jijiang_get_ids(va, mode), _jijiang_get_idd(va, mode), ID_req, ID_res, mode) == false then
+		push_message(table.concat({char_juese[ID_res].name, "不响应"}))
+		return
+	end
+
+	local c_pos = ai_chazhao_sha(ID_res, char_juese[ID_res].shoupai)
+	if c_pos < 0 then
+		push_message(table.concat({char_juese[ID_res].name, "不响应"}))
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	_jijiang_exe(ID_req, ID_res, {c_pos}, mode, va)
+	timer.start(0.6)
+end
+function skills_jijiang_enter(ID_req, mode, va)
+	local old_gamerun_status = gamerun_status
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_status = "确认操作"
+	jiaohu_text = table.concat({"是否响应", char_juese[ID_req].name, "的'激将'?"})
+	gamerun_OK = false
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		set_hints("")
+
+		if gamerun_OK == true then
+			_jijiang_select_card(ID_req, mode, va, old_gamerun_status)
+		else
+			gamerun_status = old_gamerun_status
+			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
+			_hujia_huifu()
+		end
+		timer.start(0.6)
+	end
+	
+	platform.window:invalidate()
+end
+function _jijiang_select_card(ID_req, mode, va, old_gamerun_status)
+	skills_enter("您可出1张杀", "", "激将", "技能选择-多牌")
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			local qualified = false
+			local c_pos = skills_get_selected_shoupai()
+			if #c_pos == 1 then
+				if card_judge_if_sha(char_current_i, c_pos[1]) then
+					qualified = true
+				end
+			elseif (mode == "借刀杀人" or mode == "杀") and #char_juese[char_current_i].wuqi > 0 then
+				if char_juese[char_current_i].wuqi[1] == "丈八矛" then
+					if #c_pos == 2 then
+						qualified = true
+					end
+				end
+			end
+
+			if qualified == false then
+				return
+			end
+
+			gamerun_status = old_gamerun_status
+			set_hints("")
+			_jijiang_exe(ID_req, char_current_i, c_pos, mode, va)
+
+			card_selected = {}
+			card_highlighted = 1
+		else
+			gamerun_status = old_gamerun_status
+			set_hints("")
+			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
+			_hujia_huifu()
+		end
+		timer.start(0.6)
+	end
+	
+	gamerun_tab_ptr = nil
+end
+function _jijiang_exe(ID_req, ID_res, ID_shoupai, mode, va)
+	--  弹出第一层：激将响应  --
+	_hujia_huifu()
+
+	--  弹出第二层：激将请求  --
+	_hujia_huifu()
+
+	--  清空原有函数队列  --
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	push_message(table.concat({char_juese[ID_res].name, "响应"}))
+	
+	if mode == "决斗" then
+		local ID_s, ID_mubiao, wushuang_flag
+		ID_s = va[1]; ID_mubiao = va[2]; wushuang_flag = va[3]
+
+		add_funcptr(_juedou_sha, {ID_res, ID_s, ID_shoupai[1]})
+		skills_losecard(ID_res, 9999, true)
+		_juedou_nextstep(ID_s, ID_mubiao, wushuang_flag)
+	elseif mode == "南蛮入侵" then
+		add_funcptr(_nanman_sha, {ID_res, ID_shoupai[1]})
+		skills_losecard(ID_res, 1, true)
+		add_funcptr(_nanman_zhudong_huifu)
+	elseif mode == "借刀杀人" or mode == "杀" then
+		local ID_jiedao_req, ID_s, ID_mubiao
+		ID_jiedao_req = va[1]; ID_s = va[2]; ID_mubiao = va[3]
+
+		add_funcptr(_jijiang_geipai, {ID_res, ID_s, ID_shoupai})
+		skills_losecard(ID_res, 9999, true)
+		add_funcptr(_jijiang_sha, {ID_jiedao_req, ID_s, ID_mubiao, mode, #ID_shoupai})
+	end
+end
+function _jijiang_sha(va_list)
+	local ID_req, ID_s, ID_mubiao, mode, n_sha
+	ID_req = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]; mode = va_list[4]; n_sha = va_list[5]
+
+	local ID_shoupai = {}
+	local n_shoupai = #char_juese[ID_s].shoupai
+	for i = n_shoupai - n_sha + 1, n_shoupai do
+		table.insert(ID_shoupai, i)
+	end
+
+	if mode == "借刀杀人" then
+		_jiedao_sha(ID_shoupai, ID_req, ID_s, ID_mubiao)
+	else
+		card_sha(ID_shoupai, ID_s, {ID_mubiao}, true)
+	end
+end
+function _jijiang_geipai(va_list)
+	local ID_s, ID_d, c_pos, msg
+	ID_s = va_list[1]; ID_d = va_list[2]; c_pos = va_list[3]
+	
+	msg = table.concat({char_juese[ID_s].name, "提供了"})
+
+	for i = 1, #c_pos do
+		local card = char_juese[ID_s].shoupai[c_pos[i]]
+		msg = msg .. table.concat({"'", card[2], card[3], "的", card[1], "'"})
+		if i ~= #c_pos then
+			msg = msg .. "，"
+		end
+	end
+	push_message(msg)
+
+	for i = #c_pos, 1, -1 do
+		table.insert(char_juese[ID_d].shoupai, char_juese[ID_s].shoupai[c_pos[i]])
+		card_remove({ID_s, c_pos[i]})
+	end
+end
+function _jijiang_get_ids(va, mode)
+	if mode == "决斗" then
+		return va[1]
+	elseif mode == "南蛮入侵" then
+		return va[1]
+	elseif mode == "借刀杀人" or mode == "杀" then
+		return va[2]
+	end
+	return nil
+end
+function _jijiang_get_idd(va, mode)
+	if mode == "决斗" then
+		return va[2]
+	elseif mode == "南蛮入侵" then
+		return va[2]
+	elseif mode == "借刀杀人" or mode == "杀" then
+		return va[3]
+	end
+	return nil
+end
