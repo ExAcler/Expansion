@@ -161,6 +161,12 @@ function ai_judge_shensu(ID, is_panding)
 					percent = 50 - 20 * math.min(#char_juese[ID].shoupai - 3, 3)
 				end
 
+				if #char_juese[zhugong_id].fangju > 0 then
+					if char_juese[zhugong_id].fangju[1] == "藤甲" then
+						percent = 0
+					end
+				end
+
 				if ai_judge_random_percent(percent) == 1 then
 					return {}, 0, {}
 				else

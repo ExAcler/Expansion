@@ -2811,15 +2811,17 @@ function card_nanman(ID_shoupai, _ID_s)
 	
 	for i = 1, 4 do
 		if char_juese[id].siwang == false and char_juese[id].skill["祸首"] ~= "available" and char_juese[id].skill["巨象"] ~= "available" and id ~= _ID_s then
-			funcptr_add_tag = "无懈执行前"
-    		add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了南蛮入侵"})
-			funcptr_add_tag = nil
+			if _nanman_judge_mian(id) == false then
+				funcptr_add_tag = "无懈执行前"
+				add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了南蛮入侵"})
+				funcptr_add_tag = nil
 
-			card_wuxie("南蛮入侵", ID_s, id)
+				card_wuxie("南蛮入侵", ID_s, id)
 
-			funcptr_add_tag = "无懈无效结算"
-			add_funcptr(_nanman_exe, {ID_s, id})
-			funcptr_add_tag = nil
+				funcptr_add_tag = "无懈无效结算"
+				add_funcptr(_nanman_exe, {ID_s, id})
+				funcptr_add_tag = nil
+			end
 		end
 	    id = id + 1
 		if id > 5 then id = 1 end
@@ -2830,11 +2832,11 @@ function card_nanman(ID_shoupai, _ID_s)
 	funcptr_add_tag = nil
 end
 function _nanman_judge_mian(ID_mubiao)	--  南蛮入侵：判断是否可以免除出杀
-	--  若装备藤甲，免过  --
+	--  若装备藤甲，不用出杀  --
 	card = char_juese[ID_mubiao].fangju
 	if #card ~= 0 then
 	    if card[1] == "藤甲" then
-	        _nanman_send_msg({char_juese[ID_mubiao].name, "装备藤甲，不用出杀"})
+	        add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "装备藤甲，不用出杀"})
 		    return true
 	    end
 	end
@@ -2844,10 +2846,6 @@ end
 function _nanman_exe(va_list)
 	local ID_s, ID_mubiao
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
-
-	if _nanman_judge_mian(ID_mubiao) == true then
-		return
-	end
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()
@@ -2981,15 +2979,17 @@ function card_wanjian(ID_shoupai, ID_s)
 	if id > 5 then id = 1 end
 	for i = 1, 4 do
 	    if char_juese[id].siwang == false then
-			funcptr_add_tag = "无懈执行前"
-    		add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了万箭齐发"})
-			funcptr_add_tag = nil
+			if _wanjian_judge_mian(id) == false then
+				funcptr_add_tag = "无懈执行前"
+				add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了万箭齐发"})
+				funcptr_add_tag = nil
 
-			card_wuxie("万箭齐发", ID_s, id)
+				card_wuxie("万箭齐发", ID_s, id)
 
-			funcptr_add_tag = "无懈无效结算"
-			add_funcptr(_wanjian_exe, {ID_s, id})
-			funcptr_add_tag = nil
+				funcptr_add_tag = "无懈无效结算"
+				add_funcptr(_wanjian_exe, {ID_s, id})
+				funcptr_add_tag = nil
+			end
 	    end
 		id = id + 1
 		if id > 5 then id = 1 end
@@ -3005,7 +3005,7 @@ function _wanjian_judge_mian(ID)	--  万箭齐发：判断是否可以不用出�
 	local card = char_juese[ID].fangju
 	if #card ~= 0 then
 	    if card[1] == "藤甲" then
-	        _nanman_send_msg({char_juese[ID].name, "装备藤甲，不用出闪"})
+	        add_funcptr(_nanman_send_msg, {char_juese[ID].name, "装备藤甲，不用出闪"})
 			return true
 	    end
 	end
@@ -3014,10 +3014,6 @@ end
 function _wanjian_exe(va_list)
 	local ID_s, ID_mubiao
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
-
-	if _wanjian_judge_mian(ID_mubiao) == true then
-		return
-	end
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
 	timer.stop()

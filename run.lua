@@ -1647,6 +1647,12 @@ function on.escapeKey()
 		return
 	end
 	
+	if gamerun_status == "确认操作" then
+		gamerun_OK = false
+		gamerun_OK_ptr()
+		return
+	end
+
 	--  未选取牌时  --
 	if table.getn2(card_selected) == 0 then
 		if string.find(gamerun_status, "主动出牌") then
@@ -1726,12 +1732,6 @@ function on.escapeKey()
 				gamerun_OK_ptr()
 			end
 
-			return
-		end
-
-		if gamerun_status == "确认操作" then
-			gamerun_OK = false
-			gamerun_OK_ptr()
 			return
 		end
 		

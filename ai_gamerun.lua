@@ -584,7 +584,7 @@ function ai_skill_use_priority(ID)
 
 		if #mubiao > 0 then
 			if skills_jixi_ai(ID, mubiao[1], #card_tian[ID]) then
-				local percent = math.floor(100 / (3 ^ math.min(3 - #card_tian[ID], 0)))
+				local percent = math.floor(100 / (3 ^ math.max(3 - #card_tian[ID], 0)))
 				if ai_judge_random_percent(percent) == 0 then 
 					ai_skills_discard["急袭"] = true
 				end
