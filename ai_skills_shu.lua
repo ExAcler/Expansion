@@ -230,3 +230,36 @@ function ai_judge_jijiang(ID_laiyuan, ID_mubiao, ID_req, ID_res, mode)
 		return false
 	end
 end
+
+--  AI决定是否发动连环的连环效果  --
+--  返回是否发动、手牌ID、目标列表  --
+function ai_judge_lianhuan_lian(ID)
+	local cards = ai_card_search(ID, "草花", 1)
+	if #cards == 0 then
+		return false, 0, {}
+	end
+
+	local lianhuan_cards = ai_card_search(ID, "铁锁连环", 1)
+	if #lianhuan_cards > 0 then
+		return false, 0, {}
+	end
+
+	local shoupai = {"铁锁连环", "黑桃", "3"}
+	local attack_mubiao = ai_judge_target(ID, shoupai[1], {shoupai}, 2)
+
+	if #attack_mubiao < 1 then
+		return false, 0, {}
+	else
+		return true, cards[1], attack_mubiao
+	end
+end
+
+--  AI决定是否发动连环的重铸效果  --
+--  返回是否发动、手牌ID  --
+function ai_judge_lianhuan_chongzhu(ID)
+	local cards = ai_card_search(ID, "草花", 1)
+	if #cards == 0 then
+		return false, 0
+	end
+	return true, cards[1]
+end

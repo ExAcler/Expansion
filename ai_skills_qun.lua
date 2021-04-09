@@ -185,3 +185,64 @@ function ai_judge_qingnang(ID)
 		return true, cards[1], mindef_ID
 	end
 end
+
+--  AI决定是否发动乱击  --
+--  返回是否发动、手牌列表  --
+function ai_judge_luanji(ID)
+	local cards = ai_card_search(ID, "黑桃", 2)
+	if #cards < 2 then
+		cards = ai_card_search(ID, "草花", 2)
+	end
+	if #cards < 2 then
+		cards = ai_card_search(ID, "红桃", 2)
+	end
+	if #cards < 2 then
+		cards = ai_card_search(ID, "方块", 2)
+	end
+
+	if #cards < 2 then
+		return false, {}
+	end
+	table.sort(cards)
+
+	if ai_judge_AOE(ID, "万箭齐发") >= 0.5 then
+		return true, cards
+	else
+		return false, {}
+	end
+end
+
+--  AI决定是否发动竭缘  --
+--  返回是否发动、手牌ID  --
+function ai_judge_jieyuan(ID, ID_counterpart, dianshu, shuxing, mode)
+	if mode == "造成伤害" then
+		if ai_judge_same_identity(ID, ID_counterpart, true) ~= 2 then
+			return false, 0
+		end
+	end
+ 
+	local cards
+	local percent
+	if mode == "造成伤害" then
+		percent = 20
+		cards = ai_card_search(ID, "黑色", 1)
+	else
+		percent = 0
+		cards = ai_card_search(ID, "红色", #char_juese[ID].shoupai)
+		for i = #cards, 1, -1 do
+			if card_judge_if_shan(ID, cards[i]) then
+				table.remove(cards, i)
+				break
+			end
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+
+	if #cards == 0 or ai_judge_random_percent(percent) == 1 then
+		return false, 0
+	else
+		return true, cards[1]
+	end
+end

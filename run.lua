@@ -1814,6 +1814,13 @@ function on.escapeKey()
 		end
 
 		if table.getn2(card_selected) == 1 then
+			if string.find(gamerun_status, "技能选择") then
+				if imp_card == "铁锁连环" then
+					gamerun_OK = false
+					gamerun_OK_ptr()
+				end
+			end
+
 			if gamerun_status == "选择目标" then
 				if card == "铁锁连环" then
 					--  发动铁索连环 (重铸效果)  --

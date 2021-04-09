@@ -8,6 +8,17 @@ function ai_chazhao_sha(ID, shoupai)
 	if c_pos < 0 then
 		c_pos = _sha_card_chazhao(shoupai, "火杀")
 	end
+	if c_pos < 0 then
+		--  关羽武圣  --
+		if char_juese[ID].skill["武圣"] == "available" then
+			c_pos = _sha_chazhao_redblack(ID, shoupai, true)
+		end
+
+		--  赵云龙胆  --
+		if char_juese[ID].skill["龙胆"] == "available" then
+			c_pos = _sha_card_chazhao(shoupai, "闪")
+		end
+	end
 	return c_pos
 end
 

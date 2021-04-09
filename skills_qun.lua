@@ -300,17 +300,22 @@ function skills_jiuchi(ID)
 end
 
 --  袁绍：乱击  --
+function skills_luanji_ai(ID, ID_shoupai)
+	return skills_luanji(ID, ID_shoupai)
+end
 function skills_luanji_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 
 	skills_enter("请选择两张同花色牌", "使用万箭齐发", "万箭齐发", "技能选择-多牌")
 	
 	gamerun_OK_ptr = function()
-		skills_luanji()
+		local ID_shoupai = skills_get_selected_shoupai()
+		skills_luanji(char_current_i, ID_shoupai)
 	end
 	
 	gamerun_tab_ptr = function()
-		if skills_judge_luanji() then
+		local ID_shoupai = skills_get_selected_shoupai()
+		if skills_judge_luanji(char_current_i, ID_shoupai) then
 			set_hints(skill_text_2)
 		else
 			set_hints(skill_text_1)
@@ -319,40 +324,30 @@ function skills_luanji_enter()
 	
 	return true
 end
-function skills_judge_luanji()
-	local i, card
-	local h1 = 0
-	local h2 = 0
-	card = char_juese[char_current_i].shoupai
-	
-	if table.getn2(card_selected) == 2 then
-		for i, _ in pairs(card_selected) do
-			if h1 == 0 then
-				h1 = i
-			else
-				h2 = i
-			end
-		end
-		if card[h1][2] == card[h2][2] then
+function skills_judge_luanji(ID, ID_shoupai)
+	local shoupai = char_juese[ID].shoupai
+
+	if #ID_shoupai == 2 then
+		local yanse1, huase1, dianshu1 = ai_judge_cardinfo(ID, {shoupai[ID_shoupai[1]]})
+		local yanse2, huase2, dianshu2 = ai_judge_cardinfo(ID, {shoupai[ID_shoupai[2]]})
+
+		if huase1 == huase2 then
 			return true
 		end
 	end
 	return false
 end
-function skills_luanji()
-	local i
-	local h1 = 0
-	local h2 = 0
-	
-	if skills_judge_luanji() then
+function skills_luanji(ID, ID_shoupai)
+	if skills_judge_luanji(ID, ID_shoupai) then
 		funcptr_queue = {}
-		local card_i = skills_get_selected_shoupai()
 		
-		if card_wanjian(card_i, char_current_i) then
+		if card_wanjian(ID_shoupai, ID) then
 			skills_cs()
 		    consent_func_queue(0.6)
+			return true
 		end
 	end
+	return false
 end
 
 --  左慈：化身 --
@@ -1185,4 +1180,151 @@ function _huangtian_geipai(va_list)
 
 	card_remove({ID_s, ID_shoupai})
 	card_insert(ID_zhugong, card)
+end
+
+--  灵雎：竭缘  --
+function skills_jieyuan(mode)
+	local deduct_va = deduct_va_stack[#deduct_va_stack]
+	local id, laiyuan, dianshu, shuxing
+	local ID, ID_counterpart
+	dianshu = deduct_va[1]; id = deduct_va[2]; laiyuan = deduct_va[3]; shuxing = deduct_va[4]
+
+	dianshu = _deduct_count(deduct_va)
+	if mode == "受到伤害" then
+		ID = id
+		ID_counterpart = laiyuan
+	else
+		ID = laiyuan
+		ID_counterpart = id
+	end
+
+	if char_juese[ID_counterpart].tili < char_juese[ID].tili then
+		_baiyin_skip()
+		return
+	end
+
+	if ID == char_current_i then
+		skills_jieyuan_enter(ID_counterpart, dianshu, shuxing, mode)
+	else
+		skills_jieyuan_ai(ID, ID_counterpart, dianshu, shuxing, mode)
+	end
+end
+function skills_jieyuan_ai(ID, ID_counterpart, dianshu, shuxing, mode)
+	local fadong, ID_shoupai
+	fadong, ID_shoupai = ai_judge_jieyuan(ID, ID_counterpart, dianshu, shuxing, mode)
+
+	if fadong == false then
+		_baiyin_skip()
+		return
+	end
+
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	_jieyuan_exe(ID_shoupai, ID, dianshu, mode)
+end
+function skills_jieyuan_enter(ID_counterpart, dianshu, shuxing, mode)
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "选项选择"
+
+	if mode == "受到伤害" then
+		choose_name = table.concat({"您将受到", dianshu, "点", shuxing, "属性伤害"})
+		jiaohu_text = "是否发动'竭缘'使该伤害-1?"
+	else
+		choose_name = table.concat({"您将对", char_juese[ID_counterpart].name ,"造成伤害"})
+		jiaohu_text = "是否发动'竭缘'使该伤害+1?"
+	end
+
+	choose_option = {"是", "否"}
+
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		set_hints("")
+
+		if i == 1 then
+			_jieyuan_select(dianshu, shuxing, mode)
+		else
+			gamerun_status = old_gamerun_status
+			_tianxiang_huifu()
+			timer.start(0.6)
+		end
+	end
+
+	platform.window:invalidate()
+end
+function _jieyuan_select(dianshu, shuxing, mode)
+	if mode == "受到伤害" then
+		skills_enter("请选择红色手牌", "", "竭缘", "技能选择-单牌")
+	else
+		skills_enter("请选择黑色手牌", "", "竭缘", "技能选择-单牌")
+	end
+		
+	gamerun_OK = false
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			if table.getn2(card_selected) == 1 then
+				local yanse, huase, dianshu = ai_judge_cardinfo(char_current_i, {char_juese[char_current_i].shoupai[card_highlighted]})
+				local desired
+
+				if mode == "受到伤害" then
+					desired = "红色"
+				else
+					desired = "黑色"
+				end
+
+				if yanse == desired then
+					_jieyuan_exe(card_highlighted, char_current_i, dianshu, mode)
+				end
+			end
+		else
+			gamerun_status = old_gamerun_status
+			set_hints("")
+			_tianxiang_huifu()
+			timer.start(0.6)
+		end
+	end
+	
+	gamerun_tab_ptr = nil
+	platform.window:invalidate()
+end
+function _jieyuan_exe(ID_shoupai, ID, dianshu, mode)
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	card_selected = {}
+
+	add_funcptr(_jieyuan_sub1, {ID_shoupai, ID})
+	skills_losecard(ID, 1, true)
+	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '竭缘'")
+	
+	if mode == "受到伤害" then
+		add_funcptr(push_message, char_juese[ID].name .. "令伤害减少1点")
+		deduct_va_stack[#deduct_va_stack][1] = deduct_va_stack[#deduct_va_stack][1] - 1
+	else
+		add_funcptr(push_message, char_juese[ID].name .. "令伤害增加1点")
+		deduct_va_stack[#deduct_va_stack][1] = deduct_va_stack[#deduct_va_stack][1] + 1
+	end
+
+	add_funcptr(_tianxiang_huifu)
+	_baiyin_skip()
+	timer.start(0.6)
+end
+function _jieyuan_sub1(va_list)
+	local ID_shoupai, ID
+	ID_shoupai = va_list[1]; ID = va_list[2]
+
+	local card = char_juese[ID].shoupai[ID_shoupai]
+	card_add_qipai(card)
+	card_remove({ID, ID_shoupai})
+	push_message(table.concat({char_juese[ID].name, "弃掉了", card[2], card[3], "的", card[1]}))
 end

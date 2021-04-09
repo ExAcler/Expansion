@@ -1697,7 +1697,11 @@ function skills_jianxiong_enter()
 end
 function _jianxiong_exe(ID)
 	push_message(char_juese[ID].name .. "发动了武将技能 '奸雄'")
-
+	add_funcptr(_jianxiong_get_card, ID)
+	add_funcptr(_jianxiong_huifu)
+	timer.start(0.6)
+end
+function _jianxiong_get_card(ID)
 	local msg
 	msg = char_juese[ID].name .. "获得了"
 	for i = 1, #card_jiesuan[1] do
@@ -1707,15 +1711,12 @@ function _jianxiong_exe(ID)
 			msg = msg .. "，"
 		end
 	end
-	add_funcptr(push_message, msg)
+	push_message(msg)
 
 	for i = 1, #card_jiesuan[1] do
 		card_insert(ID, card_jiesuan[1][i])
 	end
 	card_jiesuan[1] = {}
-
-	add_funcptr(_jianxiong_huifu)
-	timer.start(0.6)
 end
 function _jianxiong_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()

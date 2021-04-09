@@ -566,7 +566,7 @@ function ai_skill_use_priority(ID)
 	end
 
 	--  刘备仁德  --
-	if char_juese[ID].skill["仁德"] == "available" then
+	if char_juese[ID].skill["仁德"] == "available" and ai_skills_discard["仁德"] ~= true then
 		fadong, ID_shoupai, mubiao = ai_judge_rende(ID)
 		if fadong == true then
 			if skills_rende_ai(ID, mubiao, ID_shoupai) then
@@ -593,6 +593,19 @@ function ai_skill_use_priority(ID)
 		end
 	end
 
+	--  袁绍乱击  --
+	if char_juese[ID].skill["乱击"] == "available" and ai_skills_discard["乱击"] ~= true then
+		fadong, ID_shoupai = ai_judge_luanji(ID)
+		if fadong == true then
+			ai_skills_discard["乱击"] = true
+			if ai_judge_random_percent(80) == 1 then
+				if skills_luanji_ai(ID, ID_shoupai) then
+					return true
+				end
+			end
+		end
+	end
+
 	return false
 end
 
@@ -615,7 +628,7 @@ function ai_skill_use(ID)
 	if char_juese[ID].skill["国色"] == "available" then
 		fadong, ID_shoupai, mubiao = ai_judge_guose(ID)
 		if fadong == true then
-			if card_judge_le(mubiao) == true then
+			if card_judge_le(ID_shoupai, ID, mubiao) == true then
 				add_funcptr(card_le, {ID_shoupai, ID, mubiao})
 				timer.start(0.6)
 				return true
@@ -627,7 +640,7 @@ function ai_skill_use(ID)
 	if char_juese[ID].skill["断粮"] == "available" then
 		fadong, ID_shoupai, mubiao = ai_judge_duanliang(ID)
 		if fadong == true then
-			if card_judge_bingliang(ID, mubiao) == true then
+			if card_judge_bingliang(ID_shoupai, ID, mubiao) == true then
 				add_funcptr(card_bingliang, {ID_shoupai, ID, mubiao})
 				timer.start(0.6)
 				return true
@@ -654,6 +667,38 @@ function ai_skill_use(ID)
 				timer.start(0.6)
 				return true
 			end
+		end
+	end
+
+	--  庞统连环  --
+	if char_juese[ID].skill["连环"] == "available" then
+		fadong, ID_shoupai, mubiao = ai_judge_lianhuan_lian(ID)
+		if fadong == true then
+			local mubiao1, mubiao2, doubl
+			if #mubiao == 2 then
+				mubiao1 = mubiao[1]
+				mubiao2 = mubiao[2]
+				doubl = true
+			else
+				mubiao1 = mubiao[1]
+				mubiao2 = nil
+				doubl = false
+			end
+
+			if ai_skills_discard["连环"] ~= true then
+				if card_lian_lianhuan({ID_shoupai}, ID, mubiao1, mubiao2, doubl) then
+					ai_skills_discard["连环"] = true
+					timer.start(0.6)
+					return true
+				end
+			end
+		end
+
+		fadong, ID_shoupai = ai_judge_lianhuan_chongzhu(ID)
+		if fadong == true then
+			add_funcptr(card_lian_chongzhu, {ID_shoupai, ID})
+			ai_next_card(ID)
+			return true
 		end
 	end
 
