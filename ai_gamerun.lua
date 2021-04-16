@@ -74,17 +74,21 @@ function ai_judge_same_identity(ID, ID_mubiao, blackjack)
 		end
 	elseif char_juese[ID].shenfen == "内奸" then
 		if blackjack then
-			if ai_judge_blackjack(ID) then
-				if char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true then
-					return 1
-				elseif char_juese[ID_mubiao].isantigovernment == true or char_juese[ID_mubiao].isblackjack == true then
-					return 2
-				end
+			if char_juese[ID_mubiao].shenfen == "主公" and char_juese[ID_mubiao].tili <= 1 then
+				return 1
 			else
-				if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
-					return 1
-				elseif char_juese[ID_mubiao].isantigovernment == false or char_juese[ID_mubiao].isblackjack == true then
-					return 2
+				if ai_judge_blackjack(ID) then
+					if char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true then
+						return 1
+					elseif char_juese[ID_mubiao].isantigovernment == true or char_juese[ID_mubiao].isblackjack == true then
+						return 2
+					end
+				else
+					if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
+						return 1
+					elseif char_juese[ID_mubiao].isantigovernment == false or char_juese[ID_mubiao].isblackjack == true then
+						return 2
+					end
 				end
 			end
 		else
@@ -148,13 +152,17 @@ function ai_basic_judge_mubiao(ID, required, is_help, exclude_self, exclude_unkn
 					end
 				end
 			elseif char_juese[ID].shenfen == "内奸" then
-				if ai_judge_blackjack(ID) then
-					if char_juese[possible_target[i]].isantigovernment == is_help then
-						table.remove(possible_target, i)
-					end
+				if char_juese[possible_target[i]].shenfen == "主公" and char_juese[possible_target[i]].tili <= 1 then
+					table.remove(possible_target, i)
 				else
-					if char_juese[possible_target[i]].isantigovernment == not is_help then
-						table.remove(possible_target, i)
+					if ai_judge_blackjack(ID) then
+						if char_juese[possible_target[i]].isantigovernment == is_help then
+							table.remove(possible_target, i)
+						end
+					else
+						if char_juese[possible_target[i]].isantigovernment == not is_help then
+							table.remove(possible_target, i)
+						end
 					end
 				end
 			end

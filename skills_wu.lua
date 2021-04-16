@@ -1382,43 +1382,6 @@ end
 function _tianxiang_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
---[[
-function _tianxiang_remove_last_deduct()		--  天香：从函数队列中删除上一个伤害队列
-	local v_funcptr_queue, v_funcptr_i
-	v_funcptr_queue, v_funcptr_i = pop_zhudong_queue()
-
-	local items_to_remove = {}
-	local keep_after = false
-	for i = 1, #v_funcptr_queue do
-		local tag = v_funcptr_queue[i].tag
-
-		if tag ~= nil then
-			if string.find(tag, "体力扣减") and keep_after == false then
-				keep_after = true
-			end
-
-			if string.find(tag, "体力扣减") or keep_after == false then
-				table.insert(items_to_remove, i)
-			else
-				break
-			end
-		else
-			if keep_after == false then
-				table.insert(items_to_remove, i)
-			else
-				break
-			end
-		end
-	end
-
-	for i = #items_to_remove, 1, -1 do
-		table.remove(v_funcptr_queue, items_to_remove[i])
-	end
-
-	funcptr_queue = v_funcptr_queue
-	funcptr_i = 0
-end
-]]
 function _tianxiang_mopai(ID_mubiao)
 	local lost_tili = char_juese[ID_mubiao].tili_max - char_juese[ID_mubiao].tili
 	card_fenfa({ID_mubiao, lost_tili, true})

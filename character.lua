@@ -1,4 +1,4 @@
---  剩余技能：烈刃、甘露、旋风、双雄、悲歌、乱武  --
+--  剩余技能：甘露、旋风、双雄、悲歌、乱武  --
 
 -- 各角色拥有技能 --
 char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
@@ -72,7 +72,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神吕蒙"] = {{3,3}, "神", false, {"涉猎", "攻心"}, "男", {"",""}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
 	["神司马懿"] = {{4,4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定","觉醒",""}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"激将","乱击","竭缘","不屈"}, "男", {"主公","","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"激将","烈刃","竭缘","不屈"}, "男", {"主公","","",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -259,6 +259,7 @@ char_sha_mubiao = nil	-- 当前作用杀的目标列表
 char_sha_mubiao_i = nil	-- 当前作用杀的目标ID
 char_zhuque = false		-- 发动朱雀羽扇标志
 char_haoshi = false		-- 鲁肃发动好施标志
+char_bagua = false		-- 发动八卦阵标志
 char_buqu = {}		-- 角色是否处于不屈状态
 deduct_va_stack = {}		-- 当前正在结算伤害的参数列表
 deduct_hengzhi_stack = {}	-- 当前正在结算的伤害是否需要连环传导
@@ -939,7 +940,7 @@ function char_skills_after_deduct(is_lianhuan)
 	end
 
 	--  杀造成伤害后结算  --
-	if laiyuan ~= -1 and fp ~= nil and shuxing ~= "流失" and is_lianhuan == false then
+	if laiyuan ~= -1 and fp ~= nil and shuxing ~= "流失" and is_lianhuan ~= true then
 		fp(laiyuan, id)
 	end
 
@@ -1041,12 +1042,6 @@ function _char_tili_deduct()    --  体力扣减：队列执行函数
 		_baiyin_skip()
 		return
 	end
-
-	if dianshu == 0 then
-		msg = {char_juese[id].name, "防止了此伤害"}
-		push_message(table.concat(msg))
-		return
-	end
 	
 	--  青钢剑无视防具  --
 	if not char_wushi then
@@ -1063,6 +1058,12 @@ function _char_tili_deduct()    --  体力扣减：队列执行函数
 	        push_message(table.concat(msg))
 			deduct_va[1] = 1
 		end
+	end
+
+	if deduct_va[1] == 0 then
+		msg = {char_juese[id].name, "防止了此伤害"}
+		push_message(table.concat(msg))
+		return
 	end
 	
 	char_juese[id].tili = char_juese[id].tili - deduct_va[1]

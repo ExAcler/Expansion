@@ -381,7 +381,7 @@ function gamerun_huihe_start()
 	end
 	
 	if char_juese[char_acting_i].skill["志继"] == "available" and #char_juese[char_acting_i].shoupai == 0 then
-		add_funcptr(skills_hunzi)
+		add_funcptr(skills_zhiji)
 	end
 	
 	if char_juese[char_acting_i].skill["英魂"] == "available" and char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
@@ -1266,7 +1266,7 @@ function on.enterKey()
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_guixin_sub2, {gamerun_guankan_selected, guankan_s, guankan_d})
 
-		elseif string.find(gamerun_status, "反馈") then
+		elseif string.find(gamerun_status, "反馈") or string.find(gamerun_status, "烈刃") then
 			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
 			skills_losecard(guankan_d, 9999, true)
 			add_funcptr(_fankui_status_restore)
@@ -1736,7 +1736,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" or imp_card == "享乐" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" or imp_card == "享乐" or imp_card == "竭缘" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end

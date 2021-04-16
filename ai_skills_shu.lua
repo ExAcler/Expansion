@@ -263,3 +263,31 @@ function ai_judge_lianhuan_chongzhu(ID)
 	end
 	return true, cards[1]
 end
+
+--  AI决定是否发动烈刃  --
+function ai_judge_lieren(ID_s, ID_mubiao)
+	if ai_judge_same_identity(ID_s, ID_mubiao) == 1 then
+		return false
+	end
+
+	local cards = ai_card_search(ID_s, "随意", #char_juese[ID_s].shoupai)
+
+	for i = #cards, 1, -1 do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID_s, {char_juese[ID_s].shoupai[cards[i]]})
+		dianshu = _pindian_convert_dianshu(dianshu)
+
+		if dianshu >= 1 and dianshu <= 4 then
+			table.remove(cards, i)
+		end
+	end
+
+	if #cards == 0 or char_juese[ID_s].tili <= 1 then
+		return false
+	end
+
+	if ai_judge_random_percent(75) == 1 then
+		return true
+	else
+		return false
+	end
+end

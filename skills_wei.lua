@@ -76,10 +76,10 @@ function skills_quhu_ai(ID_s, ID_mubiao, ID_to_shanghai)	--  AI发动驱虎
 
 		if s_win then
 			if #ai_judge_in_range(ID_mubiao) > 0 then
-				char_tili_deduct({1, ID_to_shanghai, ID_mubiao, "普通", ID_to_shanghai, nil, true})
+				char_tili_deduct({1, ID_to_shanghai, ID_mubiao, "普通", ID_to_shanghai})
 			end
 		else
-			char_tili_deduct({1, ID_s, ID_mubiao, "普通", ID_s, nil, true})
+			char_tili_deduct({1, ID_s, ID_mubiao, "普通", ID_s})
 		end
 
 		add_funcptr(_pindian_huifu)
@@ -152,7 +152,7 @@ function _quhu_sub1()
 			gamerun_status = "手牌生效中"
 
 			skills_cs()
-			char_tili_deduct({1, gamerun_target_selected, guankan_s, "普通", gamerun_target_selected, nil, true})
+			char_tili_deduct({1, gamerun_target_selected, guankan_s, "普通", gamerun_target_selected})
 			add_funcptr(_pindian_huifu)
 			timer.start(0.6)
 		end
@@ -2370,7 +2370,6 @@ function skills_hujia_req_side_enter(mode, va)
 			skills_hujia_add(char_current_i, mode, va)
 		else
 			_hujia_huifu()
-			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end
@@ -2402,10 +2401,20 @@ function skills_hujia_ai(ID_req, ID_res, mode, va)
 		return
 	end
 
-	local c_pos = ai_chazhao_shan(ID_res, char_juese[ID_res].shoupai)
-	if c_pos < 0 then
-		push_message(table.concat({char_juese[ID_res].name, "不响应"}))
-		return
+	local arm_bagua = false
+	if #char_juese[ID_res].fangju > 0 then
+		if char_juese[ID_res].fangju[1] == "八卦阵" then
+			arm_bagua = true
+		end
+	end
+
+	local c_pos
+	if arm_bagua == false then
+		c_pos = ai_chazhao_shan(ID_res, char_juese[ID_res].shoupai)
+		if c_pos < 0 then
+			push_message(table.concat({char_juese[ID_res].name, "不响应"}))
+			return
+		end
 	end
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
@@ -2413,7 +2422,13 @@ function skills_hujia_ai(ID_req, ID_res, mode, va)
 	funcptr_queue = {}
 	funcptr_i = 0
 
-	_hujia_exe(ID_req, ID_res, c_pos, mode, va)
+	push_message(table.concat({char_juese[ID_res].name, "响应"}))
+
+	if arm_bagua == false then
+		_hujia_exe(ID_req, ID_res, c_pos, mode, va)
+	else
+		_hujia_bagua(ID_req, ID_res, mode, va, "手牌生效中")
+	end
 	timer.start(0.6)
 end
 function skills_hujia_enter(ID_req, mode, va)
@@ -2430,19 +2445,60 @@ function skills_hujia_enter(ID_req, mode, va)
 	gamerun_OK_ptr = function()
 		funcptr_queue = {}
 		set_hints("")
+		gamerun_status = old_gamerun_status
 
 		if gamerun_OK == true then
-			_hujia_select_card(ID_req, mode, va, old_gamerun_status)
+			push_message(table.concat({char_juese[char_current_i].name, "响应"}))
+
+			local arm_bagua = false
+			if #char_juese[char_current_i].fangju > 0 then
+				if char_juese[char_current_i].fangju[1] == "八卦阵" then
+					arm_bagua = true
+				end
+			end
+
+			if arm_bagua == false then
+				_hujia_select_card(ID_req, mode, va, old_gamerun_status)
+			else
+				_hujia_bagua(ID_req, char_current_i, mode, va, old_gamerun_status)
+			end
 		else
-			gamerun_status = old_gamerun_status
 			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
 			_hujia_huifu()
-			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end
 	
 	platform.window:invalidate()
+end
+function _hujia_bagua(ID_req, ID_res, mode, va, old_gamerun_status)
+	add_funcptr(card_arm_bagua, {ID_res, nil})
+	add_funcptr(_hujia_bagua_get_result, {ID_req, ID_res, mode, va, old_gamerun_status})
+end
+function _hujia_bagua_get_result(va_list)
+	local ID_req, ID_res, mode, va, old_gamerun_status
+	ID_req = va_list[1]; ID_res = va_list[2]; mode = va_list[3]; va = va_list[4]; old_gamerun_status = va_list[5]
+
+	if _bagua_jiesuan(ID_res) then
+		_hujia_exe(ID_req, ID_res, -1, mode, va)
+		timer.start(0.6)
+	else
+		if ID_res == char_current_i then
+			_hujia_select_card(ID_req, mode, va, old_gamerun_status)
+		else
+			_hujia_determine_shan(ID_req, ID_res, mode, va)
+		end
+	end
+end
+function _hujia_determine_shan(ID_req, ID_res, mode, va)
+	local c_pos = ai_chazhao_shan(ID_res, char_juese[ID_res].shoupai)
+	if c_pos < 0 then
+		push_message(table.concat({char_juese[ID_res].name, "放弃"}))
+		_hujia_huifu()
+	else
+		_hujia_exe(ID_req, ID_res, c_pos, mode, va)
+	end
+	timer.start(0.6)
 end
 function _hujia_select_card(ID_req, mode, va, old_gamerun_status)
 	skills_enter("您可出1张闪", "", "护驾", "技能选择-单牌")
@@ -2452,6 +2508,7 @@ function _hujia_select_card(ID_req, mode, va, old_gamerun_status)
 				if card_judge_if_shan(char_current_i, card_highlighted) then
 					gamerun_status = old_gamerun_status
 					set_hints("")
+
 					_hujia_exe(ID_req, char_current_i, card_highlighted, mode, va)
 
 					card_selected = {}
@@ -2461,9 +2518,8 @@ function _hujia_select_card(ID_req, mode, va, old_gamerun_status)
 		else
 			gamerun_status = old_gamerun_status
 			set_hints("")
-			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
+			push_message(table.concat({char_juese[char_current_i].name, "放弃"}))
 			_hujia_huifu()
-			--funcptr_i = funcptr_i + 1
 		end
 		timer.start(0.6)
 	end
@@ -2481,9 +2537,10 @@ function _hujia_exe(ID_req, ID_res, ID_shoupai, mode, va)
 	funcptr_queue = {}
 	funcptr_i = 0
 
-	push_message(table.concat({char_juese[ID_res].name, "响应"}))
-	add_funcptr(_sha_shan, {ID_res, ID_shoupai})
-	skills_losecard(ID_res, 9999, true)
+	if ID_shoupai ~= -1 then
+		add_funcptr(_sha_shan, {ID_res, ID_shoupai})
+		skills_losecard(ID_res, 9999, true)
+	end
 	
 	if mode == "杀" then
 		local card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag

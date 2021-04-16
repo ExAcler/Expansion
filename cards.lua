@@ -433,7 +433,7 @@ function card_out_jiesuan()
 		--  祝融巨象拿走南蛮入侵  --
 		if card_jiesuan[2] == "南蛮入侵" then
 			for i = 1, 5 do
-				if char_juese[i].skill["巨象"] == "available" and i ~= card_jiesuan[3] then
+				if char_juese[i].skill["巨象"] == "available" and i ~= card_jiesuan[3] and char_juese[i].siwang == false then
 					skills_juxiang(i)
 
 					for j = 1, #card_jiesuan[1] do
@@ -1679,12 +1679,50 @@ function _arm_sub1()
 end
 
 --  八卦阵效果  --
-function card_arm_bagua(ID, ID_attack)
-    add_funcptr(push_message, table.concat({char_juese[ID].name, "发动了'八卦阵'效果"}))
+function card_arm_bagua(va_list)
+	local ID, ID_attack
+	ID = va_list[1]; ID_attack = va_list[2]
+
+    skills_push_queue()
+
+	if ID == char_current_i then
+		_bagua_enter(ID_attack)
+	else
+		_bagua_exe(ID, ID_attack)
+	end
+end
+function _bagua_enter(ID_attack)
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动'八卦阵'效果?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		gamerun_status = "手牌生效中"
+		set_hints("")
+
+		if gamerun_OK then
+			_bagua_exe(char_current_i, ID_attack)
+	    else
+			char_bagua = false
+			skills_pop_queue(true)
+			timer.start(0.6)
+		end
+	end
+
+	platform.window:invalidate()
+end
+function _bagua_exe(ID, ID_attack)
+	char_bagua = true
+
+	push_message(table.concat({char_juese[ID].name, "发动了'八卦阵'效果"}))
 	add_funcptr(_bagua_fan_panding, ID)
 
 	--  如场上有司马懿或张角，询问其改判技能  --
 	skills_guicai_guidao_ask(ID, ID_attack, ID, "八卦阵")
+
+	add_funcptr(skills_pop_queue)
+	timer.start(0.6)
 end
 function _bagua_fan_panding(ID)
 	--  翻开判定牌  --
@@ -1696,8 +1734,12 @@ function _bagua_fan_panding(ID)
 	push_message(table.concat({char_juese[ID].name, "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
 end
 function _bagua_jiesuan(ID)
-	local success = false
+	if char_bagua == false then
+		return false
+	end
+	char_bagua = false
 
+	local success = false
 	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card_panding_card})
 
 	--  曹丕颂威  --
@@ -3012,7 +3054,7 @@ function _nanman_AI(ID_s, ID_mubiao)    --  南蛮入侵：响应AI
 		skills_losecard(ID_mubiao, 1, true)
 	else
 	    add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
-		char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao, nil, true})
+		char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
 	end
 
 	add_funcptr(_nanman_zhudong_huifu)
@@ -3053,7 +3095,7 @@ function _nanman_zhudong_fangqi(ID_s)	--  南蛮入侵：己方放弃
 	set_hints("")
 
 	add_funcptr(_nanman_send_msg, {char_juese[char_current_i].name, "放弃"})
-	char_tili_deduct({1, char_current_i, ID_s, "普通", char_current_i, nil, true})
+	char_tili_deduct({1, char_current_i, ID_s, "普通", char_current_i})
 	add_funcptr(_nanman_zhudong_huifu)
 end
 function _nanman_zhudong_huifu()	--  南蛮入侵：恢复己方中断前函数队列
@@ -3194,7 +3236,7 @@ function _wanjian_exe(va_list)
 			if char_juese[ID_mubiao].skill["八阵"] == "available" then
 				add_funcptr(push_message, table.concat({char_juese[ID_mubiao].name, "触发了武将技能 '八阵'"}))
 			end
-			card_arm_bagua(ID_mubiao, ID_s)
+			add_funcptr(card_arm_bagua, {ID_mubiao, ID_s})
 		end
 	end
 	
@@ -3241,7 +3283,7 @@ function _wanjian_jiesuan(va_list)
 			end
 		else
 			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
-			char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao, nil, true})
+			char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
 		end
 		add_funcptr(_wanjian_huifu)
 	else
@@ -3303,7 +3345,7 @@ function _wanjian_zhudong_fangqi(ID_s)	--  万箭齐发：己方放弃
 	set_hints("")
 
 	add_funcptr(_nanman_send_msg, {char_juese[char_current_i].name, "放弃"})
-	char_tili_deduct({1, char_current_i, ID_s, "普通", char_current_i, nil, true})
+	char_tili_deduct({1, char_current_i, ID_s, "普通", char_current_i})
 	add_funcptr(_wanjian_huifu)
 end
 function _wanjian_huifu()	--  万箭齐发：恢复己方中断前函数队列
@@ -4182,7 +4224,7 @@ function _sha_exe_ai_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_fla
 				if char_juese[ID_mubiao].skill["八阵"] == "available" then
 					add_funcptr(skills_bazhen, ID_mubiao)
 				end
-				card_arm_bagua(ID_mubiao, ID_s)
+				add_funcptr(card_arm_bagua, {ID_mubiao, ID_s})
 		    end
 		end
 	end
@@ -4564,7 +4606,7 @@ function _sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, 
 				if char_juese[ID_mubiao].skill["八阵"] == "available" then
 					add_funcptr(skills_bazhen, ID_mubiao)
 				end
-				card_arm_bagua(ID_mubiao, ID_s)
+				add_funcptr(card_arm_bagua, {ID_mubiao, ID_s})
 		    end
 		end
 	end
@@ -4834,16 +4876,6 @@ function _sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)    --  杀：扣
 	end
 	
 	local p = function(ID_s, ID_mubiao)
-		--  祝融烈刃  --
-		if char_juese[ID_s].skill["烈刃"] == "available" then
-
-		end
-
-		--  蔡文姬悲歌  --
-		if char_juese[ID_s].skill["悲歌"] == "available" then
-
-		end
-
 		--  麒麟弓效果  --
 		if #char_juese[ID_s].wuqi ~= 0 then
 			if char_juese[ID_s].wuqi[1] == "麒麟弓" and (#char_juese[ID_mubiao].gongma > 0 or #char_juese[ID_mubiao].fangma > 0) then
@@ -4852,8 +4884,17 @@ function _sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)    --  杀：扣
 				else
 					_sha_qilin_ai({ID_s, ID_mubiao})
 				end
-				return
 			end
+		end
+
+		--  祝融烈刃  --
+		if char_juese[ID_s].skill["烈刃"] == "available" then
+			add_funcptr(skills_lieren, {ID_s, ID_mubiao})
+		end
+
+		--  蔡文姬悲歌  --
+		if char_juese[ID_s].skill["悲歌"] == "available" then
+
 		end
 	end
 	

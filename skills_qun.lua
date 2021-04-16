@@ -1253,7 +1253,7 @@ function skills_jieyuan_enter(ID_counterpart, dianshu, shuxing, mode)
 		set_hints("")
 
 		if i == 1 then
-			_jieyuan_select(dianshu, shuxing, mode)
+			_jieyuan_select(dianshu, shuxing, mode, old_gamerun_status)
 		else
 			gamerun_status = old_gamerun_status
 			_tianxiang_huifu()
@@ -1263,7 +1263,7 @@ function skills_jieyuan_enter(ID_counterpart, dianshu, shuxing, mode)
 
 	platform.window:invalidate()
 end
-function _jieyuan_select(dianshu, shuxing, mode)
+function _jieyuan_select(dianshu, shuxing, mode, old_gamerun_status)
 	if mode == "受到伤害" then
 		skills_enter("请选择红色手牌", "", "竭缘", "技能选择-单牌")
 	else
@@ -1315,7 +1315,7 @@ function _jieyuan_exe(ID_shoupai, ID, dianshu, mode)
 		deduct_va_stack[#deduct_va_stack][1] = deduct_va_stack[#deduct_va_stack][1] + 1
 	end
 
-	add_funcptr(_tianxiang_huifu)
+	add_funcptr(skills_pop_queue)
 	_baiyin_skip()
 	timer.start(0.6)
 end

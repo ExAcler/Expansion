@@ -1562,3 +1562,116 @@ function _ruoyu_add_tili_max()
 	char_juese[char_acting_i].tili_max = char_juese[char_acting_i].tili_max + 1
 	push_message(char_juese[char_acting_i].name .. "增加1点体力上限")
 end
+
+--  祝融：烈刃  --
+function skills_lieren(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	if #char_juese[ID_s].shoupai == 0 or #char_juese[ID_mubiao].shoupai == 0 then
+		skills_skip_subqueue()
+		return
+	end
+
+	if ID_s == char_current_i then
+		skills_lieren_enter(ID_mubiao)
+	else
+		skills_lieren_ai(ID_s, ID_mubiao)
+	end
+end
+function skills_lieren_ai(ID_s, ID_mubiao)
+	if ai_judge_lieren(ID_s, ID_mubiao) == false then
+		skills_skip_subqueue()
+		return
+	end
+
+	skills_push_queue()
+	_lieren_exe(ID_s, ID_mubiao)
+end
+function skills_lieren_enter(ID_mubiao)
+	skills_push_queue()
+
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '烈刃'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		gamerun_status = old_gamerun_status
+		set_hints("")
+
+		if gamerun_OK then
+			_lieren_exe(char_current_i, ID_mubiao)
+	    else
+			skills_pop_queue(true)
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function _lieren_exe(ID_s, ID_mubiao)
+	local win_fp = function(s_win, mubiao_win)
+		if s_win == false then
+			skills_skip_subqueue()
+			return
+		end
+		skills_cs()
+		_lieren_shun(ID_s, ID_mubiao)
+	end
+
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '烈刃'")
+	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "与", char_juese[ID_mubiao].name, "进行拼点"}))
+	add_funcptr(card_pindian, {ID_s, ID_mubiao, win_fp, false})
+	add_funcptr(skills_pop_queue)
+	timer.start(0.6)
+end
+function _lieren_shun(ID_s, ID_mubiao)
+	if ai_card_stat(ID_mubiao, true, true) == 0 then
+		skills_skip_subqueue()
+		return
+	end
+
+	if ID_s == char_current_i then
+		_lieren_shun_exe(ID_s, ID_mubiao)
+	else
+		_shun_ai({ID_s, ID_mubiao, true})
+	end
+end
+function _lieren_shun_exe(ID_s, ID_d)
+	skills_push_queue()
+
+	fankui_gamerun_status = gamerun_status
+	gamerun_status = "观看手牌-烈刃"
+	gamerun_guankan_type = {}
+	
+	--  往观看牌堆添加牌  --
+	if #char_juese[ID_d].shoupai > 0 then
+	    table.insert(gamerun_guankan_type, {"手牌", 0})
+	end
+	if #char_juese[ID_d].fangma > 0 then
+	    table.insert(gamerun_guankan_type, {"防御马", 0})
+	end
+	if #char_juese[ID_d].gongma > 0 then
+	    table.insert(gamerun_guankan_type, {"攻击马", 0})
+	end
+	if #char_juese[ID_d].wuqi > 0 then
+	    table.insert(gamerun_guankan_type, {"武器", 0})
+	end
+	if #char_juese[ID_d].fangju > 0 then
+	    table.insert(gamerun_guankan_type, {"防具", 0})
+	end
+	
+	--  设置状态信息  --
+	gamerun_guankan_selected = 1
+	guankan_s = ID_s
+	guankan_d = ID_d
+	
+	txt_messages:setVisible(false)
+	platform.window:invalidate()
+end

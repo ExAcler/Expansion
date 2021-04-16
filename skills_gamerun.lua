@@ -286,3 +286,21 @@ function skills_withdraw_outgame(ID)
 	--  '田'  --
 	_tuntian_siwang_qipai(ID)
 end
+
+function skills_push_queue()
+	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+end
+
+function skills_pop_queue(non_immediate)
+	funcptr_queue, funcptr_i = pop_zhudong_queue()
+	if non_immediate ~= true then
+		on.timer()
+	end
+end
+
+function skills_skip_subqueue()
+	on.timer()
+end
