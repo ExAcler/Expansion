@@ -210,9 +210,10 @@ end
 --end
 
 --  魏延：狂骨  --
-function skills_kuanggu(ID_s)
+function skills_kuanggu(ID_s, dianshu)
 	add_funcptr(push_message, char_juese[ID_s].name .. "触发了武将技能 '狂骨'")
-	char_tili_huifu(ID_s, 1)
+	local _dianshu = math.min(dianshu, char_juese[ID_s].tili_max - char_juese[ID_s].tili)
+	char_tili_huifu(ID_s, _dianshu)
 end
 function _kuanggu_sub1(ID_s)
 	push_message(char_juese[ID_s].name.."回复1点体力")

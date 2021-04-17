@@ -12,7 +12,6 @@ message_list = {}
 game_skip_mopai = false    -- 跳过摸牌阶段标识
 game_skip_panding = false	-- 跳过判定阶段标识
 game_skip_chupai = false    -- 跳过出牌阶段标识
-game_victory = false    -- 游戏胜利标识
 
 -- 状态信息 --
 jiaohu_text = ""    -- 交互提示区文字
@@ -1652,7 +1651,7 @@ function on.escapeKey()
 		return
 	end
 	
-	if string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") then
+	if string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") or string.find(gamerun_status, "选项选择") then
 		return
 	end
 	
@@ -1736,7 +1735,7 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" or imp_card == "享乐" or imp_card == "竭缘" then
+			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" or imp_card == "享乐" or imp_card == "竭缘" or imp_card == "悲歌" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
 			end

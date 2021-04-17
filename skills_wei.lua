@@ -176,15 +176,53 @@ end
 
 --  曹丕：行殇  --
 function skills_xingshang(va_list)
-	local ID_s, ID_siwang, panding
-	ID_s = va_list[1]; ID_siwang = va_list[2]; panding = va_list[3]
-	
-	push_message(char_juese[ID_s].name .. "发动了武将技能 '行殇'")
-	push_message(table.concat({char_juese[ID_s].name, "获得了", char_juese[ID_siwang].name, "的所有牌"}))
-	
-	_xingshang_card_transfer(ID_s, ID_siwang, panding)
+	local ID_s, ID_siwang
+	ID_s = va_list[1]; ID_siwang = va_list[2]
+
+	skills_push_queue()
+
+	if ID_s == char_current_i then
+		skills_xingshang_enter(ID_siwang)
+	else
+		_xingshang_exe(ID_s, ID_siwang)
+	end
 end
-function _xingshang_card_transfer(ID_s, ID_siwang, panding)    --  行殇：将死亡玩家所有卡牌转移至曹丕
+function skills_xingshang_enter(ID_siwang)
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '行殇'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+
+		if gamerun_OK then
+			_xingshang_exe(char_current_i, ID_siwang)
+	    else
+			gamerun_status = old_gamerun_status
+			set_hints("")
+
+			skills_pop_queue(true)
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function _xingshang_exe(ID_s, ID_siwang)
+	gamerun_status = "手牌生效中"
+	set_hints("")
+
+	push_message(char_juese[ID_s].name .. "发动了武将技能 '行殇'")
+	add_funcptr(_xingshang_card_transfer, {ID_s, ID_siwang})
+	add_funcptr(skills_pop_queue)
+	timer.start(0.6)
+end
+function _xingshang_card_transfer(va_list)    --  行殇：将死亡玩家所有卡牌转移至曹丕
+	local ID_s, ID_siwang
+	ID_s = va_list[1]; ID_siwang = va_list[2]
+
 	local i, max_select
 	
 	max_select = #char_juese[ID_siwang].shoupai
@@ -197,15 +235,6 @@ function _xingshang_card_transfer(ID_s, ID_siwang, panding)    --  行殇：将�
 		end
 	end
 	char_juese[ID_siwang].shoupai = {}
-	
-	if panding and #char_juese[ID_siwang].panding ~= 0 then
-		for i = 1, #char_juese[ID_siwang].panding do
-			if char_juese[ID_siwang].panding[i] ~= nil then
-				card_insert(ID_s, char_juese[ID_siwang].panding[i])
-			end
-		end
-	end
-	char_juese[ID_siwang].panding = {}
 	
 	if #char_juese[ID_siwang].wuqi ~= 0 then
 		card_insert(ID_s, char_juese[ID_siwang].wuqi)
@@ -226,6 +255,8 @@ function _xingshang_card_transfer(ID_s, ID_siwang, panding)    --  行殇：将�
 		card_insert(ID_s, char_juese[ID_siwang].fangma)
 	end
 	char_juese[ID_siwang].fangma = {}
+
+	push_message(table.concat({char_juese[ID_s].name, "获得了", char_juese[ID_siwang].name, "的所有牌"}))
 end
 
 --  SP姜维：困奋  --

@@ -490,7 +490,7 @@ function _qipai_sub1(ID)
 	card_shanchu({char_acting_i, ID})
 end
 
---  角色死亡，弃置所有手牌  --
+--  角色死亡 (或可弃牌数小于应弃牌数)，弃置所有牌  --
 function card_qipai_all(ID, panding)
     local i, v, j, max_select
 	
@@ -3629,7 +3629,7 @@ function _juedou_xiangying_enter(va_list)    --  决斗：进入主动响应状�
 	char_xiangying_2 = va_list[3]
 
     gamerun_status = "主动出牌-决斗"
-	jiaohu_text = "请您出杀"
+	jiaohu_text = "请您出杀或'取消'放弃"
 	platform.window:invalidate()
 end
 function _juedou_exe_ji(ID_s, ID_mubiao, c_pos)    --  决斗：己方响应
@@ -3887,10 +3887,8 @@ function _jiu_sub1(va_list)
 	
 	if card[1] ~= "酒" then
 		push_message(char_juese[ID_s].name.."发动了武将技能 '酒池'")
-		_nanman_send_msg({char_juese[ID_s].name, "喝酒 (", card[2], card[3], "的", card[1], ")"})
-	else
-		_nanman_send_msg({char_juese[ID_s].name, "喝酒"})
 	end
+	_nanman_send_msg({char_juese[ID_s].name, "喝酒 (", card[2], card[3], "的", card[1], ")"})
 
 	card_add_qipai(card)
 	card_remove({ID_s, ID_shoupai})
@@ -4893,8 +4891,10 @@ function _sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)    --  杀：扣
 		end
 
 		--  蔡文姬悲歌  --
-		if char_juese[ID_s].skill["悲歌"] == "available" then
-
+		for i = 1, 5 do
+			if char_juese[i].skill["悲歌"] == "available" then
+				add_funcptr(skills_beige, {i, ID_mubiao, ID_s})
+			end
 		end
 	end
 	
@@ -5189,7 +5189,7 @@ function card_jiedao(ID_shoupai, ID_req, ID_s, ID_d)
 	local msg, c_pos
 	
 	--  空城状态的诸葛亮不能杀  --
-	if _jiedao_judge_kongcheng(ID_d) == false then
+	if _jiedao_judge_kongcheng(ID_d) == true then
 		return false
 	end
 
@@ -5314,7 +5314,7 @@ function _jiedao_zhudong_chu(va_list)	--  借刀杀人：己方出杀
 	local ID_req, ID_s, ID_d
 	ID_req = va_list[1]; ID_s = va_list[2]; ID_d = va_list[3]
 
-	if _jiedao_judge_kongcheng(ID_d) == false then
+	if _jiedao_judge_kongcheng(ID_d) == true then
 		return false
 	end
 
@@ -5374,7 +5374,8 @@ function _jiedao_sub1(va_list)
 	local ID_shoupai, ID_req, ID_s, ID_d
 	ID_shoupai = va_list[1]; ID_req = va_list[2]; ID_s = va_list[3]; ID_d = va_list[4]
 
-	local msg = {char_juese[ID_req].name, "借", char_juese[ID_s].name, "的刀杀", char_juese[ID_d].name}
+	local card = char_juese[ID_req].shoupai[ID_shoupai]
+	local msg = {char_juese[ID_req].name, "借", char_juese[ID_s].name, "的刀杀", char_juese[ID_d].name, " (", card[2], card[3], "的", card[1], ")"}
 	push_message(table.concat(msg))
 	card_shanchu({ID_req, ID_shoupai})
 end

@@ -1850,6 +1850,10 @@ function _buqu_qipai_exe(va_list)
 	table.remove(card_buqu[ID], ID_buqu)
 	card_add_qipai(card)
 end
+function _buqu_lose_all_skills(ID)		--  不屈：被断肠后立即进入濒死状态
+	char_buqu[ID] = false
+	add_funcptr(char_binsi_2, {1, ID, -1, "普通", true, false})
+end
 function _buqu_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end

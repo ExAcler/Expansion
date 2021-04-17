@@ -1,4 +1,4 @@
---  剩余技能：甘露、旋风、双雄、悲歌、乱武  --
+--  剩余技能：甘露、旋风、双雄、乱武  --
 
 -- 各角色拥有技能 --
 char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
@@ -62,7 +62,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["庞德"] = {{4,4}, "群", false, {"马术", "猛进"}, "男", {"锁定",""}, true}, 
     ["袁绍"] = {{4,4}, "群", true, {"乱击", "血裔"}, "男", {"","主公"}, true}, 
     ["董卓"] = {{8,8}, "群", true, {"酒池", "肉林", "崩坏", "暴虐"}, "男", {"","锁定","锁定","主公"}, true}, 
-    ["蔡文姬"] = {{3,3}, "群", false, {"悲歌", "断肠"}, "女", {"","锁定"}, false}, 
+    ["蔡文姬"] = {{3,3}, "群", false, {"悲歌", "断肠"}, "女", {"","锁定"}, true}, 
     ["左慈"] = {{3,3}, "群", false, {"化身", "新生"}, "男", {"禁止","禁止"}, true},
 	["贾诩"] = {{3,3}, "群", false, {"完杀", "乱武", "帷幕"}, "男", {"锁定", "限定", "锁定"}, true},	
 	["SP貂蝉"] = {{3,3}, "群", false, {"闭月", "离魂"}, "女", {"",""}, true}, 
@@ -72,7 +72,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神吕蒙"] = {{3,3}, "神", false, {"涉猎", "攻心"}, "男", {"",""}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
 	["神司马懿"] = {{4,4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定","觉醒",""}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"激将","烈刃","竭缘","不屈"}, "男", {"主公","","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"悲歌","断肠","竭缘","不屈"}, "男", {"","锁定","",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -691,8 +691,12 @@ function char_alive_stat()
 end
 
 --  游戏胜利条件判断  --
-function char_judge_shengli(siwang_id, laiyuan)
-	local i, count, alive, ended
+function char_judge_shengli(va_list)
+	local siwang_id, laiyuan
+	siwang_id = va_list[1]; laiyuan = va_list[2]
+
+	skills_push_queue()
+	local i, count, alive, ended, msg
 
 	--  内奸最后存活  --
 	count = 0
@@ -706,8 +710,9 @@ function char_judge_shengli(siwang_id, laiyuan)
 		msg = {"所有其他角色阵亡，内奸胜利，游戏结束"}
 		add_funcptr(push_message, table.concat(msg))
 		add_funcptr(_deduct_sub)
+		skills_skip_subqueue()
+		timer.start(0.6)
 
-		game_victory = true
 		return true
 	end
 	
@@ -716,8 +721,9 @@ function char_judge_shengli(siwang_id, laiyuan)
 		msg = {"主公阵亡，反贼胜利，游戏结束"}
 		add_funcptr(push_message, table.concat(msg))
 		add_funcptr(_deduct_sub)
+		skills_skip_subqueue()
+		timer.start(0.6)
 		
-		game_victory = true
 		return true
 	end
 	
@@ -734,8 +740,9 @@ function char_judge_shengli(siwang_id, laiyuan)
 		msg = {"反贼与内奸阵亡，主公与忠臣胜利，游戏结束"}
 		add_funcptr(push_message, table.concat(msg))
 		add_funcptr(_deduct_sub)
+		skills_skip_subqueue()
+		timer.start(0.6)
 		
-		game_victory = true
 		return true
 	end
 	
@@ -754,6 +761,10 @@ function char_judge_shengli(siwang_id, laiyuan)
 		end
 		gamerun_killed[laiyuan] = gamerun_killed[laiyuan] + 1
 	end
+
+	add_funcptr(skills_pop_queue)
+	skills_skip_subqueue()
+	timer.start(0.6)
 	
 	return false
 end
@@ -801,9 +812,9 @@ function char_skills_injured()
 
 	_tili_deduct_push_queue()
 
-	--  魏延对距离1以内的玩家造成伤害，回复1点体力  --
+	--  魏延对距离1以内的玩家造成伤害，回复体力  --
 	if char_juese[laiyuan].skill["狂骨"] == "available" and char_calc_distance(laiyuan, id) <= 1 and char_juese[laiyuan].tili < char_juese[laiyuan].tili_max and shuxing ~= "流失" then
-		skills_kuanggu(laiyuan)
+		skills_kuanggu(laiyuan, dianshu)
 	end
 
 	--  董卓暴虐  --
@@ -1151,7 +1162,7 @@ function _deduct_sub()    --  进入游戏重置状态
 end
 
 --  角色濒死结算  --
-function char_binsi(va_list)
+function char_binsi(va_list)	--  濒死结算 (从伤害结算函数中调用)
 	local deduct_va = deduct_va_stack[#deduct_va_stack]
 	local deduct_id_ignore = deduct_id_ignore_stack[#deduct_id_ignore_stack]
 	local id, dianshu, tili, ID_shanghai, shanghai_shuxing, has_sellblood, is_buqu
@@ -1159,6 +1170,16 @@ function char_binsi(va_list)
 	dianshu = deduct_va[1]; id = deduct_va[2]; ID_shanghai = deduct_va[3]; shanghai_shuxing = deduct_va[4]
 	has_sellblood = va_list[1]; is_buqu = va_list[2]
 
+	char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellblood, is_buqu, deduct_id_ignore)
+end
+function char_binsi_2(va_list)	--  濒死结算 (从其他函数调用)
+	local id, dianshu, tili, ID_shanghai, shanghai_shuxing, has_sellblood, is_buqu
+	dianshu = va_list[1]; id = va_list[2]; ID_shanghai = va_list[3]; shanghai_shuxing = va_list[4]
+	has_sellblood = va_list[5]; is_buqu = va_list[6]
+
+	char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellblood, is_buqu, -1)
+end
+function char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellblood, is_buqu, deduct_id_ignore)
 	if char_juese[id].tili > 0 or id == deduct_id_ignore then
 		_baiyin_skip()
 		return
@@ -1533,26 +1554,21 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	funcptr_i = 0
 	char_juese[id].hengzhi = false
 	
-	--  曹丕发动行殇  --
-	local xingshang_id ,fenxin_id = 0, 0
-	for i = 1, 5 do
-		if i ~= id and char_juese[i].skill["行殇"] == "available" and char_juese[i].siwang == false then
-			xingshang_id = i
-			break
-		end
-	end
-
 	--  设置死亡标志  --
 	char_juese[id].siwang = true
 	char_buqu[id] = false
 
-	--  死亡丢弃所有手牌  --
-	if xingshang_id == 0 then
-		card_qipai_all(id, true)
-	else
-		add_funcptr(skills_xingshang, {xingshang_id, id, true})
+	--  曹丕发动行殇  --
+	for i = 1, 5 do
+		if i ~= id and char_juese[i].skill["行殇"] == "available" and char_juese[i].siwang == false then
+			add_funcptr(skills_xingshang, {i, id})
+			break
+		end
 	end
 
+	--  死亡丢弃所有手牌  --
+	add_funcptr(_binsi_siwang_qipai, id)
+	
 	--  丢弃所有移出游戏的牌  --
 	skills_withdraw_outgame(id)
 
@@ -1564,7 +1580,7 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 		end
 	end
 	
-	--  蔡文姬发动断肠  --
+	--  蔡文姬触发断肠  --
 	if ID_shanghai ~= -1 and shuxing ~= "流失" and char_juese[id].skill["断肠"] == "available" then
 		add_funcptr(skills_duanchang, {id, ID_shanghai})
 	end
@@ -1573,12 +1589,19 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 
 	--  胜利条件判断  --
 	if shanghai_shuxing == "流失" then
-		char_judge_shengli(id, -1)
+		add_funcptr(char_judge_shengli, {id, -1})
 	else
-		char_judge_shengli(id, ID_shanghai)
+		add_funcptr(char_judge_shengli, {id, ID_shanghai})
 	end
 
 	add_funcptr(_binsi_remove_sellblood, {has_sellblood, id})
+	timer.start(0.6)
+end
+function _binsi_siwang_qipai(ID_siwang)
+	skills_push_queue()
+	card_qipai_all(ID_siwang, true)
+	add_funcptr(skills_pop_queue)
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _binsi_remove_sellblood(va_list)	--  濒死结算：角色已死亡，从队列中删除所有卖血结算函数

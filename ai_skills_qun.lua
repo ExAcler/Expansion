@@ -246,3 +246,45 @@ function ai_judge_jieyuan(ID, ID_counterpart, dianshu, shuxing, mode)
 		return true, cards[1]
 	end
 end
+
+--  AI决定是否发动悲歌  --
+--  返回是否发动、手牌ID  --
+function ai_judge_beige(ID, ID_mubiao, ID_laiyuan)
+	if #char_juese[ID].shoupai == 0 then
+		return false, 0
+	end
+
+	if ai_judge_same_identity(ID, ID_mubiao, true) ~= 1 then
+		return false, 0
+	end
+
+	if ai_judge_same_identity(ID, ID_laiyuan, true) == 1 then
+		return false, 0
+	end
+
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	for i = #cards, 1, -1 do
+		if card_judge_if_shan(ID, cards[i]) then
+			table.remove(cards, i)
+			break
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+
+	if #cards == 0 then
+		return false, 0
+	end
+
+	local percent = (20 * #char_juese[ID].shoupai) - 10
+	if char_juese[ID_mubiao].tili <= 1 then
+		percent = 100
+	end
+
+	if ai_judge_random_percent(percent) == 1 then
+		return true, cards[1]
+	else
+		return false, 0
+	end
+end

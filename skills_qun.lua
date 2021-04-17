@@ -49,8 +49,20 @@ end
 
 --  蔡文姬：断肠 --
 function skills_duanchang(va_list)
-	local ID, ID_shanghai = va_list[1] ,va_list[2]
-	push_message(char_juese[ID].name .. "触发了武将技能 '断肠' ")
+	local ID, ID_shanghai = va_list[1], va_list[2]
+	skills_push_queue()
+
+	push_message(char_juese[ID].name .. "触发了武将技能 '断肠'")
+	add_funcptr(_duanchang_lose_skills, ID_shanghai)
+	skills_withdraw_outgame(ID_shanghai)
+
+	--  周泰在不屈状态下失去所有技能，立即进入濒死状态  --
+	_buqu_lose_all_skills(ID_shanghai)
+
+	add_funcptr(skills_pop_queue)
+	timer.start(0.6)
+end
+function _duanchang_lose_skills(ID_shanghai)
 	push_message(char_juese[ID_shanghai].name .. "失去所有武将技能")
 	char_juese[ID_shanghai].skill = {}
 	char_juese[ID_shanghai].skillname = {}
@@ -1326,5 +1338,212 @@ function _jieyuan_sub1(va_list)
 	local card = char_juese[ID].shoupai[ID_shoupai]
 	card_add_qipai(card)
 	card_remove({ID, ID_shoupai})
-	push_message(table.concat({char_juese[ID].name, "弃掉了", card[2], card[3], "的", card[1]}))
+	push_message(table.concat({char_juese[ID].name, "'弃掉了'", card[2], card[3], "的", card[1], "'"}))
+end
+
+--  蔡文姬：悲歌  --
+function skills_beige(va_list)
+	local ID_s, ID_mubiao, ID_laiyuan
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; ID_laiyuan = va_list[3]
+
+	if #char_juese[ID_s].shoupai == 0 then
+		skills_skip_subqueue()
+		return
+	end
+
+	if ID_s == char_current_i then
+		skills_beige_enter(ID_mubiao, ID_laiyuan)
+	else
+		skills_beige_ai(ID_s, ID_mubiao, ID_laiyuan)
+	end
+end
+function skills_beige_ai(ID_s, ID_mubiao, ID_laiyuan)
+	local fadong, ID_shoupai = ai_judge_beige(ID_s, ID_mubiao, ID_laiyuan)
+	if fadong == false then
+		skills_skip_subqueue()
+		return
+	end
+
+	skills_push_queue()
+	_beige_exe(ID_shoupai, ID_s, ID_mubiao, ID_laiyuan)
+end
+function skills_beige_enter(ID_mubiao, ID_laiyuan)
+	skills_push_queue()
+
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '悲歌'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+		gamerun_status = old_gamerun_status
+		set_hints("")
+
+		if gamerun_OK then
+			_beige_select_card(ID_mubiao, ID_laiyuan, old_gamerun_status)
+	    else
+			skills_pop_queue(true)
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function _beige_select_card(ID_mubiao, ID_laiyuan, old_gamerun_status)
+	skills_enter("请选择一张牌", "", "悲歌", "技能选择-单牌")
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			if table.getn2(card_selected) == 1 then
+				gamerun_status = "手牌生效中"
+				set_hints("")
+				
+				_beige_exe(card_highlighted, char_current_i, ID_mubiao, ID_laiyuan)
+				card_selected = {}
+				card_highlighted = 1
+			end
+		else
+			gamerun_status = old_gamerun_status
+			set_hints("")
+			skills_pop_queue(true)
+			timer.start(0.6)
+		end
+	end
+
+	platform.window:invalidate()
+end
+function _beige_exe(ID_shoupai, ID_s, ID_mubiao, ID_laiyuan)
+	add_funcptr(_beige_qipai, {ID_shoupai, ID_s})
+	skills_losecard(ID_s, 1, true)
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '悲歌'")
+
+	add_funcptr(_beige_fan_panding, ID_mubiao)
+
+	--  如场上有司马懿或张角，询问其改判技能  --
+	skills_guicai_guidao_ask(ID_mubiao, ID_s, ID_mubiao, "悲歌")
+	
+	add_funcptr(_beige_jiesuan, {ID_s, ID_mubiao, ID_laiyuan})
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _beige_qipai(va_list)
+	local ID_shoupai, ID
+	ID_shoupai = va_list[1]; ID = va_list[2]
+
+	local card = char_juese[ID].shoupai[ID_shoupai]
+	card_add_qipai(card)
+	card_remove({ID, ID_shoupai})
+	push_message(table.concat({char_juese[ID].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+end
+function _beige_fan_panding(ID_s)
+	--  翻开判定牌  --
+	if #card_yixi == 0 then
+	    card_xipai(true)
+	end
+    card_panding_card = card_yixi[1]
+	table.remove(card_yixi, 1)
+	push_message(table.concat({char_juese[ID_s].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
+end
+function _beige_jiesuan(va_list)
+	local ID_s, ID_mubiao, ID_laiyuan
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; ID_laiyuan = va_list[3]
+
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local yanse, huase, dianshu = ai_judge_cardinfo(ID_mubiao, {card_panding_card})
+
+	--  曹丕颂威  --
+	skills_judge_songwei(ID_mubiao)
+
+	if huase == "黑桃" then
+		push_message(char_juese[ID_s].name .. "的 '悲歌' 判定结果为黑桃")
+		skills_card_qi_panding(ID_mubiao)
+		add_funcptr(char_fanmian, ID_laiyuan)
+		
+	elseif huase == "草花" then
+		push_message(char_juese[ID_s].name .. "的 '悲歌' 判定结果为草花")
+		skills_card_qi_panding(ID_mubiao)
+		if ID_laiyuan == char_current_i then
+			add_funcptr(_beige_laiyuan_qipai_enter)
+		else
+			add_funcptr(_beige_laiyuan_qipai_ai, ID_laiyuan)
+		end
+
+	elseif huase == "红桃" then
+		push_message(char_juese[ID_s].name .. "的 '悲歌' 判定结果为红桃")
+		skills_card_qi_panding(ID_mubiao)
+		if char_juese[ID_mubiao].tili < char_juese[ID_mubiao].tili_max then
+			char_tili_huifu(ID_mubiao, 1)
+		end
+
+	elseif huase == "方块" then
+		push_message(char_juese[ID_s].name .. "的 '悲歌' 判定结果为方块")
+		skills_card_qi_panding(ID_mubiao)
+		add_funcptr(card_fenfa, {ID_mubiao, 2, true})
+
+	else
+		skills_card_qi_panding(ID_mubiao)
+	end
+	
+	add_funcptr(skills_pop_queue)
+	timer.start(0.6)
+end
+function _beige_laiyuan_qipai_ai(ID_laiyuan)
+	if ai_card_stat(ID_laiyuan, true, false) == 0 then
+		skills_skip_subqueue()
+		return
+	end
+
+	skills_push_queue()
+	local qipai_id, qi_zhuangbei_id = ai_judge_withdraw(ID_laiyuan, 2, true)
+
+	ai_withdraw(ID_laiyuan, qipai_id, qi_zhuangbei_id, true)
+	skills_losecard(ID_laiyuan, 9999, true)
+
+	add_funcptr(skills_pop_queue)
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _beige_laiyuan_qipai_enter()
+	skills_push_queue()
+
+	local n_cards = ai_card_stat(char_current_i, true, false)
+	if n_cards < 2 then
+		if n_cards > 0 then
+			card_qipai_all(char_current_i, false)
+			skills_losecard(char_current_i, 9999, true)
+		end
+
+		add_funcptr(skills_pop_queue)
+		skills_skip_subqueue()
+		timer.start(0.6)
+		return
+	end
+
+	gamerun_wuqi_into_hand(char_current_i)
+	skills_enter("您须弃2张牌", "", "悲歌2", "技能选择-多牌")
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true and table.getn2(card_selected) == 2 then
+			gamerun_status = "手牌生效中"
+			set_hints("")
+
+			card_qipai_go()
+			card_selected = {}
+			card_highlighted = 1
+
+			add_funcptr(_beige_wuqi_out_hand)
+			skills_losecard(char_current_i, 9999, true)
+
+			add_funcptr(skills_pop_queue)
+			timer.start(0.6)
+		end
+	end
+end
+function _beige_wuqi_out_hand()
+	gamerun_wuqi_out_hand(char_current_i)
+	on.timer()
 end
