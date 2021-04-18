@@ -101,6 +101,15 @@ function skills_zhiji_set(ID, option)
 end
 
 --  诸葛亮：观星  --
+function skills_guanxing_check_and_run()
+	skills_push_queue()
+	if char_juese[char_acting_i].skill["观星"] == "available" then
+		add_funcptr(skills_guanxing, char_acting_i)
+	end
+	add_funcptr(skills_pop_queue)
+	skills_skip_subqueue()
+	timer.start(0.2)
+end
 function skills_guanxing(ID)
 	if ID == char_current_i then
 		skills_guanxing_enter(ID)
@@ -111,6 +120,7 @@ end
 function skills_guanxing_ai(ID)
 	local guanxing_choice = ai_judge_guanxing(ID)
 	if guanxing_choice == false then
+		skills_skip_subqueue()
 		return
 	end
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
@@ -132,7 +142,7 @@ function skills_guanxing_enter(ID)
 
 	gamerun_status = "选项选择"
 	choose_name = "观星"
-	jiaohu_text = "是否使用 '观星' ?"
+	jiaohu_text = "是否发动 '观星'?"
 	choose_option = {"是","否"}
 	
 	txt_messages:setVisible(false)
@@ -607,7 +617,7 @@ function skills_rende(ID_s, ID_mubiao, ID_shoupai)
 	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '仁德'")
 	
 	add_funcptr(skills_rende_exe, {ID_s, ID_mubiao, ID_shoupai})
-	skills_losecard(ID_s, #ID_shoupai, true)
+	skills_losecard(ID_s)
 
 	add_funcptr(_rende_sub)
 	return true
@@ -651,7 +661,7 @@ end
 function skills_lianhuan_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 
-	skills_enter("请选择草花牌", "'确定': 选择目标A '取消': 重铸", "铁锁连环", "技能选择-单牌")
+	skills_enter("请选择草花牌", "'确定': 选择目标A '取消': 重铸", "铁索连环", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
 		if gamerun_status == "技能选择-目标" then
@@ -1041,10 +1051,10 @@ function _fangquan_exe_2(ID_s, ID_mubiao, ID_shoupai)
 		card_add_qipai(card)
 		card_remove({ID_s, ID_shoupai})
 		push_message(table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
-		skills_losecard(ID_s, 0, true)
+		skills_losecard(ID_s)
 	else
 		ai_withdraw(ID_s, ID_shoupai, {}, false)
-		skills_losecard(ID_s, 0, true)
+		skills_losecard(ID_s)
 	end
 	push_message(table.concat({char_juese[ID_mubiao].name, "获得了额外的回合"}))
 	table.insert(extra_turn, ID_mubiao)
@@ -1235,7 +1245,7 @@ function skills_xiangle_enter(ID)
 end
 function _xiangle_exe(ID_shoupai, ID, ID_laiyuan)
 	add_funcptr(_xiangle_sub1, {ID_shoupai, ID_laiyuan})
-	skills_losecard(ID_laiyuan, 1, true)
+	skills_losecard(ID_laiyuan)
 	add_funcptr(_xiangle_huifu)
 	timer.start(0.6)
 end
@@ -1454,18 +1464,18 @@ function _jijiang_exe(ID_req, ID_res, ID_shoupai, mode, va)
 		ID_s = va[1]; ID_mubiao = va[2]; wushuang_flag = va[3]
 
 		add_funcptr(_juedou_sha, {ID_res, ID_s, ID_shoupai[1]})
-		skills_losecard(ID_res, 9999, true)
+		skills_losecard(ID_res)
 		_juedou_nextstep(ID_s, ID_mubiao, wushuang_flag)
 	elseif mode == "南蛮入侵" then
 		add_funcptr(_nanman_sha, {ID_res, ID_shoupai[1]})
-		skills_losecard(ID_res, 1, true)
+		skills_losecard(ID_res)
 		add_funcptr(_nanman_zhudong_huifu)
 	elseif mode == "借刀杀人" or mode == "杀" then
 		local ID_jiedao_req, ID_s, ID_mubiao
 		ID_jiedao_req = va[1]; ID_s = va[2]; ID_mubiao = va[3]
 
 		add_funcptr(_jijiang_geipai, {ID_res, ID_s, ID_shoupai})
-		skills_losecard(ID_res, 9999, true)
+		skills_losecard(ID_res)
 		add_funcptr(_jijiang_sha, {ID_jiedao_req, ID_s, ID_mubiao, mode, #ID_shoupai})
 	end
 end

@@ -141,7 +141,7 @@ function ai_judge_wusheng(ID)
 	attack_mubiao = ai_get_in_range(ID, attack_mubiao)
 
 	for i = #attack_mubiao, 1, -1 do
-		if char_juese[attack_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青钢剑" then
+		if char_juese[attack_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青釭剑" then
 			table.remove(attack_mubiao, i)
 		end
 	end
@@ -177,7 +177,7 @@ function ai_judge_longdan(ID)
 	attack_mubiao = ai_get_in_range(ID, attack_mubiao)
 
 	for i = #attack_mubiao, 1, -1 do
-		if char_juese[attack_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青钢剑" then
+		if char_juese[attack_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青釭剑" then
 			table.remove(attack_mubiao, i)
 		end
 	end
@@ -239,12 +239,12 @@ function ai_judge_lianhuan_lian(ID)
 		return false, 0, {}
 	end
 
-	local lianhuan_cards = ai_card_search(ID, "铁锁连环", 1)
+	local lianhuan_cards = ai_card_search(ID, "铁索连环", 1)
 	if #lianhuan_cards > 0 then
 		return false, 0, {}
 	end
 
-	local shoupai = {"铁锁连环", "黑桃", "3"}
+	local shoupai = {"铁索连环", "黑桃", "3"}
 	local attack_mubiao = ai_judge_target(ID, shoupai[1], {shoupai}, 2)
 
 	if #attack_mubiao < 1 then

@@ -473,10 +473,11 @@ function ai_skill_use_priority(ID)
 	local fadong, ID_shoupai, mubiao
 
 	--  神司马懿极略  --
-	if char_juese[ID].skill["极略"] == "available" and mark_ren[ID] > 0 then
-		skills_jilve_ai(ID)
-		timer.start(0.6)
-		return true
+	if char_juese[ID].skill["极略"] == "available" and mark_ren[ID] > 0 and ai_skills_discard["极略"] ~= true then
+		if skills_jilve_ai(ID) then
+			timer.start(0.6)
+			return true
+		end
 	end
 	
 	--  神吕蒙攻心  --
@@ -740,7 +741,7 @@ function ai_card_use(ID)
 		end
 	end
 	targets = ai_judge_target(ID, "火杀", {{"火杀","红桃","K"}}, 1)
-	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" or #targets == 0 then
+	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" or char_juese[ID].skill["旋风"] == "available" or #targets == 0 then
 		local card_use = ai_card_search(ID, "武器", 1)
 		if #card_use ~= 0 then
 			local wuqi_card = char_juese[ID].shoupai[card_use[1]]
@@ -750,7 +751,7 @@ function ai_card_use(ID)
 		end
 	end
 
-	if (#char_juese[ID].fangju == 0 and char_juese[ID].skill["八阵"] ~= "available") or char_juese[ID].skill["枭姬"] == "available" then
+	if (#char_juese[ID].fangju == 0 and char_juese[ID].skill["八阵"] ~= "available") or char_juese[ID].skill["枭姬"] == "available" or char_juese[ID].skill["旋风"] == "available" then
 		local card_use = ai_card_search(ID, "防具", 1)
 		if #card_use ~= 0 then
 			local wuqi_card = char_juese[ID].shoupai[card_use[1]]
@@ -760,7 +761,7 @@ function ai_card_use(ID)
 		end
 	end
 
-	if #char_juese[ID].gongma == 0 or char_juese[ID].skill["枭姬"] == "available" then
+	if #char_juese[ID].gongma == 0 or char_juese[ID].skill["枭姬"] == "available" or char_juese[ID].skill["旋风"] == "available" then
 		local card_use = ai_card_search(ID, "-1马", 1)
 		if #card_use ~= 0 then
 			local wuqi_card = char_juese[ID].shoupai[card_use[1]]
@@ -770,7 +771,7 @@ function ai_card_use(ID)
 		end
 	end
 
-	if #char_juese[ID].fangma == 0 or char_juese[ID].skill["枭姬"] == "available" then
+	if #char_juese[ID].fangma == 0 or char_juese[ID].skill["枭姬"] == "available" or char_juese[ID].skill["旋风"] == "available" then
 		local card_use = ai_card_search(ID, "+1马", 1)
 		if #card_use ~= 0 then
 			local wuqi_card = char_juese[ID].shoupai[card_use[1]]
@@ -808,7 +809,7 @@ function ai_card_use(ID)
 		end
 	end
 
-	local card_use = ai_card_search(ID, "铁锁连环", 1)
+	local card_use = ai_card_search(ID, "铁索连环", 1)
 	if #card_use ~= 0 then
 		local ID1, ID2, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
@@ -817,14 +818,14 @@ function ai_card_use(ID)
 		if #targets == 2 then
 			ID1 = targets[1]
 			ID2 = targets[2]
-			if card_chupai_ai({card_use[1]}, ID1, ID2, ID, "铁锁连环-连环") then
+			if card_chupai_ai({card_use[1]}, ID1, ID2, ID, "铁索连环-连环") then
 				--  连后处理ai_next_card --
 				timer.start(0.6)
 				return
 			end
 		else
-			card_chupai_ai({card_use[1]}, ID, nil, nil, "铁锁连环-重铸")
-			ai_next_card(ID)
+			card_chupai_ai({card_use[1]}, ID, nil, nil, "铁索连环-重铸")
+			--ai_next_card(ID)
 			return
 		end
 	end
@@ -950,7 +951,7 @@ function ai_card_use(ID)
 				local card_use_jiu = ai_card_search(ID, "酒", 1)
 				if #card_use_jiu ~= 0 and (char_sha_time > 0 or char_juese[ID].wuqi[1] == "诸葛弩" ) and char_sha_able == true then
 					if card_chupai_ai({card_use_jiu[1]}, ID, nil, nil, "酒") then
-						ai_next_card(ID)
+						--ai_next_card(ID)
 						return
 					end
 				end
@@ -1094,26 +1095,32 @@ function _ai_qipai_exe(ID)
 		qipai_id, qizhuangbei_id = ai_judge_withdraw(ID, required, false)
 	end
 
+	gamerun_qipai_n = 0
 	for i = #qipai_id, 1, -1 do
-		add_funcptr(_qipai_sub1, qipai_id[i])
+		add_funcptr(_qipai_sub1, {qipai_id[i], ID})
+		gamerun_qipai_n = gamerun_qipai_n + 1
 	end
 	if qizhuangbei_id[1] == 1 then
 		add_funcptr(_qipai_sub4,ID)
+		gamerun_qipai_n = gamerun_qipai_n + 1
 	end
 
 	if qizhuangbei_id[2] == 1 then
 		add_funcptr(_qipai_sub5,ID)
+		gamerun_qipai_n = gamerun_qipai_n + 1
 	end
 
 	if qizhuangbei_id[3] == 1 then
 		add_funcptr(_qipai_sub6,ID)
+		gamerun_qipai_n = gamerun_qipai_n + 1
 	end
 
 	if qizhuangbei_id[4] == 1 then
 		add_funcptr(_qipai_sub7,ID)
+		gamerun_qipai_n = gamerun_qipai_n + 1
 	end
-	skills_losecard(ID, #qipai_id, true)
-
+	skills_losecard(ID)
+	
 	gamerun_huihe_jieshu(true)
 end
 function _qipai_huihe_set()

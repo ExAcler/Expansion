@@ -663,3 +663,18 @@ function ai_judge_qixi(ID)
 	local maxdef_ID = ai_judge_maximum_def(attack_mubiao)
 	return true, cards[1], maxdef_ID
 end
+
+--  AI决定是否发动旋风  --
+--  返回含有角色ID的表，如为空则表示不发动  --
+function ai_judge_xuanfeng(ID)
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+
+	for i = #attack_mubiao, 1, -1 do
+		if ai_card_stat(attack_mubiao[i], true, false) == 0 then
+			table.remove(attack_mubiao, i)
+		end
+	end
+	attack_mubiao = random_pick(attack_mubiao, 2)
+
+	return attack_mubiao
+end

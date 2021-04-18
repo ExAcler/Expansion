@@ -156,54 +156,35 @@ function _qi_panding_exe(ID)
 end
 
 --  失去手牌触发技能结算  --
-function skills_losecard(ID_juese, n_card, in_queue)
-	local sub = false
-
+function skills_losecard(ID_juese)
 	--  失去白银狮子，回复1点体力  --
 	if char_juese[ID_juese].arm_baiyin == true then
-		if in_queue then
-			add_funcptr(card_lost_baiyin, ID_juese)
-		end
+		add_funcptr(card_lost_baiyin, ID_juese)
 	end
 
 	--  张春华在手牌不足时摸牌  --
-	if char_juese[ID_juese].skill["伤逝"] == "available" and #char_juese[ID_juese].shoupai - n_card < char_juese[ID_juese].tili_max - char_juese[ID_juese].tili then
-		if in_queue then
-			add_funcptr(skills_shangshi, ID_juese)
-		else
-			skills_shangshi(ID_juese, true)
-			sub = true
-		end
+	if char_juese[ID_juese].skill["伤逝"] == "available" then
+		add_funcptr(skills_shangshi, ID_juese)
 	end
 
 	--  陆逊在失去最后手牌时摸一张牌  --
-	if char_juese[ID_juese].skill["连营"] == "available" and #char_juese[ID_juese].shoupai <= n_card then
-		if in_queue then
-			add_funcptr(skills_lianying, ID_juese)
-		elseif sub == false then
-			skills_lianying(ID_juese)
-		end
+	if char_juese[ID_juese].skill["连营"] == "available" then
+		add_funcptr(skills_lianying, ID_juese)
 	end
 
 	--  孙尚香在失去装备时摸两张牌  --
 	if char_juese[ID_juese].skill["枭姬"] == "available" then
-		if in_queue then
-			add_funcptr(skills_xiaoji, ID_juese)
-		end
+		add_funcptr(skills_xiaoji, ID_juese)
 	end
 
-	--[[--  凌统在失去装备时弃别人两张牌  --
+	--  凌统在失去装备时弃别人两张牌  --
 	if char_juese[ID_juese].skill["旋风"] == "available" then
-		if in_queue then
-			add_funcptr(skills_xuanfeng, ID_juese)
-		end
-	end]]
+		add_funcptr(skills_xuanfeng, {ID_juese, "出牌"})
+	end
 
 	--  邓艾发动屯田  --
 	if char_juese[ID_juese].skill["屯田"] == "available" then
-		if in_queue then
-			add_funcptr(skills_tuntian, ID_juese)
-		end
+		add_funcptr(skills_tuntian, ID_juese)
 	end
 end
 
@@ -283,7 +264,7 @@ function skills_withdraw_outgame(ID)
 	--  不屈牌  --
 	_buqu_siwang_qipai(ID)
 
-	--  '田'  --
+	--  田牌  --
 	_tuntian_siwang_qipai(ID)
 end
 
@@ -302,5 +283,10 @@ function skills_pop_queue(non_immediate)
 end
 
 function skills_skip_subqueue()
+	on.timer()
+end
+
+function gamerun_wuqi_out_hand_queued()
+	gamerun_wuqi_out_hand(char_current_i)
 	on.timer()
 end

@@ -277,8 +277,8 @@ function ai_judge_beige(ID, ID_mubiao, ID_laiyuan)
 		return false, 0
 	end
 
-	local percent = (20 * #char_juese[ID].shoupai) - 10
-	if char_juese[ID_mubiao].tili <= 1 then
+	local percent = (25 * #char_juese[ID].shoupai) - 10
+	if char_juese[ID_mubiao].tili <= 1 or ID_mubiao == ID then
 		percent = 100
 	end
 

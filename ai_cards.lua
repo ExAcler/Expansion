@@ -117,7 +117,7 @@ end
 function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 	if (name == "万箭齐发" or name == "南蛮入侵") and char_juese[ID_jiu].fangju[1] == "藤甲" then
         return false
-	elseif name == "万箭齐发" or name == "南蛮入侵" or name == "火攻" or name == "借刀杀人" or name == "决斗" or (name == "铁锁连环" and char_juese[ID_jiu].hengzhi == false) or name == "乐不思蜀" or name == "兵粮寸断" or name == "闪电" then
+	elseif name == "万箭齐发" or name == "南蛮入侵" or name == "火攻" or name == "借刀杀人" or name == "决斗" or (name == "铁索连环" and char_juese[ID_jiu].hengzhi == false) or name == "乐不思蜀" or name == "兵粮寸断" or name == "闪电" then
 		if char_juese[id].shenfen == "内奸" and char_juese[ID_jiu].shenfen == "主公" and char_juese[ID_jiu].tili == 1 then
 			return true
 		elseif ai_judge_same_identity(id, ID_jiu, false) == 1 then
@@ -125,7 +125,7 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 		else
 			return false
 		end
-	elseif name == "桃园结义" or name == "五谷丰登" or name == "无中生有" or (name == "铁锁连环" and char_juese[ID_jiu].hengzhi == true) then
+	elseif name == "桃园结义" or name == "五谷丰登" or name == "无中生有" or (name == "铁索连环" and char_juese[ID_jiu].hengzhi == true) then
 		if ai_judge_same_identity(id, ID_jiu, false) == 2 and char_juese[id].shenfen ~= "内奸" then
 			return true
 		else
@@ -265,24 +265,24 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 			table.remove(possible_target,i)
 		elseif card_treated ~= "借刀杀人" and string.find(card_treated,"杀") ~= nil and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["帷幕"] == "available" then
 			table.remove(possible_target,i)
-		elseif ID == possible_target[i] and card_treated == "铁锁连环" and char_juese[ID].hengzhi == true then
+		elseif ID == possible_target[i] and card_treated == "铁索连环" and char_juese[ID].hengzhi == true then
 			
 		elseif ID == possible_target[i] then
 			table.remove(possible_target,i)
 		elseif char_juese[ID].shenfen == "主公" then
-			if (char_juese[possible_target[i]].isantigovernment == false and char_juese[possible_target[i]].isblackjack ~= true) and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
+			if (char_juese[possible_target[i]].isantigovernment == false and char_juese[possible_target[i]].isblackjack ~= true) and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
 				
 			elseif char_juese[possible_target[i]].isantigovernment == false and char_juese[possible_target[i]].isblackjack ~= true then
 				table.remove(possible_target,i)
 			end
 		elseif char_juese[ID].shenfen == "忠臣" then
-			if (char_juese[possible_target[i]].shenfen == "主公") and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
+			if (char_juese[possible_target[i]].shenfen == "主公") and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
 
 			elseif char_juese[possible_target[i]].shenfen == "主公" then
 				table.remove(possible_target, i)
 			end
 		elseif char_juese[ID].shenfen == "反贼" then
-			if (char_juese[possible_target[i]].isantigovernment == true and char_juese[possible_target[i]].isblackjack ~= true) and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁锁连环")) then
+			if (char_juese[possible_target[i]].isantigovernment == true and char_juese[possible_target[i]].isblackjack ~= true) and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
 			
 			elseif char_juese[possible_target[i]].isantigovernment == true and char_juese[possible_target[i]].isblackjack ~= true then
 				table.remove(possible_target,i)
@@ -411,7 +411,7 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 				end
 			end
 		end
-	elseif card_treated == "铁锁连环" then
+	elseif card_treated == "铁索连环" then
 		--剔除已经横置的对手
 		for i=#possible_target,1,-1 do
 			if char_juese[possible_target[i]].hengzhi == true and (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[possible_target[i]].isantigovernment ~= false then
@@ -452,13 +452,13 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 		end
 		--剔除普杀藤甲
 		for i=#possible_target,1,-1 do
-			if char_juese[possible_target[i]].fangju[1] == "藤甲" and shuxing == false and char_juese[ID].wuqi[1] ~= "朱雀扇" and char_juese[ID].wuqi[1] ~= "青钢剑" then
+			if char_juese[possible_target[i]].fangju[1] == "藤甲" and shuxing == false and char_juese[ID].wuqi[1] ~= "朱雀扇" and char_juese[ID].wuqi[1] ~= "青釭剑" then
 				table.remove(possible_target,i)
 			end
 		end
 		--剔除黑杀仁王、于禁毅重
 		for i=#possible_target,1,-1 do
-			if (char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[ID].wuqi[1] ~= "青钢剑") or (#char_juese[possible_target[i]].fangju == 0 and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["毅重"] == "available") then
+			if (char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[ID].wuqi[1] ~= "青釭剑") or (#char_juese[possible_target[i]].fangju == 0 and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["毅重"] == "available") then
 				table.remove(possible_target,i)
 			end
 		end
@@ -530,6 +530,18 @@ end
 
 --  AI计算AOE收益  --
 function ai_judge_AOE(ID,card)
+	--  单挑必放AOE  --
+	if char_alive_stat() == 2 and (card == "南蛮入侵" or card == "万箭齐发") then
+		if card == "南蛮入侵" then
+			for i = 1, 5 do
+				if i ~= ID and char_juese[i].skill["巨象"] == "available" and char_juese[i].siwang == false then
+					return 0
+				end
+			end
+		end
+		return 1
+	end
+
 	local gain, bonus = -1, 1
 	for i = 1, 5 do
 		if char_juese[i].siwang == true then
@@ -703,31 +715,31 @@ function ai_card_search(ID, kind, required, alt_shoupai)
 		end
 	elseif kind == "锦囊" then
 		for i = #shoupai,1,-1 do
-			if shoupai[i][1] == "兵粮寸断" or shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "闪电" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁锁连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无懈可击" or shoupai[i][1] == "无中生有" then
+			if shoupai[i][1] == "兵粮寸断" or shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "闪电" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁索连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无懈可击" or shoupai[i][1] == "无中生有" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "非无懈锦囊" then
 		for i = #shoupai,1,-1 do
-			if shoupai[i][1] == "兵粮寸断" or shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "闪电" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁锁连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无中生有" then
+			if shoupai[i][1] == "兵粮寸断" or shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "闪电" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁索连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无中生有" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "非延时锦囊" then
 		for i = #shoupai,1,-1 do
-			if shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁锁连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无懈可击" or shoupai[i][1] == "无中生有" then
+			if shoupai[i][1] == "过河拆桥" or shoupai[i][1] == "火攻" or shoupai[i][1] == "借刀杀人" or shoupai[i][1] == "决斗" or shoupai[i][1] == "乐不思蜀" or shoupai[i][1] == "南蛮入侵" or shoupai[i][1] == "顺手牵羊" or shoupai[i][1] == "桃园结义" or shoupai[i][1] == "铁索连环" or shoupai[i][1] == "万箭齐发" or shoupai[i][1] == "五谷丰登" or shoupai[i][1] == "无懈可击" or shoupai[i][1] == "无中生有" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "装备" then
 		for i = #shoupai,1,-1 do
-			if shoupai[i][1] == "八卦阵" or shoupai[i][1] == "赤兔" or shoupai[i][1] == "雌雄剑" or shoupai[i][1] == "大宛" or shoupai[i][1] == "的卢" or shoupai[i][1] == "方天戟" or shoupai[i][1] == "贯石斧" or shoupai[i][1] == "古锭刀" or shoupai[i][1] == "寒冰剑" or shoupai[i][1] == "骅骝" or shoupai[i][1] == "绝影" or shoupai[i][1] == "诸葛弩" or shoupai[i][1] == "麒麟弓" or shoupai[i][1] == "青钢剑" or shoupai[i][1] == "仁王盾" or shoupai[i][1] == "白银狮" or shoupai[i][1] == "藤甲" or shoupai[i][1] == "青龙刀" or shoupai[i][1] == "朱雀扇" or shoupai[i][1] == "丈八矛" or shoupai[i][1] == "爪黄飞电" or shoupai[i][1] == "紫骍" then
+			if shoupai[i][1] == "八卦阵" or shoupai[i][1] == "赤兔" or shoupai[i][1] == "雌雄剑" or shoupai[i][1] == "大宛" or shoupai[i][1] == "的卢" or shoupai[i][1] == "方天戟" or shoupai[i][1] == "贯石斧" or shoupai[i][1] == "古锭刀" or shoupai[i][1] == "寒冰剑" or shoupai[i][1] == "骅骝" or shoupai[i][1] == "绝影" or shoupai[i][1] == "诸葛弩" or shoupai[i][1] == "麒麟弓" or shoupai[i][1] == "青釭剑" or shoupai[i][1] == "仁王盾" or shoupai[i][1] == "白银狮" or shoupai[i][1] == "藤甲" or shoupai[i][1] == "青龙刀" or shoupai[i][1] == "朱雀扇" or shoupai[i][1] == "丈八矛" or shoupai[i][1] == "爪黄飞电" or shoupai[i][1] == "紫騂" then
 				table.insert(card_searched,i)
 			end
 		end
 	elseif kind == "武器" then
 		for i = #shoupai,1,-1 do
-			if shoupai[i][1] == "雌雄剑" or shoupai[i][1] == "方天戟" or shoupai[i][1] == "贯石斧" or shoupai[i][1] == "古锭刀" or shoupai[i][1] == "寒冰剑" or shoupai[i][1] == "诸葛弩" or shoupai[i][1] == "麒麟弓" or shoupai[i][1] == "青钢剑" or shoupai[i][1] == "青龙刀" or shoupai[i][1] == "朱雀扇" or shoupai[i][1] == "丈八矛" then
+			if shoupai[i][1] == "雌雄剑" or shoupai[i][1] == "方天戟" or shoupai[i][1] == "贯石斧" or shoupai[i][1] == "古锭刀" or shoupai[i][1] == "寒冰剑" or shoupai[i][1] == "诸葛弩" or shoupai[i][1] == "麒麟弓" or shoupai[i][1] == "青釭剑" or shoupai[i][1] == "青龙刀" or shoupai[i][1] == "朱雀扇" or shoupai[i][1] == "丈八矛" then
 				table.insert(card_searched,i)
 			end
 		end
@@ -745,7 +757,7 @@ function ai_card_search(ID, kind, required, alt_shoupai)
 		end	
 	elseif kind == "-1马" then
 		for i = #shoupai,1,-1 do
-			if shoupai[i][1] == "紫骍" or shoupai[i][1] == "赤兔" or shoupai[i][1] == "大宛" then
+			if shoupai[i][1] == "紫騂" or shoupai[i][1] == "赤兔" or shoupai[i][1] == "大宛" then
 				table.insert(card_searched,i)
 			end
 		end	

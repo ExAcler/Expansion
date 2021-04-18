@@ -208,7 +208,7 @@ function ai_judge_shensu(ID, is_panding)
 
 	ID_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
 	for i = #ID_mubiao, 1, -1 do
-		if char_juese[ID_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青钢剑" then
+		if char_juese[ID_mubiao[i]].fangju[1] == "藤甲" and char_juese[ID].wuqi[1] ~= "青釭剑" then
 			table.remove(ID_mubiao, i)
 		end
 	end

@@ -72,7 +72,7 @@ function ai_judge_gongxin_mubiao(ID)
 	end
 end
 
--- AI决定是否归心 --
+--  AI决定是否归心  --
 function ai_judge_guixin(ID_s)
 	local gain = -3
 	for i = 1, 5 do
@@ -89,4 +89,41 @@ function ai_judge_guixin(ID_s)
 	else
 		return false
 	end
+end
+
+--  AI决定是否发动极略获得完杀  --
+function ai_judge_jilve_wansha(ID)
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	
+	local has_attack_card = false
+	for i = 1, #char_juese[ID].shoupai do
+		if card_judge_if_sha(ID, i) then
+			for i = 1, #attack_mubiao do
+				if card_if_d_limit("杀", ID, attack_mubiao[i], i) then
+					has_attack_card = true
+					break
+				end
+			end
+			if has_attack_card == true then
+				break
+			end
+		elseif char_juese[ID].shoupai[i][1] == "决斗" then
+			has_attack_card = true
+			break
+		elseif char_juese[ID].shoupai[i][1] == "火攻" then
+			has_attack_card = true
+			break
+		end
+	end
+	if has_attack_card == false then
+		return false
+	end
+
+	for i = 1, #attack_mubiao do
+		if char_juese[attack_mubiao[i]].tili <= 1 then
+			return true
+		end
+	end
+
+	return false
 end

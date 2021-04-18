@@ -1,4 +1,4 @@
---  剩余技能：甘露、旋风、双雄、乱武  --
+--  剩余技能：甘露、双雄、乱武  --
 
 -- 各角色拥有技能 --
 char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
@@ -50,10 +50,10 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["太史慈"] = {{4,4}, "吴", false, {"天义"}, "男", {""}, true}, 
     ["鲁肃"] = {{3,3}, "吴", false, {"好施", "缔盟"}, "男", {"",""}, true}, 
     ["孙坚"] = {{4,4}, "吴", false, {"英魂"}, "男", {""}, true}, 
-    ["张昭张宏"] = {{3,3}, "吴", false, {"直谏", "固政"}, "男", {"",""}, true}, 
+    ["张昭张紘"] = {{3,3}, "吴", false, {"直谏", "固政"}, "男", {"",""}, true}, 
     ["孙策"] = {{4,4}, "吴", true, {"激昂", "魂姿", "制霸"}, "男", {"","觉醒","主公"}, true}, 
 	["吴国太"] = {{3,3}, "吴", false, {"甘露","补益"}, "女", {"",""}, true}, 
-	["凌统"] = {{4,4}, "吴", false, {"旋风"}, "男", {""}, false}, 
+	["凌统"] = {{4,4}, "吴", false, {"旋风"}, "男", {""}, true}, 
 	["颜良文丑"] = {{4,4}, "群", false, {"双雄"}, "男", {""}, false},
     ["吕布"] = {{4,4}, "群", false, {"无双"}, "男", {"锁定"}, true}, 
     ["貂蝉"] = {{3,3}, "群", false, {"闭月", "离间"}, "女", {"",""}, true}, 	
@@ -72,14 +72,14 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神吕蒙"] = {{3,3}, "神", false, {"涉猎", "攻心"}, "男", {"",""}, true},	
 	["神曹操"] = {{3,3}, "神", false, {"归心", "飞影"}, "男", {"","锁定"}, true},
 	["神司马懿"] = {{4,4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定","觉醒",""}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"悲歌","断肠","竭缘","不屈"}, "男", {"","锁定","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"悲歌","旋风","涉猎","攻心"}, "男", {"","","",""}, true},
 }
 
 -- 武器攻击范围 --
 card_wuqi_r = 
 {
     ["诸葛弩"] = 1, 
-	["雌雄剑"] = 2, ["青钢剑"] = 2, ["寒冰剑"] = 2, ["古锭刀"] = 2, 
+	["雌雄剑"] = 2, ["青釭剑"] = 2, ["寒冰剑"] = 2, ["古锭刀"] = 2, 
 	["青龙刀"] = 3, ["丈八矛"] = 3, ["贯石斧"] = 3, 
 	["朱雀扇"] = 4, ["方天戟"] = 4, 
 	["麒麟弓"] = 5
@@ -87,7 +87,7 @@ card_wuqi_r =
 
 function init_character()
 -- 各角色武将牌 --
-char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "孙笑川", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张郃", "张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张宏", "凌统", "吴国太", "颜良文丑", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈", "公孙瓒", "神曹操", "神司马懿", "神吕蒙", "曹彰", "廖化", "灵雎", "SP貂蝉", "SP姜维", "袁术", "贾诩"}
+char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "孙笑川", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张郃", "张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张紘", "凌统", "吴国太", "颜良文丑", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈", "公孙瓒", "神曹操", "神司马懿", "神吕蒙", "曹彰", "廖化", "灵雎", "SP貂蝉", "SP姜维", "袁术", "贾诩"}
 char_wujiang_zhugong = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓","孙笑川"}  -- 主公武将牌
 char_wujiang_f = {}  -- 洗后的武将牌
 
@@ -707,8 +707,7 @@ function char_judge_shengli(va_list)
 		end
 	end
 	if count == 1 and char_juese[alive].shenfen == "内奸" then
-		msg = {"所有其他角色阵亡，内奸胜利，游戏结束"}
-		add_funcptr(push_message, table.concat(msg))
+		_shengli_info("内奸")
 		add_funcptr(_deduct_sub)
 		skills_skip_subqueue()
 		timer.start(0.6)
@@ -718,8 +717,7 @@ function char_judge_shengli(va_list)
 	
 	--  主公阵亡  --
 	if char_juese[siwang_id].shenfen == "主公" then
-		msg = {"主公阵亡，反贼胜利，游戏结束"}
-		add_funcptr(push_message, table.concat(msg))
+		_shengli_info("反贼")
 		add_funcptr(_deduct_sub)
 		skills_skip_subqueue()
 		timer.start(0.6)
@@ -737,8 +735,7 @@ function char_judge_shengli(va_list)
 		end
 	end
 	if ended then
-		msg = {"反贼与内奸阵亡，主公与忠臣胜利，游戏结束"}
-		add_funcptr(push_message, table.concat(msg))
+		_shengli_info("主公")
 		add_funcptr(_deduct_sub)
 		skills_skip_subqueue()
 		timer.start(0.6)
@@ -757,7 +754,7 @@ function char_judge_shengli(va_list)
 		if char_juese[laiyuan].shenfen == "主公" and char_juese[siwang_id].shenfen == "忠臣" then
 			add_funcptr(push_message, "主公误杀忠臣，丢弃所有牌")
 			card_qipai_all(laiyuan, false)
-			skills_losecard(laiyuan, 9999, true)
+			skills_losecard(laiyuan)
 		end
 		gamerun_killed[laiyuan] = gamerun_killed[laiyuan] + 1
 	end
@@ -767,6 +764,55 @@ function char_judge_shengli(va_list)
 	timer.start(0.6)
 	
 	return false
+end
+function _shengli_info(win_shenfen)
+	local winner = {}
+	local loser = {}
+
+	if win_shenfen == "主公" then
+		for i = 1, 5 do
+			if char_juese[i].shenfen == "主公" or char_juese[i].shenfen == "忠臣" then
+				table.insert(winner, {char_juese[i].name, char_juese[i].shenfen})
+			else
+				table.insert(loser, {char_juese[i].name, char_juese[i].shenfen})
+			end
+		end
+	elseif win_shenfen == "反贼" then
+		for i = 1, 5 do
+			if char_juese[i].shenfen == "反贼" then
+				table.insert(winner, {char_juese[i].name, char_juese[i].shenfen})
+			else
+				table.insert(loser, {char_juese[i].name, char_juese[i].shenfen})
+			end
+		end
+	elseif win_shenfen == "内奸" then
+		for i = 1, 5 do
+			if char_juese[i].shenfen == "内奸" and char_juese[i].siwang == false then
+				table.insert(winner, {char_juese[i].name, char_juese[i].shenfen})
+			else
+				table.insert(loser, {char_juese[i].name, char_juese[i].shenfen})
+			end
+		end
+	end
+
+	local msg
+	msg = "游戏结束，获胜者为"
+	for i, v in ipairs(winner) do
+		msg = msg .. table.concat({v[1], " (", v[2], ")"})
+		if i < #winner then
+			msg = msg .. "，"
+		end
+	end
+	add_funcptr(push_message, msg)
+
+	msg = "失败者为"
+	for i, v in ipairs(loser) do
+		msg = msg .. table.concat({v[1], " (", v[2], ")"})
+		if i < #loser then
+			msg = msg .. "，"
+		end
+	end
+	add_funcptr(push_message, msg)
 end
 
 --  翻面结算 --
@@ -1054,7 +1100,7 @@ function _char_tili_deduct()    --  体力扣减：队列执行函数
 		return
 	end
 	
-	--  青钢剑无视防具  --
+	--  青釭剑无视防具  --
 	if not char_wushi then
 		--  藤甲受火属性伤害，伤害+1  --
 		if char_juese[id].fangju[1] == "藤甲" and shuxing == "火" then
@@ -1251,7 +1297,7 @@ function char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellbl
 				else
 					add_funcptr(_binsi_zhudong, {id, target_tili})
 				end
-				skills_losecard(cur, 9999, true)
+				skills_losecard(cur)
 
 				--  周泰移除不屈牌  --
 				if char_juese[id].skill["不屈"] == "available" and is_buqu == true then

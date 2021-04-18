@@ -75,6 +75,7 @@ mark_ren = {}  --忍标记数量
 gamerun_killed = {}  --在当前回合内杀死角色的数量
 skill_temp = {}  --临时获得的技能，在自己的回合结束后失去
 lordskill_used = {}		-- 当前回合中角色是否已经使用过主公技
+gamerun_qipai_n = 0		-- 当前回合于弃牌阶段弃牌总数
 
 ai_skills_discard = {}	-- 记录AI不再在本回合考虑的技能
 
@@ -331,6 +332,7 @@ function gamerun_huihe_start()
 	char_sha_additional_target = 0
 	char_sha_able = true
 	char_hejiu = false
+	gamerun_qipai_n = 0
 	ai_skills_discard = {}
 	lordskill_used = {}
 	for i = 1, 5 do
@@ -359,52 +361,55 @@ function gamerun_huihe_start()
 	msg = nil
 
 	--  回合开始阶段技能  --
+	--  左慈化身  --
 	if char_juese[char_acting_i].skill["化身"] == "available" then
 		add_funcptr(skills_huashen, {char_acting_i, "回合开始"})
 	end
 	
+	--  神司马懿拜印  --
 	if char_juese[char_acting_i].skill["拜印"] == "available" and mark_ren[char_acting_i] >= 4 then
 		add_funcptr(skills_baiyin)
 	end
 	
+	--  孙策魂姿  --
 	if char_juese[char_acting_i].skill["魂姿"] == "available" and char_juese[char_acting_i].tili == 1 then
 		add_funcptr(skills_hunzi)
 	end
 
+	--  邓艾凿险  --
 	if char_juese[char_acting_i].skill["凿险"] == "available" and #card_tian[char_acting_i] > 2 then
 		add_funcptr(skills_zaoxian)
 	end
 
+	--  刘禅若愚  --
 	if char_juese[char_acting_i].skill["若愚"] == "available" and skills_judge_ruoyu() then
 		add_funcptr(skills_ruoyu)
 	end
 	
+	--  姜维志继  --
 	if char_juese[char_acting_i].skill["志继"] == "available" and #char_juese[char_acting_i].shoupai == 0 then
 		add_funcptr(skills_zhiji)
 	end
 	
-	if char_juese[char_acting_i].skill["英魂"] == "available" and char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
-		if char_acting_i == char_current_i or ai_judge_yinghun(char_acting_i) ~= 3 then
-			add_funcptr(skills_yinghun, char_acting_i)
-		end
-	end
+	--  孙坚英魂  --
+	add_funcptr(skills_yinghun_check_and_run)
 	
-	if char_juese[char_acting_i].skill["观星"] == "available" then
-		if char_acting_i == char_current_i or ai_judge_guanxing(char_acting_i) ~= false then
-			add_funcptr(skills_guanxing, char_acting_i)
-		end
-	end
+	--  诸葛亮观星  --
+	add_funcptr(skills_guanxing_check_and_run)
 	
+	--  甄姬洛神  --
 	if char_juese[char_acting_i].skill["洛神"] == "available" then
 		add_funcptr(skills_luoshen, char_acting_i)
 	end
 	
 	--  判定阶段  --
 	--  进入判定阶段前技能  --
+	--  夏侯渊神速  --
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, true})
 	end
 
+	--  张郃巧变  --
 	if char_juese[char_acting_i].skill["巧变"] == "available" then
 		add_funcptr(skills_qiaobian, {char_acting_i, "判定"})
 	end
@@ -414,46 +419,53 @@ function gamerun_huihe_start()
 	
 	--  摸牌阶段  --
 	--  进入摸牌阶段前技能  --
+	--  张郃巧变  --
 	if char_juese[char_acting_i].skill["巧变"] == "available" then
 		add_funcptr(skills_qiaobian, {char_acting_i, "摸牌"})
 	end
 
-	if char_juese[char_acting_i].skill["英姿"] == "available" then
-		add_funcptr(skills_yingzi, char_acting_i)
-	end
+	--  周瑜英姿  --
+	add_funcptr(skills_yingzi_check_and_run)
 
+	--  袁术庸肆  --
 	if char_juese[char_acting_i].skill["庸肆"] == "available" then
 		add_funcptr(skills_yongsi, char_acting_i)
 	end
 
+	--  许褚裸衣  --
 	if char_juese[char_acting_i].skill["裸衣"] == "available" then
 		if char_acting_i == char_current_i or ai_judge_luoyi(char_acting_i) == 1 then
 			add_funcptr(skills_luoyi, char_acting_i)
 		end
 	end
 
+	--  曹彰将驰  --
 	if char_juese[char_acting_i].skill["将驰"] == "available" then
 		if char_acting_i == char_current_i or ai_judge_jiangchi(char_acting_i) ~= 3 then
 			add_funcptr(skills_jiangchi, char_acting_i)
 		end
 	end
 
+	--  张辽突袭  --
 	if char_juese[char_acting_i].skill["突袭"] == "available" then
 		add_funcptr(skills_tuxi, char_acting_i)
 	end
 
+	--  鲁肃好施  --
 	if char_juese[char_acting_i].skill["好施"] == "available" then
 		if char_acting_i == char_current_i or ai_judge_haoshi(char_acting_i) == 1 then
 			add_funcptr(skills_haoshi_stage_1, char_acting_i)
 		end
 	end
 
+	--  孟获再起  --
 	if char_juese[char_acting_i].skill["再起"] == "available" then
 		if char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
 			add_funcptr(skills_zaiqi, char_acting_i)
 		end
 	end
 
+	--  神吕蒙涉猎  --
 	if char_juese[char_acting_i].skill["涉猎"] == "available" then
 		if char_acting_i == char_current_i or ai_judge_shelie(char_acting_i) == 1 then
 			add_funcptr(skills_shelie, char_acting_i)
@@ -465,18 +477,22 @@ function gamerun_huihe_start()
 
 	--  出牌阶段  --
 	--  进入出牌阶段前技能  --
+	--  鲁肃好施  --
 	if char_juese[char_acting_i].skill["好施"] == "available" then
 		add_funcptr(skills_haoshi_stage_2, char_acting_i)
 	end
 
+	--  张郃巧变  --
 	if char_juese[char_acting_i].skill["巧变"] == "available" then
 		add_funcptr(skills_qiaobian, {char_acting_i, "出牌"})
 	end
 	
+	--  夏侯渊神速  --
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, false})
 	end
 	
+	--  刘禅放权  --
 	if char_juese[char_acting_i].skill["放权"] == "available" then
 		add_funcptr(skills_fangquan, char_acting_i)
 	end
@@ -646,7 +662,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	end
 	
 	if card == "闪电" then
-	    --  如果判定结果是黑桃2~9，失去3点体力  --
+	    --  如果判定结果是黑桃2~9，受到3点雷电伤害  --
 	    if huase == "黑桃" and dianshu >= "2" and dianshu <= "9" then
 		    msg = {char_juese[char_acting_i].name, "的'闪电'判定成功"}
 			push_message(table.concat(msg))
@@ -717,13 +733,14 @@ function _panding_pass(id)    -- 将闪电传给下一个玩家
 	table.remove(char_juese[char_acting_i].panding, id)
 end
 function _panding_wuxie(id)	-- 判定被无懈
-	push_message("锦囊被无懈，无需判定")
+	--push_message("锦囊被无懈，无需判定")
 	if char_juese[char_acting_i].panding[id][1] == "闪电" then
 		_panding_pass(id)
 	else
 		card_add_qipai(char_juese[char_acting_i].panding[id])
 		table.remove(char_juese[char_acting_i].panding, id)
 	end
+	skills_skip_subqueue()
 end
 
 --  当前玩家/AI回合结束 (弃牌阶段~回合结束阶段)
@@ -734,6 +751,10 @@ function gamerun_huihe_jieshu(qipai)
 	end
 
 	--  弃牌阶段技能  --
+	if char_juese[char_acting_i].skill["旋风"] == "available" and gamerun_qipai_n >= 2 then
+		add_funcptr(skills_xuanfeng, {char_acting_i, "弃牌"})
+	end
+
 	for i = 1, 5 do
 		if i ~= char_acting_i and char_juese[i].skill["固政"] == "available" and char_juese[i].siwang == false then
 			add_funcptr(skills_guzheng, {i, char_acting_i})
@@ -932,7 +953,7 @@ function gamerun_target_skip_self(direction, card)
 	end
 
 	if gamerun_status == "选择目标-B" then
-		while gamerun_target_selected == guankan_s or (gamerun_target_selected == char_current_i and card ~= "借刀杀人" and card ~= "铁锁连环") do
+		while gamerun_target_selected == guankan_s or (gamerun_target_selected == char_current_i and card ~= "借刀杀人" and card ~= "铁索连环") do
 			gamerun_target_selected = gamerun_target_selected + increment
 		end
 		return
@@ -1238,12 +1259,12 @@ function on.enterKey()
 		funcptr_i = 0
 		if string.find(gamerun_status, "顺") then
 			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
-			skills_losecard(guankan_d, 9999, true)
+			skills_losecard(guankan_d)
 			add_funcptr(_shun_sub2)
 
 		elseif string.find(gamerun_status, "拆") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
-			skills_losecard(guankan_d, 9999, true)
+			skills_losecard(guankan_d)
 			add_funcptr(_chai_sub2)
 
 		elseif string.find(gamerun_status, "杀") then
@@ -1252,28 +1273,38 @@ function on.enterKey()
 
 		elseif string.find(gamerun_status, "寒1") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
-			skills_losecard(guankan_d, 9999, true)
+			skills_losecard(guankan_d)
 			add_funcptr(_sha_sub3)
 
 		elseif string.find(gamerun_status, "寒2") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
-			skills_losecard(guankan_d, 9999, true)
+			skills_losecard(guankan_d)
 			add_funcptr(_sha_sub2)
 
 		elseif string.find(gamerun_status, "归心") then
 			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
-			skills_losecard(guankan_d, 9999, true)
+			skills_losecard(guankan_d)
 			add_funcptr(_guixin_sub2, {gamerun_guankan_selected, guankan_s, guankan_d})
 
 		elseif string.find(gamerun_status, "反馈") or string.find(gamerun_status, "烈刃") then
 			add_funcptr(card_chai_shun_exe, {false, gamerun_guankan_selected, guankan_s, guankan_d})
-			skills_losecard(guankan_d, 9999, true)
+			skills_losecard(guankan_d)
 			add_funcptr(_fankui_status_restore)
 
 		elseif string.find(gamerun_status, "猛进") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
-			skills_losecard(guankan_d, 9999, true)
+			skills_losecard(guankan_d)
 			add_funcptr(_fankui_status_restore)
+
+		elseif string.find(gamerun_status, "旋风") then
+			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
+			skills_losecard(guankan_d)
+
+			if string.find(gamerun_status, "旋风1") then
+				add_funcptr(_xuanfeng_select_target, "观看手牌-旋风2")
+			else
+				_xuanfeng_chai_post()
+			end
 
 		end
 		timer.start(0.6)
@@ -1417,7 +1448,7 @@ function on.enterKey()
 
 				n_qipai = table.getn2(card_selected)
 				card_qipai_go()
-				skills_losecard(char_current_i, n_qipai, true)
+				skills_losecard(char_current_i)
 				
 				_sha_exe_3(char_current_i, gamerun_target_selected, guankan_s)
 				consent_func_queue(0.6)
@@ -1491,12 +1522,12 @@ function on.enterKey()
 			end
 
 			if gamerun_status == "选择目标" then
-				if carda == "借刀杀人" or carda == "铁锁连环" or fangtian == true then
+				if carda == "借刀杀人" or carda == "铁索连环" or fangtian == true then
 					--  多目标出牌  --
 					if card_if_d_limit(char_juese[char_current_i].shoupai[card_highlighted][1], char_current_i, gamerun_target_selected, {card_highlighted}) then
 						if carda == "借刀杀人" then
 							set_hints("请选择目标B")
-						elseif carda == "铁锁连环" then
+						elseif carda == "铁索连环" then
 							set_hints("'确定'：选择B '取消'：仅A")
 						elseif fangtian == true then
 							--  若只有两人存活，方天画戟只能指定一个目标  --
@@ -1531,7 +1562,7 @@ function on.enterKey()
 			end
 
 			if gamerun_status == "选择目标-B" then
-				if carda == "借刀杀人" or carda == "铁锁连环" then
+				if carda == "借刀杀人" or carda == "铁索连环" then
 					--  开始借刀杀人/连环  --
 					if card_chupai(true) then
 						--  恢复状态  --
@@ -1613,9 +1644,9 @@ function on.enterKey()
 			funcptr_queue = {}; card_highlighted = 1
 			wugucards = {}
 
-			local n_qipai = table.getn2(card_selected)
+			gamerun_qipai_n = gamerun_qipai_n + table.getn2(card_selected)
 			card_qipai_go()    -- 执行弃牌
-			skills_losecard(char_current_i, n_qipai, true)
+			skills_losecard(char_current_i)
 
 	        gamerun_huihe_jieshu(true)    -- 进入回合结束阶段
 		    consent_func_queue(0.2)
@@ -1651,7 +1682,7 @@ function on.escapeKey()
 		return
 	end
 	
-	if string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") or string.find(gamerun_status, "选项选择") then
+	if string.find(gamerun_status, "观看手牌") or string.find(gamerun_status, "牌堆选择") or string.find(gamerun_status, "选项选择") or string.find(gamerun_status, "牌堆操作") then
 		return
 	end
 	
@@ -1735,10 +1766,10 @@ function on.escapeKey()
 		end
 
 		if string.find(gamerun_status, "技能选择") then
-			if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁锁连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" or imp_card == "享乐" or imp_card == "竭缘" or imp_card == "悲歌" then
+			--if imp_card == "强袭" or imp_card == "濒死" or imp_card == "铁索连环" or imp_card == "天香" or imp_card == "鬼才" or imp_card == "流离" or imp_card == "杀" or imp_card == "护驾" or imp_card == "突袭" or imp_card == "黄天" or imp_card == "制霸" or imp_card == "享乐" or imp_card == "竭缘" or imp_card == "悲歌" or imp_card == "旋风" then
 				gamerun_OK = false
 				gamerun_OK_ptr()
-			end
+			--end
 
 			return
 		end
@@ -1773,9 +1804,9 @@ function on.escapeKey()
 						funcptr_queue = {}
 						push_message(char_juese[char_acting_i].name.."触发了武将技能 '庸肆'")
 
-						local n_qipai = table.getn2(card_selected)
+						gamerun_qipai_n = table.getn2(card_selected)
 						card_qipai_go()
-						skills_losecard(char_current_i, n_qipai, true)
+						skills_losecard(char_current_i)
 
 						add_funcptr(gamerun_wuqi_out_hand, char_acting_i)
 						char_yongsi_withdraw = true
@@ -1814,14 +1845,14 @@ function on.escapeKey()
 
 		if table.getn2(card_selected) == 1 then
 			if string.find(gamerun_status, "技能选择") then
-				if imp_card == "铁锁连环" then
+				if imp_card == "铁索连环" then
 					gamerun_OK = false
 					gamerun_OK_ptr()
 				end
 			end
 
 			if gamerun_status == "选择目标" then
-				if card == "铁锁连环" then
+				if card == "铁索连环" then
 					--  发动铁索连环 (重铸效果)  --
 					card_lian_chongzhu({card_highlighted, char_current_i})
 					--  恢复状态  --
@@ -1833,7 +1864,7 @@ function on.escapeKey()
 			end
 
 			if gamerun_status == "选择目标-B" then
-				if card == "铁锁连环" then
+				if card == "铁索连环" then
 					--  发动铁索连环 (连环效果)  --
 					if card_chupai(false) then
 						--  恢复状态  --
@@ -2219,8 +2250,8 @@ function on.tabKey()
 			end
 
 			--  选取的是锦囊 (闪电、无懈可击、南蛮入侵、万箭齐发、桃园结义、无中生有、五谷丰登除外)、杀  --
-			--  借刀杀人、铁锁连环选取目标A  --
-			if card_get_leixing(card) == "延时类锦囊" and card ~= "闪电" or card == "顺手牵羊" or card == "过河拆桥" or card == "决斗" or card == "火攻" or card == "杀" or card == "火杀" or card == "雷杀" or card == "借刀杀人" or card == "铁锁连环" then
+			--  借刀杀人、铁索连环选取目标A  --
+			if card_get_leixing(card) == "延时类锦囊" and card ~= "闪电" or card == "顺手牵羊" or card == "过河拆桥" or card == "决斗" or card == "火攻" or card == "杀" or card == "火杀" or card == "雷杀" or card == "借刀杀人" or card == "铁索连环" then
 				gamerun_status = "选择目标"
 				gamerun_select_target("init")    -- 初始化选择目标状态
 			end

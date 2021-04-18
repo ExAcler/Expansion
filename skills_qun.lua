@@ -14,7 +14,7 @@ end
 function skills_fenxin_enter(ID, ID_mubiao)
 	gamerun_status = "选项选择"
 	choose_name = "焚心"
-	jiaohu_text = "是否使用 '焚心' 与"..char_juese[ID_mubiao].name.."换身份?"
+	jiaohu_text = "是否发动 '焚心' 与"..char_juese[ID_mubiao].name.."换身份?"
 	choose_option = {"发动","不发动"}
 	txt_messages:setVisible(false)
 	gamerun_guankan_selected = 1
@@ -165,10 +165,7 @@ function skills_judge_benghuai(ID)    --  判断是否满足崩坏条件
 	return false
 end
 function skills_benghuai()
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	if char_acting_i == char_current_i then
 		skills_benghuai_enter()
@@ -177,14 +174,14 @@ function skills_benghuai()
 	end
 end
 function skills_benghuai_ai()
-	add_funcptr(push_message, char_juese[char_acting_i].name .. "触发了武将技能 '崩坏'")
+	push_message(char_juese[char_acting_i].name .. "触发了武将技能 '崩坏'")
 	if ai_judge_benghuai(char_acting_i) == false then
 		add_funcptr(_benghuai_reduce_max, char_acting_i)
 	else
 		char_tili_deduct({1, char_acting_i, -1, "流失", char_acting_i})
 	end
 
-	add_funcptr(_skills_benghuai_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
 end
 function skills_benghuai_enter()    --  进入崩坏状态
@@ -204,7 +201,7 @@ function skills_benghuai_enter()    --  进入崩坏状态
 				add_funcptr(push_message, char_juese[char_current_i].name .. "触发了武将技能 '崩坏'")
 				add_funcptr(_benghuai_reduce_max, char_current_i)
 
-				add_funcptr(_skills_benghuai_huifu)
+				add_funcptr(skills_pop_queue)
 				timer.start(0.6)
 			end
 		else
@@ -213,7 +210,7 @@ function skills_benghuai_enter()    --  进入崩坏状态
 			add_funcptr(push_message, char_juese[char_current_i].name .. "触发了武将技能 '崩坏'")
 			char_tili_deduct({1, char_current_i, -1, "流失", char_current_i})
 
-			add_funcptr(_skills_benghuai_huifu)
+			add_funcptr(skills_pop_queue)
 			timer.start(0.6)
 		end
 	end
@@ -745,10 +742,10 @@ function _lijian_exe(ID_shoupai, ID_s, ID_first, ID_second, ai_qi_zhuangbei_id)
 		gamerun_wuqi_out_hand(char_current_i)
 
 		add_funcptr(push_message, table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
-		skills_losecard(ID_s, 0, true)
+		skills_losecard(ID_s)
 	else
 		ai_withdraw(ID_s, {ID_shoupai}, ai_qi_zhuangbei_id, true)
-		skills_losecard(ID_s, 9999, true)
+		skills_losecard(ID_s)
 	end
 
 	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '离间'")
@@ -813,7 +810,7 @@ function _lihun_exe(ID_shoupai, ID_s, ID_mubiao)
 	local card = char_juese[ID_s].shoupai[ID_shoupai]
 	card_add_qipai(card)
 	card_remove({ID_s, ID_shoupai})
-	skills_losecard(ID_s, 1, true)
+	skills_losecard(ID_s)
 	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
 
 	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '离魂'")
@@ -824,7 +821,7 @@ function _lihun_exe(ID_shoupai, ID_s, ID_mubiao)
 		card_insert(ID_s, char_juese[ID_mubiao].shoupai[i])
 		table.remove(char_juese[ID_mubiao].shoupai,i)
 	end
-	skills_losecard(ID_mubiao, 9999, true)
+	skills_losecard(ID_mubiao)
 
 	char_fanmian(ID_s)
 	lihun_target = ID_mubiao
@@ -865,7 +862,7 @@ function skills_lihun_stage_2_enter()
 				gamerun_status = ""
 
 				add_funcptr(_lihun_exe_2, {char_current_i, lihun_target, ID_shoupai, ID_zhuangbei})
-				skills_losecard(char_current_i, 9999, true)
+				skills_losecard(char_current_i)
 
 				add_funcptr(gamerun_wuqi_out_hand,char_acting_i)
 				add_funcptr(_lihun_huifu)
@@ -967,7 +964,7 @@ function skills_mengjin_ai(ID, ID_mubiao)
 	if ai_card_stat(ID_mubiao, true, false) > 0 then
 		push_message(char_juese[ID].name .. "发动了武将技能 '猛进'")
 		add_funcptr(_mengjin_exe, {ID, ID_mubiao})
-		skills_losecard(ID_mubiao, 9999, true)
+		skills_losecard(ID_mubiao)
 	end
 	add_funcptr(_fankui_huifu)
 	timer.start(0.6)
@@ -1177,7 +1174,7 @@ function _huangtian_exe(ID_shoupai, ID_s, ID_zhugong)
 
 	add_funcptr(push_message, table.concat({char_juese[ID_s].name .. "响应了", char_juese[ID_zhugong].name, "的武将技能 '黄天'"}))
 	add_funcptr(_huangtian_geipai, {ID_shoupai, ID_s, ID_zhugong})
-	skills_losecard(ID_s, 1, true)
+	skills_losecard(ID_s)
 	
 	lordskill_used[ID_zhugong]["黄天"] = 1
 	add_funcptr(_fanjian_sub4)
@@ -1316,7 +1313,7 @@ function _jieyuan_exe(ID_shoupai, ID, dianshu, mode)
 	card_selected = {}
 
 	add_funcptr(_jieyuan_sub1, {ID_shoupai, ID})
-	skills_losecard(ID, 1, true)
+	skills_losecard(ID)
 	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '竭缘'")
 	
 	if mode == "受到伤害" then
@@ -1338,7 +1335,7 @@ function _jieyuan_sub1(va_list)
 	local card = char_juese[ID].shoupai[ID_shoupai]
 	card_add_qipai(card)
 	card_remove({ID, ID_shoupai})
-	push_message(table.concat({char_juese[ID].name, "'弃掉了'", card[2], card[3], "的", card[1], "'"}))
+	push_message(table.concat({char_juese[ID].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
 end
 
 --  蔡文姬：悲歌  --
@@ -1415,7 +1412,7 @@ function _beige_select_card(ID_mubiao, ID_laiyuan, old_gamerun_status)
 end
 function _beige_exe(ID_shoupai, ID_s, ID_mubiao, ID_laiyuan)
 	add_funcptr(_beige_qipai, {ID_shoupai, ID_s})
-	skills_losecard(ID_s, 1, true)
+	skills_losecard(ID_s)
 	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '悲歌'")
 
 	add_funcptr(_beige_fan_panding, ID_mubiao)
@@ -1502,7 +1499,7 @@ function _beige_laiyuan_qipai_ai(ID_laiyuan)
 	local qipai_id, qi_zhuangbei_id = ai_judge_withdraw(ID_laiyuan, 2, true)
 
 	ai_withdraw(ID_laiyuan, qipai_id, qi_zhuangbei_id, true)
-	skills_losecard(ID_laiyuan, 9999, true)
+	skills_losecard(ID_laiyuan)
 
 	add_funcptr(skills_pop_queue)
 	skills_skip_subqueue()
@@ -1515,7 +1512,7 @@ function _beige_laiyuan_qipai_enter()
 	if n_cards < 2 then
 		if n_cards > 0 then
 			card_qipai_all(char_current_i, false)
-			skills_losecard(char_current_i, 9999, true)
+			skills_losecard(char_current_i)
 		end
 
 		add_funcptr(skills_pop_queue)
@@ -1531,19 +1528,16 @@ function _beige_laiyuan_qipai_enter()
 			gamerun_status = "手牌生效中"
 			set_hints("")
 
-			card_qipai_go()
+			card_qipai_go(char_current_i)
 			card_selected = {}
 			card_highlighted = 1
 
-			add_funcptr(_beige_wuqi_out_hand)
-			skills_losecard(char_current_i, 9999, true)
+			add_funcptr(gamerun_wuqi_out_hand_queued)
+			skills_losecard(char_current_i)
 
 			add_funcptr(skills_pop_queue)
 			timer.start(0.6)
 		end
 	end
 end
-function _beige_wuqi_out_hand()
-	gamerun_wuqi_out_hand(char_current_i)
-	on.timer()
-end
+
