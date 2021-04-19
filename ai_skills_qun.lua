@@ -360,9 +360,11 @@ function ai_judge_shuangxiong_mubiao(ID)
 
 	for i = #cards, 1, -1 do
 		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards[i]]})
-		if huase == char_shuangxiong then
+		if yanse == char_shuangxiong then
 			if card_judge_if_sha(ID, cards[i]) == true then
 				n_sha = n_sha + 1
+			elseif card_judge_if_shan(ID, cards[i]) == true and has_shan == false then
+				has_shan = true
 			end
 			table.remove(cards, i)
 		elseif card_judge_if_shan(ID, cards[i]) == true and has_shan == false then
@@ -381,4 +383,61 @@ function ai_judge_shuangxiong_mubiao(ID)
 	end
 
 	return true, cards[1], mindef_ID
+end
+
+--  AI决定是否发动酒池  --
+--  返回是否发动、手牌ID  --
+function ai_judge_jiuchi(ID)
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	local cards_red = ai_card_search(ID, "红色", #char_juese[ID].shoupai)
+	local cards_caohua = ai_card_search(ID, "草花", #char_juese[ID].shoupai)
+	local cards = ai_card_search(ID, "黑桃", #char_juese[ID].shoupai)
+	local n_sha = 0
+	local n_sha_keep = 1
+	local n_bingliang = 0
+	local n_bingliang_keep = 0
+
+	for i = 1, #attack_mubiao do
+		if card_if_d_limit("兵粮寸断", ID, attack_mubiao[i], nil) then
+			n_bingliang_keep = n_bingliang_keep + 1
+		end
+	end
+
+	for i = #cards_red, 1, -1 do
+		if card_judge_if_sha(ID, cards_red[i]) then
+			n_sha = n_sha + 1
+		end
+	end
+
+	for i = #cards_caohua, 1, -1 do
+		if card_judge_if_sha(ID, cards_caohua[i]) then
+			n_sha = n_sha + 1
+		end
+	end
+
+	for i = #cards, 1, -1 do
+		if card_judge_if_sha(ID, cards[i]) then
+			n_sha = n_sha + 1
+		elseif char_juese[ID].shoupai[cards[i]][1] == "兵粮寸断" then
+			n_bingliang = n_bingliang + 1
+		end
+
+		if card_judge_if_sha(ID, cards[i]) and n_sha <= n_sha_keep then
+			table.remove(cards, i)
+		elseif char_juese[ID].shoupai[cards[i]][1] == "兵粮寸断" and n_bingliang <= n_bingliang_keep then
+			table.remove(cards, i)
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+	if #cards == 0 then
+		return false, 0
+	end
+
+	if ai_judge_random_percent(80) == 1 then
+		return true, cards[1]
+	else
+		return false, 0
+	end
 end

@@ -4,7 +4,7 @@ function ai_judge_liegong(ID_s, ID_mubiao)
 		return true
 	end
 
-	if ai_judge_same_identity(ID_s, ID_mubiao, false) == 1 then
+	if ai_judge_same_identity(ID_s, ID_mubiao, true) == 1 then
 		--  杀被流离等导致目标非自己所愿的情况  --
 		return false
 	else
@@ -18,7 +18,7 @@ function ai_judge_tieqi(ID_s, ID_mubiao)
 		return true
 	end
 
-	if ai_judge_same_identity(ID_s, ID_mubiao, false) == 1 then
+	if ai_judge_same_identity(ID_s, ID_mubiao, true) == 1 then
 		return false
 	else
 		return true
@@ -294,9 +294,134 @@ end
 
 --  AI决定志继选择  --
 function ai_judge_zhiji(ID)
-	if char_juese[ID].tili <= 2 then
+	if ai_judge_random_percent(50) == 1 then
 		return 1
 	else
 		return 2
 	end
+end
+
+--  AI决定是否发动火计  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_huoji(ID)
+	local cards_black = ai_card_search(ID, "黑色", #char_juese[ID].shoupai)
+	local cards_red = ai_card_search(ID, "红色", #char_juese[ID].shoupai)
+	local has_shan = false
+	local use = false
+
+	for i = #cards_black, 1, -1 do
+		if card_judge_if_shan(ID, cards_black[i]) == true and has_shan == false then
+			has_shan = true
+			break
+		end
+	end
+
+	for i = #cards_red, 1, -1 do
+		if card_judge_if_shan(ID, cards_red[i]) == true and has_shan == false then
+			table.remove(cards_red, i)
+			has_shan = true
+		elseif char_juese[ID].shoupai[cards_red[i]][1] == "火攻" then
+			table.remove(cards_red, i)
+		elseif char_juese[ID].shoupai[cards_red[i]][1] == "无中生有" then
+			table.remove(cards_red, i)
+		end
+	end
+
+	local huase_stat = {["草花"] = 0, ["黑桃"] = 0, ["方块"] = 0, ["红桃"] = 0}
+	for i = 1, #cards_red do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards_red[i]]})
+		huase_stat[huase] = huase_stat[huase] + 1
+	end
+	for i = 1, #cards_black do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards_black[i]]})
+		huase_stat[huase] = huase_stat[huase] + 1
+	end
+
+	local n_huase = 0
+	local prefer = nil
+	if huase_stat["草花"] > 0 then
+		n_huase = n_huase + 1
+	end
+	if huase_stat["黑桃"] > 0 then
+		n_huase = n_huase + 1
+	end
+	if huase_stat["红桃"] > 0 then
+		n_huase = n_huase + 1
+		if huase_stat["红桃"] > 1 then
+			prefer = "红桃"
+		end
+	end
+	if huase_stat["方块"] > 0 then
+		n_huase = n_huase + 1
+		if huase_stat["方块"] > 1 then
+			prefer = "方块"
+		end
+	end
+	if n_huase >= 3 then
+		use = true
+	end
+
+	if prefer ~= nil then
+		for i = #cards_red, 1, -1 do
+			local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards_red[i]]})
+			if huase ~= prefer then
+				table.remove(cards_red, i)
+			end
+		end
+	end
+	while #cards_red > 1 do
+		table.remove(cards_red, math.random(#cards_red))
+	end
+	if #cards_red == 0 then
+		return false, 0, 0
+	end
+
+	local attack_mubiao = ai_judge_target(ID, "火攻", {{"火攻", "方块", "Q"}}, 4)
+	local mubiao = nil
+
+	for i = 1, #attack_mubiao do
+		if #char_juese[attack_mubiao[i]].fangju > 0 then
+			if char_juese[attack_mubiao[i]].fangju[1] == "藤甲" then
+				if ai_judge_random_percent(75) == 1 then
+					mubiao = attack_mubiao[i]
+				end
+			end
+		end
+	end
+
+	if #attack_mubiao == 0 then
+		return false, 0, 0
+	end
+
+	if mubiao == nil then
+		mubiao = attack_mubiao[math.random(#attack_mubiao)]
+	end
+
+	if use == true then
+		return true, cards_red[1], mubiao
+	else
+		return false, 0, 0
+	end
+end
+
+--  AI决定是否在出牌阶段发动激将  --
+--  返回是否发动、目标  --
+function ai_judge_jijiang_zhudong(ID)
+	local friends = ai_basic_judge_mubiao(ID, 4, true, true, false)
+	local has_shu = false
+	for i = 1, #friends do
+		if char_juese[friends[i]].shili == "蜀" then
+			has_shu = true
+			break
+		end
+	end
+
+	if has_shu == false then
+		return false, 0
+	end
+
+	local shoupai = {"杀", "黑桃", "7"}
+	local attack_mubiao = ai_judge_target(ID, "杀", shoupai, 1)
+
+	return true, attack_mubiao[1]
 end

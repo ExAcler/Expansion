@@ -762,6 +762,10 @@ function gamerun_huihe_jieshu(qipai)
 		add_funcptr(skills_xuanfeng, {char_acting_i, "弃牌"})
 	end
 
+	if char_juese[char_acting_i].skill["忍戒"] == "available" and char_juese[char_acting_i].siwang == false and gamerun_qipai_n > 0 then
+		add_funcptr(skills_renjie, {char_acting_i, gamerun_qipai_n})
+	end
+
 	for i = 1, 5 do
 		if i ~= char_acting_i and char_juese[i].skill["固政"] == "available" and char_juese[i].siwang == false then
 			add_funcptr(skills_guzheng, {i, char_acting_i})
@@ -826,9 +830,6 @@ function _jieshu_huihe_set(qipai)
 	local msg
 
 	gamerun_huihe_set("结束")
-	if char_juese[char_acting_i].skill["忍戒"] == "available" and char_juese[char_acting_i].siwang == false and #wugucards ~= 0 then
-		add_funcptr(skills_renjie, {char_acting_i, #wugucards})
-	end
 	card_huihe_cards_into_qipai()
 
 	if not qipai then

@@ -1343,8 +1343,7 @@ end
 function skills_jijiang_add(ID_req, mode, va)
 	push_message(table.concat({char_juese[ID_req].name, "发动了武将技能 '激将'"}))
 	for i = 1, 5 do
-		--if char_juese[i].shili == "蜀" and ID_req ~= i and char_juese[i].siwang == false then
-		if ID_req ~= i and char_juese[i].siwang == false then
+		if char_juese[i].shili == "蜀" and ID_req ~= i and char_juese[i].siwang == false then
 			add_funcptr(skills_jijiang, {ID_req, i, mode, va})
 		end
 	end

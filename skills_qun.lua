@@ -294,7 +294,7 @@ end
 function skills_jiuchi_enter()
 	if #char_juese[char_current_i].shoupai == 0 then return false end
 
-	skills_enter("请选择黑色手牌", "使用酒", "酒", "技能选择-单牌")
+	skills_enter("请选择黑桃手牌", "使用酒", "酒", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
 		skills_jiuchi(char_current_i)
@@ -305,7 +305,12 @@ function skills_jiuchi_enter()
 	return true
 end
 function skills_jiuchi(ID)
-	if skills_judge_black(ID) then
+	if table.getn2(card_selected) == 0 then
+		return
+	end
+
+	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[card_highlighted]})
+	if huase == "黑桃" then
 		funcptr_queue = {}
 		if card_jiu({card_highlighted, char_current_i, false}) then
 			skills_cs()
@@ -620,7 +625,7 @@ function skills_leiji_ai(va_list)
 	local ID_s, ID_mubiao
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
-	local fadong, mubiao = ai_judge_leiji_mubiao(ID_s. ID_mubiao)
+	local fadong, mubiao = ai_judge_leiji_mubiao(ID_s, ID_mubiao)
 	if fadong == false then
 		skills_skip_subqueue()
 		return
@@ -1626,7 +1631,7 @@ function _shuangxiong_jiesuan(ID)
 end
 function _shuangxiong_get_panding(ID)
 	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card_panding_card})
-	char_shuangxiong = huase
+	char_shuangxiong = yanse
 	game_skip_mopai = true
 
 	push_message(table.concat({char_juese[ID].name, "获得了'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
@@ -1640,7 +1645,7 @@ function skills_judge_shuangxiong_2()
 	local card = char_juese[char_current_i].shoupai[card_highlighted]
 	local yanse, huase, dianshu = ai_judge_cardinfo(char_current_i, {card})
 
-	if huase == char_shuangxiong then
+	if yanse == char_shuangxiong then
 		return false
 	end
 

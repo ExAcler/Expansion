@@ -804,9 +804,9 @@ function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	gamerun_status = "手牌生效中"
 	set_hints("")
 	
-	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '强袭'")
 	add_funcptr(_qiangxi_sub1, {ID_s, ID_shoupai})
 	skills_losecard(ID_s)
+	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '强袭'")
 
 	if ID_shoupai == 0 then
 		char_tili_deduct({1, ID_s, -1, "流失", ID_s})
@@ -826,6 +826,8 @@ function _qiangxi_sub1(va_list)
 
 	if ID_shoupai ~= 0 then
 		local card = char_juese[ID].shoupai[ID_shoupai]
+		push_message(table.concat({char_juese[ID].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+
 		card_shanchu({ID, ID_shoupai})
 		gamerun_wuqi_out_hand(ID)
 	else
@@ -1539,10 +1541,7 @@ function skills_jieming(va_list)
 	local ID
 	ID = va_list[1]
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	if ID == char_current_i then
 		skills_jieming_enter()
@@ -1565,8 +1564,7 @@ function skills_jieming_enter()
 			set_hints("")
 			gamerun_status = old_gamerun_status
 			
-			_jieming_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1588,9 +1586,9 @@ function skills_jieming_choose_mubiao(old_gamerun_status)
 			gamerun_status = old_gamerun_status
 
 			push_message(char_juese[id].name .. "发动了武将技能 '节命'")
-
 			_jieming_exe({id, gamerun_target_selected})
-			add_funcptr(_jieming_huifu)
+			
+			add_funcptr(skills_pop_queue)
 			timer.start(0.6)
 		end
 	end
@@ -1602,7 +1600,8 @@ function skills_jieming_ai(ID)
 		add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '节命'")
 		_jieming_exe({ID, bupai_mubiao})
 	end
-	add_funcptr(_jieming_huifu)
+	add_funcptr(skills_pop_queue)
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _jieming_exe(va_list)
@@ -1624,10 +1623,7 @@ end
 
 --  甄姬：洛神  --
 function skills_luoshen(ID)
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	if ID == char_current_i then
 		local old_gamerun_status = gamerun_status
@@ -1638,6 +1634,8 @@ function skills_luoshen(ID)
 end
 function skills_luoshen_ai(ID)
 	skills_luoshen_exe(ID, nil)
+	skills_skip_subqueue()
+	timer.start(0.6)
 end
 function skills_luoshen_enter(old_gamerun_status)
 	funcptr_queue = {}
@@ -1653,12 +1651,12 @@ function skills_luoshen_enter(old_gamerun_status)
 			set_hints("")
 
 			skills_luoshen_exe(char_current_i, old_gamerun_status)
+			timer.start(0.6)
 	    else
 			set_hints("")
 			gamerun_status = old_gamerun_status
 			
-			_luoshen_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.2)
 		end
 		platform.window:invalidate()
@@ -1667,7 +1665,7 @@ function skills_luoshen_enter(old_gamerun_status)
 	platform.window:invalidate()
 end
 function skills_luoshen_exe(ID, old_gamerun_status)
-	push_message(table.concat({char_juese[ID].name .. "发动了武将技能 '洛神'"}))
+	add_funcptr(push_message, table.concat({char_juese[ID].name .. "发动了武将技能 '洛神'"}))
 	add_funcptr(_ganglie_fan_panding, ID)
 
 	--  如场上有司马懿或张角，询问其改判技能  --
@@ -1677,7 +1675,6 @@ function skills_luoshen_exe(ID, old_gamerun_status)
 	add_funcptr(skills_judge_songwei_in_queue, ID)
 	
 	add_funcptr(_luoshen_jiesuan, {ID, old_gamerun_status})
-	timer.start(0.6)
 end
 function _luoshen_fan_panding(ID)		--  洛神：翻开判定牌
 	--  翻开判定牌  --
@@ -1703,14 +1700,14 @@ function _luoshen_jiesuan(va_list)		--  洛神：结算判定牌
 		else
 			funcptr_queue = {}
 			funcptr_i = 0
-			skills_luoshen_ai(ID)
+			skills_luoshen_exe(ID, nil)
 			timer.start(0.6)
 		end
 	else
 		push_message(char_juese[ID].name .. "的 '洛神' 判定失败")
 		
 		skills_card_qi_panding(ID)
-		add_funcptr(_luoshen_huifu)
+		add_funcptr(skills_pop_queue)
 		timer.stop()
 		timer.start(0.2)
 	end
@@ -2316,10 +2313,7 @@ function skills_judge_songwei(ID)
 	end
 end
 function skills_judge_songwei_in_queue(ID)
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card_panding_card})
 
@@ -2331,7 +2325,8 @@ function skills_judge_songwei_in_queue(ID)
 		end
 	end
 
-	add_funcptr(_songwei_huifu)
+	add_funcptr(skills_pop_queue)
+	skills_skip_subqueue()
 	timer.start(0.2)
 end
 function skills_songwei(va_list)

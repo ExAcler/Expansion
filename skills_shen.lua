@@ -18,13 +18,13 @@ end
 --  神司马懿：极略  --
 function skills_jilve_ai(ID_s)
 	if ai_judge_jilve_wansha(ID_s) and mark_ren[ID_s] > 0 and char_juese[ID_s].skill["完杀"] == nil then
-		skills_jilve_set(ID_s, 2)
+		add_funcptr(skills_jilve_set, {ID_s, "完杀"})
 		return true
 	end
 
 	if mark_ren[ID_s] > 0 and char_juese[ID_s].skill["制衡"] == nil then
 		if ai_judge_random_percent(70) == 1 then
-			skills_jilve_set(ID_s, 1)
+			add_funcptr(skills_jilve_set, {ID_s, "制衡"})
 			return true
 		else
 			ai_skills_discard["极略"] = true
@@ -46,17 +46,22 @@ function skills_jilve_enter()
 		table.insert(choose_option, "完杀")
 	end
 	table.insert(choose_option, "不发动")
+
 	txt_messages:setVisible(false)
 	gamerun_guankan_selected = 1
 	item_disrow = 0
+
 	gamerun_item = function(i)
-		skills_jilve_set(char_current_i, i)
+		skills_jilve_set({char_current_i, choose_option[i]})
 	end
 	
 	platform.window:invalidate()
 end
-function skills_jilve_set(ID, option)
-	if choose_option[option] == "制衡" then
+function skills_jilve_set(va_list)
+	local ID, option
+	ID = va_list[1]; option = va_list[2]
+
+	if option == "制衡" then
 		push_message(char_juese[ID].name .. "发动了武将技能 '极略' 获得技能制衡")
 		if char_juese[ID].skill["制衡"] ~= nil then
 			skill_double[ID]["制衡"] = true
@@ -66,7 +71,7 @@ function skills_jilve_set(ID, option)
 		table.insert(char_juese[ID].skillname,"制衡")
 		table.insert(skill_temp[ID],"制衡")
 		mark_ren[ID] = mark_ren[ID] - 1
-	elseif choose_option[option] == "完杀" then
+	elseif option == "完杀" then
 		push_message(char_juese[ID].name .. "发动了武将技能 '极略' 获得技能完杀")
 		if char_juese[ID].skill["完杀"] ~= nil then
 			skill_double[ID]["完杀"] = true
@@ -77,6 +82,7 @@ function skills_jilve_set(ID, option)
 		table.insert(skill_temp[ID],"完杀")
 		mark_ren[ID] = mark_ren[ID] - 1
 	end
+
 	txt_messages:setVisible(true)
 	if char_acting_i == char_current_i then
 		card_selected = {}
@@ -465,7 +471,7 @@ function skills_gongxin_ai(ID_s)
 		return false
 	end
 
-	push_message(char_juese[ID_s].name.."发动了武将技能 '攻心' (对"..char_juese[ID_mubiao].name.. ")")
+	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '攻心' (对"..char_juese[ID_mubiao].name.. ")")
 	add_funcptr(push_message, char_juese[ID_s].name .. "查看了"..char_juese[ID_mubiao].name.."的手牌")
 	char_juese[ID_s].skill["攻心"] = "locked"
 	

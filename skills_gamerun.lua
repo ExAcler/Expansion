@@ -1,4 +1,4 @@
---  主动技触发函数表  --
+--  出牌阶段技能触发函数表  --
 skills_func = 
 {
 	["奇袭"] = function() return skills_qixi_enter() end, 
@@ -29,6 +29,8 @@ skills_func =
 	["急袭"] = function() return skills_jixi_enter() end,
 	["激将"] = function() return skills_jijiang_current_enter() end,
 	["双雄"] = function() return skills_shuangxiong_2_enter() end,
+	["甘露"] = function() return false end,
+	["乱武"] = function() return false end,
 }
 
 --  主公技触发函数表  --

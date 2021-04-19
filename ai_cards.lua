@@ -144,13 +144,13 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 	elseif name == "万箭齐发" or name == "南蛮入侵" or name == "火攻" or name == "借刀杀人" or name == "决斗" or (name == "铁索连环" and char_juese[ID_jiu].hengzhi == false) or name == "乐不思蜀" or name == "兵粮寸断" or name == "闪电" then
 		if char_juese[id].shenfen == "内奸" and char_juese[ID_jiu].shenfen == "主公" and char_juese[ID_jiu].tili == 1 then
 			return true
-		elseif ai_judge_same_identity(id, ID_jiu, false) == 1 then
+		elseif ai_judge_same_identity(id, ID_jiu, true) == 1 then
 			return true
 		else
 			return false
 		end
 	elseif name == "桃园结义" or name == "五谷丰登" or name == "无中生有" or (name == "铁索连环" and char_juese[ID_jiu].hengzhi == true) then
-		if ai_judge_same_identity(id, ID_jiu, false) == 2 and char_juese[id].shenfen ~= "内奸" then
+		if ai_judge_same_identity(id, ID_jiu, true) == 2 and char_juese[id].shenfen ~= "内奸" then
 			return true
 		else
 			return false
@@ -159,18 +159,18 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 		if char_juese[ID_jiu].isantigovernment == nil or char_juese[ID_jiu].isblackjack == true then
 			return false
 		elseif char_juese[ID_s].isantigovernment == nil or char_juese[ID_s].isblackjack == true then
-			if ai_judge_same_identity(id, ID_jiu, false) == 1 then
+			if ai_judge_same_identity(id, ID_jiu, true) == 1 then
 				return true
 			else
 				return false
 			end
 		elseif id == ID_jiu then
-			if ai_judge_same_identity(id, ID_s, false) == 1 then
+			if ai_judge_same_identity(id, ID_s, true) == 1 then
 				return false
 			else
 				return true
 			end
-		elseif ai_judge_same_identity(id, ID_s, false) == 2 and char_juese[id].shenfen ~= "内奸" then
+		elseif ai_judge_same_identity(id, ID_s, true) == 2 and char_juese[id].shenfen ~= "内奸" then
 			return true
 		else
 			return false
@@ -178,7 +178,7 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 	elseif name == "无懈可击" then
 		if id == ID_jiu then
 			return true
-		elseif ai_judge_same_identity(id, ID_s, false) == 2 and char_juese[id].shenfen ~= "内奸" then
+		elseif ai_judge_same_identity(id, ID_s, true) == 2 and char_juese[id].shenfen ~= "内奸" then
 			return true
 		else
 			return false
@@ -294,21 +294,54 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 		elseif ID == possible_target[i] then
 			table.remove(possible_target,i)
 		elseif char_juese[ID].shenfen == "主公" then
-			if (char_juese[possible_target[i]].isantigovernment == false and char_juese[possible_target[i]].isblackjack ~= true) and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
+			local remove = false
+			if char_juese[possible_target[i]].isblackjack ~= true then
+				if char_juese[possible_target[i]].isantigovernment == false then
+					remove = true
+				end
+			else
+				if ai_judge_befriend_blackjack(ID) == true then
+					remove = true
+				end
+			end
+
+			if remove == true and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
 				
-			elseif char_juese[possible_target[i]].isantigovernment == false and char_juese[possible_target[i]].isblackjack ~= true then
+			elseif remove == true then
 				table.remove(possible_target,i)
 			end
 		elseif char_juese[ID].shenfen == "忠臣" then
-			if (char_juese[possible_target[i]].shenfen == "主公") and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
+			local remove = false
+			if char_juese[possible_target[i]].isblackjack ~= true then
+				if char_juese[possible_target[i]].shenfen == "主公" then
+					remove = true
+				end
+			else
+				if ai_judge_befriend_blackjack(ID) == true then
+					remove = true
+				end
+			end
 
-			elseif char_juese[possible_target[i]].shenfen == "主公" then
+			if remove == true and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
+
+			elseif remove == true then
 				table.remove(possible_target, i)
 			end
 		elseif char_juese[ID].shenfen == "反贼" then
-			if (char_juese[possible_target[i]].isantigovernment == true and char_juese[possible_target[i]].isblackjack ~= true) and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
+			local remove = false
+			if char_juese[possible_target[i]].isblackjack ~= true then
+				if char_juese[possible_target[i]].isantigovernment == true then
+					remove = true
+				end
+			else
+				if ai_judge_befriend_blackjack(ID) == true then
+					remove = true
+				end
+			end
+
+			if remove == true and ((#char_juese[possible_target[i]].panding ~= 0 and (card_treated == "顺手牵羊" or card_treated == "过河拆桥")) or (char_juese[possible_target[i]].hengzhi == true and card_treated == "铁索连环")) then
 			
-			elseif char_juese[possible_target[i]].isantigovernment == true and char_juese[possible_target[i]].isblackjack ~= true then
+			elseif remove == true then
 				table.remove(possible_target,i)
 			end
 		elseif char_juese[ID].shenfen == "内奸" then
@@ -911,14 +944,13 @@ function ai_judge_withdraw(ID, required, discard_arm)
 	local qi_zhuangbei_id = {0, 0, 0, 0}
 
 	local shoupai_copy = table.copy(char_juese[ID].shoupai)
-	local i
 	
-	for i = 1, table.maxn(shoupai_copy) do
+	for i = 1, #shoupai_copy do
 		shoupai_copy[i][4] = i
 	end
 
 	if ai_card_stat(ID, discard_arm) < required then
-		for i = 1, table.maxn(shoupai_copy) do
+		for i = 1, #shoupai_copy do
 			table.insert(qipai_id, i)
 		end
 

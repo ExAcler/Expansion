@@ -415,6 +415,8 @@ function ai_judge_zhiheng(ID)
 			if ai_judge_random_percent(50) == 1 then
 				arms[2] = 1
 			end
+		elseif ai_judge_withdraw_fangju(ID, true) then
+			arms[2] = 1
 		end
 	end
 
@@ -437,10 +439,10 @@ end
 --  AI决定是否发动苦肉  --
 function ai_judge_kurou(ID)
 	if char_juese[ID].tili >= char_juese[ID].tili_max - 1 then
-		if #char_juese[ID].shoupai < 6 then
+		if #char_juese[ID].shoupai < 4 then
 			return true
 		else
-			local percent = math.min(20 + 20 * (#char_juese[ID].shoupai - 6), 100)
+			local percent = math.min(20 + 20 * (#char_juese[ID].shoupai - 3), 100)
 			if ai_judge_random_percent(percent) == 0 then
 				return true
 			else

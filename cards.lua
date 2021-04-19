@@ -2096,28 +2096,35 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		return
 	end
 
-	n = card_chazhao(id, "无懈可击")
+	local n = card_chazhao(id, "无懈可击")
+	local is_kanpo = false
 	if n < 0 then
 		if char_juese[id].skill["看破"] == "available" then
 			n = _sha_chazhao_redblack(id, char_juese[id].shoupai, false)
+			is_kanpo = true
 		end
 	end
 
 	local should_use_wuxie = false
 	if id == ID_mubiao then
 		local name = actual_name
-		if name == "决斗" or name == "过河拆桥" or name == "顺手牵羊" or name == "万箭齐发" or name == "南蛮入侵" or name == "借刀杀人" or name == "无懈可击" or name == "火攻" or name == "铁索连环" then
+		if name == "决斗" or name == "过河拆桥" or name == "顺手牵羊" or name == "万箭齐发" or name == "南蛮入侵" or name == "借刀杀人" or name == "无懈可击" or name == "火攻" or (name == "铁索连环" and char_juese[id].hengzhi == false) then
 			should_use_wuxie = true
 		end
 	else
 		should_use_wuxie = ai_judge_wuxie(id, ID_s, ID_mubiao, actual_name)
+		if is_kanpo == true then
+			if ai_judge_random_percent(35) == 1 then
+				should_use_wuxie = false
+			end
+		end
 	end
 	
 	local card_wx
 	if n > 0 and should_use_wuxie then
 		card_wx = char_juese[id].shoupai[n]
 		if card_wx[1] ~= "无懈可击" then
-			push_message(char_juese[id].name.."使用了武将技能 '看破'")
+			push_message(char_juese[id].name .. "发动了武将技能 '看破'")
 			msg = {char_juese[id].name, "使用了无懈可击 (", card_wx[2], card_wx[3], "的", card_wx[1], ")"}
 		else
 			msg = {char_juese[id].name, "使用了'", card_wx[2], card_wx[3], "的", card_wx[1], "'"}
@@ -3764,7 +3771,7 @@ function card_huogong(ID_shoupai, ID_s, ID_mubiao)
 	ai_judge_shenfen()
 	
 	--  卧龙诸葛火计  --
-	if #ID_shoupai > 1 then
+	if char_juese[ID_s].skill["火计"] == "available" and #ID_shoupai == 1 and char_juese[ID_s].shoupai[ID_shoupai[1]][1] ~= "火攻" then
 		add_funcptr(push_message,char_juese[ID_s].name.. "发动了武将技能 '火计'")
 	end
 
@@ -3829,6 +3836,9 @@ function _huogong_beidong_exe_2(ID_s, ID_mubiao, emulated_source_shoupai, c_pos)
 		card_t_pos = {c_pos}
 	end
 	if #card_t_pos == 0 then
+		if char_acting_i ~= char_current_i then
+			ai_skills_discard["火计"] = true
+		end
 		add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "放弃"})
     	add_funcptr(_huogong_sub1, nil)
 	else
@@ -3888,6 +3898,9 @@ function _huogong_qipai(va_list)    --  火攻：攻方出牌
 	_nanman_send_msg({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"})
 end
 function _huogong_exe_3(ID_s)    --  火攻执行三：己方放弃
+	if char_acting_i ~= char_current_i then
+		ai_skills_discard["火计"] = true
+	end
     add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "放弃"})
     add_funcptr(_huogong_sub1, nil)
 end
@@ -3913,23 +3926,29 @@ function card_jiu(va_list)
 	local ID_shoupai, ID_s
 	ID_shoupai = va_list[1]; ID_s = va_list[2]
 
-    local card
-	if char_jiu_time <= 0 then return false end
-
-	gamerun_status = "手牌生效中"
-	set_hints("")
-	
-	card = char_juese[ID_s].shoupai[ID_shoupai]
-	char_jiu_time = char_jiu_time - 1
-	char_hejiu = true
-	_jiu_sub1({ID_s, ID_shoupai, card})
+	if char_jiu_time <= 0 then
+		return false
+	end
 
 	funcptr_queue = {}
 	funcptr_i = 0
 
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+	char_jiu_time = char_jiu_time - 1
+	char_hejiu = true
+
+	if char_juese[ID_s].skill["酒池"] == "available" and card[1] ~= "酒" then
+		add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '酒池'")
+	end
+	add_funcptr(_jiu_sub1, {ID_s, ID_shoupai, card})
+
 	skills_losecard(ID_s)
 	add_funcptr(_jiu_sub2)
 	
+	skills_skip_subqueue()
 	timer.start(0.6)
 	return true
 end
@@ -3937,9 +3956,6 @@ function _jiu_sub1(va_list)
 	local ID_s, ID_shoupai, card
 	ID_s = va_list[1]; ID_shoupai = va_list[2]; card = va_list[3];
 	
-	if card[1] ~= "酒" then
-		push_message(char_juese[ID_s].name.."发动了武将技能 '酒池'")
-	end
 	_nanman_send_msg({char_juese[ID_s].name, "喝酒 (", card[2], card[3], "的", card[1], ")"})
 
 	card_add_qipai(card)
