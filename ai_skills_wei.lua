@@ -163,7 +163,13 @@ function ai_judge_shensu(ID, is_panding)
 
 				if #char_juese[zhugong_id].fangju > 0 then
 					if char_juese[zhugong_id].fangju[1] == "藤甲" then
-						percent = 0
+						if #char_juese[ID].wuqi == 0 then
+							percent = 100
+						else
+							if char_juese[ID].wuqi ~= "朱雀扇" and char_juese[ID].wuqi ~= "青釭剑" then
+								percent = 100
+							end
+						end
 					end
 				end
 
@@ -484,7 +490,7 @@ function ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
 			end
 		end
 
-		--  张角发动雷击，改判使其一定生效  --
+		--  张角发动雷击，改判使其生效  --
 		if panding_leixing == "雷击" and card_panding_card[2] ~= "黑桃" then
 			local card_id = card_chazhao_with_huase(id, "黑桃")
 			if card_id < 0 then
@@ -799,20 +805,6 @@ function ai_judge_quhu(ID)
 		return true, cards[1], possible_combinations_friend[1][1], possible_combinations_friend[1][2]
 	end
 end
-function _pindian_convert_dianshu(dianshu)
-	if dianshu == "A" then
-		return 1
-	elseif dianshu == "J" then
-		return 11
-	elseif dianshu == "Q" then
-		return 12
-	elseif dianshu == "K" then
-		return 13
-	else
-		return tonumber(dianshu)
-	end
-end
-
 function _quhu_find(attack_mubiao, ID)
 	for i = 1, #attack_mubiao do
 		if attack_mubiao[i] == ID then
@@ -820,4 +812,64 @@ function _quhu_find(attack_mubiao, ID)
 		end
 	end
 	return false
+end
+
+--  AI决定是否发动强袭  --
+--  返回是否发动、手牌ID (返回0为失去体力)、目标 --
+function ai_judge_qiangxi(ID)
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	for i = #attack_mubiao, 1, -1 do
+		if #char_juese[ID].wuqi > 0 then
+			if char_calc_distance(ID, attack_mubiao[i]) > card_wuqi_r[char_juese[ID].wuqi[1]] then
+				table.remove(attack_mubiao, i)
+			end
+		else
+			if char_calc_distance(ID, attack_mubiao[i]) > 1 then
+				table.remove(attack_mubiao, i)
+			end
+		end
+	end
+
+	local mindef_ID = attack_mubiao[1]
+	for i = 2, #attack_mubiao do
+		if char_juese[attack_mubiao[i]].tili < char_juese[mindef_ID].tili and char_juese[attack_mubiao[i]].tili > 0 then
+			mindef_ID = attack_mubiao[i]
+		end
+	end
+
+	if #attack_mubiao == 0 then
+		return false, 0, 0
+	end
+
+	local cards = ai_card_search(ID, "装备", 1)
+	if #cards > 0 then
+		return true, cards[1], mindef_ID
+	end
+
+	gamerun_wuqi_into_hand(ID)
+	if #char_juese[ID].fangju ~= 0 then
+		if ai_judge_withdraw_fangju(ID) == true then
+			return true, -2, mindef_ID
+		end
+	end
+	if #char_juese[ID].gongma ~= 0 then
+		if char_juese[mindef_ID].tili == 1 then
+			return true, -3, mindef_ID
+		end
+	end
+	if #char_juese[ID].fangma ~= 0 then
+		if ai_judge_random_percent(30) == 1 or char_juese[mindef_ID].tili == 1 then
+			return true, -4, mindef_ID
+		end
+	end
+
+	if char_juese[mindef_ID].tili == 1 and char_juese[ID].tili >= 2 then
+		return true, 0, mindef_ID
+	end
+
+	if char_juese[ID].tili == char_juese[ID].tili_max then
+		return true, 0, mindef_ID
+	end
+
+	return false, 0, 0
 end

@@ -1,20 +1,16 @@
---  AI为主公时决定雷击的目标  --
-function ai_judge_leiji_mubiao(ID_mubiao)
-	local i, v
-	
-	if char_juese[ID_mubiao].isantigovernment == true then
-		return ID_mubiao
+--  AI决定雷击的目标  --
+--  返回是否发动、目标  --
+function ai_judge_leiji_mubiao(ID_s, ID_laiyuan)
+	if ai_judge_same_identity(ID_s, ID_laiyuan, true) ~= 1 then
+		return true, ID_laiyuan
 	end
-	
-	for i, v in ipairs(char_juese) do
-		if v.siwang == false then
-			if v.isantigovernment == true then
-				return i
-			end
-		end
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID_s, 1, false, true, true)
+	if #attack_mubiao == 0 then
+		return false, 0
+	else
+		return true, attack_mubiao[1]
 	end
-	
-	return -1
 end
 
 --  AI决定崩坏选择  --
@@ -258,7 +254,7 @@ function ai_judge_beige(ID, ID_mubiao, ID_laiyuan)
 		return false, 0
 	end
 
-	if ai_judge_same_identity(ID, ID_laiyuan, true) == 1 then
+	if ai_judge_same_identity(ID, ID_laiyuan, true) == 1 and ID_mubiao ~= ID then
 		return false, 0
 	end
 
@@ -287,4 +283,102 @@ function ai_judge_beige(ID, ID_mubiao, ID_laiyuan)
 	else
 		return false, 0
 	end
+end
+
+--  AI决定是否发动双雄  --
+function ai_judge_shuangxiong(ID)
+	if game_skip_chupai == true or char_juese[ID].tili <= 1 then
+		return false
+	end
+
+	if #char_juese[ID].shoupai == 0 then
+		return false
+	end
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	if #attack_mubiao == 0 then
+		return false
+	end
+
+	local n_sha = 0
+	local n_shan = 0
+	for i = 1, #char_juese[ID].shoupai do
+		if card_judge_if_sha(ID, i) then
+			n_sha = n_sha + 1
+		elseif card_judge_if_shan(ID, i) and n_shan < 1 then
+			n_shan = n_shan + 1
+		end
+	end
+
+	local percent = 0
+	for i = 1, #attack_mubiao do
+		if card_if_d_limit("决斗", ID, attack_mubiao[i], nil) and #char_juese[attack_mubiao[i]].shoupai <= 2 + math.max(n_sha - 1, 0) then
+			if #char_juese[attack_mubiao[i]].shoupai == 0 then
+				percent = 100
+			elseif n_sha + n_shan == #char_juese[ID].shoupai then
+				percent = 0
+			elseif n_sha >= 2 then
+				percent = 100
+			elseif #char_juese[ID].shoupai == 1 then
+				percent = 0
+			else
+				percent = 80
+			end
+			break
+		end
+	end
+
+	if ai_judge_random_percent(percent) == 1 then
+		return true
+	else
+		return false
+	end
+end
+
+--  AI决定双雄的使用目标  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_shuangxiong_mubiao(ID)
+	if char_shuangxiong == nil then
+		return false, 0, 0
+	end
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	if #attack_mubiao == 0 then
+		return false, 0, 0
+	end
+
+	local mindef_ID = attack_mubiao[1]
+	for i = 2, #attack_mubiao do
+		if #char_juese[attack_mubiao[i]].shoupai < #char_juese[mindef_ID].shoupai then
+			mindef_ID = attack_mubiao[i]
+		end
+	end
+
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local has_shan = false
+	local n_sha = 0
+
+	for i = #cards, 1, -1 do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards[i]]})
+		if huase == char_shuangxiong then
+			if card_judge_if_sha(ID, cards[i]) == true then
+				n_sha = n_sha + 1
+			end
+			table.remove(cards, i)
+		elseif card_judge_if_shan(ID, cards[i]) == true and has_shan == false then
+			table.remove(cards, i)
+			has_shan = true
+		elseif card_judge_if_sha(ID, cards[i]) == true and n_sha < #char_juese[mindef_ID].shoupai - 1 then
+			table.remove(cards, i)
+			n_sha = n_sha + 1
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+	if #cards == 0 then
+		return false, 0, 0
+	end
+
+	return true, cards[1], mindef_ID
 end

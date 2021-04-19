@@ -238,7 +238,7 @@ function skills_yinghun_check_and_run()
 	end
 	add_funcptr(skills_pop_queue)
 	skills_skip_subqueue()
-	timer.start(0.2)
+	timer.start(0.6)
 end
 function skills_yinghun(ID)
 	if ID == char_current_i then

@@ -186,18 +186,26 @@ function skills_benghuai_ai()
 end
 function skills_benghuai_enter()    --  进入崩坏状态
 	gamerun_huihe = "结束"
-    gamerun_status = "确认操作"
+	gamerun_status = "选项选择"
+	choose_name = table.concat({"崩坏 (当前体力", char_juese[char_current_i].tili, "/", char_juese[char_current_i].tili_max, ")"})
+	jiaohu_text = "请选择要执行的效果"
 	if char_juese[char_current_i].tili_max > 1 then
-		jiaohu_text = "'确定': 减上限 '取消': 减体力"
+		choose_option = {"失去1点体力", "扣减1点体力上限"}
 	else
-		jiaohu_text = "'取消': 减体力"
+		choose_option = {"失去1点体力"}
 	end
 	
-	gamerun_OK_ptr = function()    -- 如果确认发动，执行的函数
-		if gamerun_OK == true then
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+
+	gamerun_item = function(i)
+		set_hints("")
+		gamerun_status = ""
+		txt_messages:setVisible(true)
+
+		if i == 2 then
 			if char_juese[char_current_i].tili_max > 1 then
-				set_hints("")
-				
 				add_funcptr(push_message, char_juese[char_current_i].name .. "触发了武将技能 '崩坏'")
 				add_funcptr(_benghuai_reduce_max, char_current_i)
 
@@ -205,8 +213,6 @@ function skills_benghuai_enter()    --  进入崩坏状态
 				timer.start(0.6)
 			end
 		else
-			set_hints("")
-			
 			add_funcptr(push_message, char_juese[char_current_i].name .. "触发了武将技能 '崩坏'")
 			char_tili_deduct({1, char_current_i, -1, "流失", char_current_i})
 
@@ -611,15 +617,13 @@ function skills_leiji_choose_mubiao(old_gamerun_status)
 	end
 end
 function skills_leiji_ai(va_list)
-	local ID_s, _ID_mubiao
-	ID_s = va_list[1]; _ID_mubiao = va_list[2]
-	local ID_mubiao
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
-	if char_juese[ID_s].shenfen == "主公" then
-		ID_mubiao = ai_judge_leiji_mubiao(_ID_mubiao)
-		if ID_mubiao < 0 then return end
-	else
-		ID_mubiao = _ID_mubiao
+	local fadong, mubiao = ai_judge_leiji_mubiao(ID_s. ID_mubiao)
+	if fadong == false then
+		skills_skip_subqueue()
+		return
 	end
 
 	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
@@ -627,7 +631,7 @@ function skills_leiji_ai(va_list)
 	funcptr_queue = {}
 	funcptr_i = 0
 	
-    _leiji_exe(ID_s, ID_mubiao)
+    _leiji_exe(ID_s, mubiao)
 end
 function _leiji_exe(ID_s, ID_mubiao)
 	push_message(table.concat({char_juese[ID_s].name .. "发动了武将技能 '雷击' (对", char_juese[ID_mubiao].name, ")"}))
@@ -659,7 +663,7 @@ function _leiji_jiesuan(va_list)
 	local yanse, huase, dianshu = ai_judge_cardinfo(ID_mubiao, {card_panding_card})
 
 	--  曹丕颂威  --
-	skills_judge_songwei(ID_s)
+	skills_judge_songwei(ID_mubiao)
 
 	if huase == "黑桃" then
 		push_message(char_juese[ID_s].name .. "的 '雷击' 判定成功")
@@ -1541,3 +1545,134 @@ function _beige_laiyuan_qipai_enter()
 	end
 end
 
+--  颜良文丑：双雄  --
+function skills_shuangxiong_1(ID)
+	if ID == char_current_i then
+		skills_shuangxiong_1_enter()
+	else
+		skills_shuangxiong_1_ai(ID)
+	end
+end
+function skills_shuangxiong_1_ai(ID)
+	local fadong = ai_judge_shuangxiong(ID)
+	if fadong == false then
+		skills_skip_subqueue()
+		return
+	end
+
+	skills_push_queue()
+	_shuangxiong_exe(ID)
+end
+function skills_shuangxiong_1_enter()
+	skills_push_queue()
+
+	local old_gamerun_status = gamerun_status
+	gamerun_status = "确认操作"
+	jiaohu_text = "是否发动 '双雄'?"
+	gamerun_OK = false
+	
+	gamerun_OK_ptr = function()
+		funcptr_queue = {}
+
+		if gamerun_OK then
+			_shuangxiong_exe(char_current_i)
+	    else
+			gamerun_status = old_gamerun_status
+			set_hints("")
+
+			skills_pop_queue(true)
+			timer.start(0.6)
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function _shuangxiong_exe(ID)
+	gamerun_status = ""
+	set_hints("")
+
+	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '双雄'")
+	add_funcptr(_shuangxiong_fan_panding, ID)
+
+	--  如场上有司马懿或张角，询问其改判技能  --
+	skills_guicai_guidao_ask(ID, nil, ID, "双雄")
+	
+	add_funcptr(_shuangxiong_jiesuan, ID)
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _shuangxiong_fan_panding(ID_s)
+	--  翻开判定牌  --
+	if #card_yixi == 0 then
+	    card_xipai(true)
+	end
+    card_panding_card = card_yixi[1]
+	table.remove(card_yixi, 1)
+	push_message(table.concat({char_juese[ID_s].name .. "的判定牌是'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
+end
+function _shuangxiong_jiesuan(ID)
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	--  曹丕颂威  --
+	skills_judge_songwei(ID)
+
+	add_funcptr(_shuangxiong_get_panding, ID)	
+	add_funcptr(skills_pop_queue)
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _shuangxiong_get_panding(ID)
+	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card_panding_card})
+	char_shuangxiong = huase
+	game_skip_mopai = true
+
+	push_message(table.concat({char_juese[ID].name, "获得了'", card_panding_card[2], card_panding_card[3], "的", card_panding_card[1], "'"}))
+	card_insert(ID, card_panding_card)
+	card_panding_card = {}
+end
+function skills_judge_shuangxiong_2()
+	if table.getn2(card_selected) ~= 1 then
+		return false
+	end
+	local card = char_juese[char_current_i].shoupai[card_highlighted]
+	local yanse, huase, dianshu = ai_judge_cardinfo(char_current_i, {card})
+
+	if huase == char_shuangxiong then
+		return false
+	end
+
+	return true
+end
+function skills_shuangxiong_2_enter()
+	if char_shuangxiong == nil or #char_juese[char_current_i].shoupai == 0 then
+		return false
+	end
+
+	skills_enter("请选择一张手牌", "决斗", "决斗", "技能选择-单牌")
+
+	gamerun_OK_ptr = function()
+		_shuangxiong_2_exe()
+	end
+
+	gamerun_tab_ptr = function()
+		if skills_judge_shuangxiong_2() then
+			skills_enter_target()
+		end
+	end
+
+	return true
+end
+function _shuangxiong_2_exe()
+	if skills_judge_shuangxiong_2() == false then
+		return
+	end
+
+	funcptr_queue = {}
+	if card_juedou({card_highlighted}, char_current_i, gamerun_target_selected) then
+		skills_cs()
+		consent_func_queue(0.6)
+	end
+end

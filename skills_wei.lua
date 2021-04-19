@@ -723,35 +723,69 @@ end
 function skills_qiangxi_enter()
 	if #char_juese[char_current_i].shoupai == 0 and ai_arm_stat(char_current_i) == 0 then return false end
 	
-	gamerun_wuqi_into_hand(char_current_i)
-	skills_enter("请选择装备牌或'取消'减体力", "请选择目标", "强袭", "技能选择-单牌")
+	gamerun_status = "选项选择"
+	choose_name = "强袭"
+	jiaohu_text = "需要弃装备牌还是失去体力?"
+	choose_option = {"弃1张装备牌", "失去1点体力", "取消"}
 	
-	gamerun_OK_ptr = function()
-		if gamerun_OK == true then
-			if skills_qiangxi(char_current_i, card_highlighted, gamerun_target_selected) then
-				skills_cs()
-				consent_func_queue(0.6)
-			end
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+
+		if i == 1 then
+			skills_qiangxi_select("装备")
+		elseif i == 2 then
+			skills_qiangxi_select("体力")
 		else
-			if table.getn2(card_selected) == 0 then
-				last_OK = false
-				skills_enter_target()
-			end
-		end
-	end
-	
-	gamerun_tab_ptr = function()
-		if skills_judge_zhijian_1(char_current_i, card_highlighted) then
-			last_OK = true
-			skills_enter_target()
+			gamerun_skill_selected = 0
+			skills_rst()
 		end
 	end
 	
 	return true
 end
-function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
-	if gamerun_status == "技能选择-单牌" then return false end
+function skills_qiangxi_select(mode)
+	if mode == "装备" then
+		gamerun_wuqi_into_hand(char_current_i)
+		skills_enter("请选择装备牌", "请选择目标", "强袭", "技能选择-单牌")
+	else
+		skills_enter("请选择目标", "", "强袭", "技能选择-目标")
+		gamerun_select_target("init")
+	end
+	
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			if gamerun_status == "技能选择-目标" then
+				local ID_shoupai = card_highlighted
+				if mode == "体力" then
+					ID_shoupai = 0
+				end
 
+				if skills_qiangxi(char_current_i, ID_shoupai, gamerun_target_selected) then
+					skills_cs()
+					consent_func_queue(0.6)
+				end
+			end
+		end
+	end
+	
+	if mode == "装备" then
+		gamerun_tab_ptr = function()
+			if skills_judge_zhijian_1(char_current_i, card_highlighted) then
+				skills_enter_target()
+			end
+		end
+	else
+		gamerun_tab_ptr = nil
+	end
+
+	platform.window:invalidate()
+end
+
+function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	if #char_juese[ID_s].wuqi ~= 0 then
 	    if char_calc_distance(ID_s, ID_mubiao) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
 	        return false
@@ -762,8 +796,8 @@ function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	    end
 	end
 
-	if last_OK == true then
-		if skills_judge_zhijian_1(char_current_i, card_highlighted) == false then return false end
+	if ID_shoupai ~= 0 then
+		if skills_judge_zhijian_1(ID_s, ID_shoupai) == false then return false end
 	end
 	
 	funcptr_queue = {}
@@ -771,14 +805,14 @@ function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	set_hints("")
 	
 	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '强袭'")
-	add_funcptr(_qiangxi_sub1, {ID_s, card_highlighted})
+	add_funcptr(_qiangxi_sub1, {ID_s, ID_shoupai})
 	skills_losecard(ID_s)
 
-	if last_OK == false then
+	if ID_shoupai == 0 then
 		char_tili_deduct({1, ID_s, -1, "流失", ID_s})
 	end
 	char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
-	add_funcptr(_qiangxi_sub2)
+	add_funcptr(_fanjian_sub4)
 	
 	return true
 end
@@ -788,19 +822,16 @@ function _qiangxi_sub1(va_list)
 
 	char_juese[ID].skill["强袭"] = "locked"
 	card_selected = {}
-	if last_OK == true then
+	card_highlighted = 1
+
+	if ID_shoupai ~= 0 then
 		local card = char_juese[ID].shoupai[ID_shoupai]
 		card_shanchu({ID, ID_shoupai})
+		gamerun_wuqi_out_hand(ID)
+	else
+		gamerun_wuqi_out_hand(ID)
+		skills_skip_subqueue()
 	end
-
-	gamerun_wuqi_out_hand(ID)
-	card_highlighted = 1
-end
-function _qiangxi_sub2()
-	card_selected = {}
-	card_highlighted = 1
-	set_hints("请您出牌")
-	gamerun_status = ""
 end
 
 --  许褚：裸衣  --

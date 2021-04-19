@@ -488,6 +488,23 @@ function ai_skill_use_priority(ID)
 		end
 	end
 
+	--  颜良文丑双雄  --
+	if char_juese[ID].skill["双雄"] == "available" and char_shuangxiong ~= nil and ai_skills_discard["双雄"] ~= 2 then
+		fadong, ID_shoupai, mubiao = ai_judge_shuangxiong_mubiao(ID)
+		if fadong == true then
+			if card_juedou({ID_shoupai}, ID, mubiao) then
+				if type(ai_skills_discard["双雄"]) ~= "number" then
+					ai_skills_discard["双雄"] = 1
+				else
+					ai_skills_discard["双雄"] = ai_skills_discard["双雄"] + 1
+				end
+
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
 	--  甘宁奇袭  --
 	if char_juese[ID].skill["奇袭"] == "available" then
 		fadong, ID_shoupai, mubiao = ai_judge_qixi(ID)
@@ -622,6 +639,17 @@ end
 function ai_skill_use(ID)
 	local fadong, ID_shoupai, mubiao
 
+	--  典韦强袭  --
+	if char_juese[ID].skill["强袭"] == 1 then
+		fadong, ID_shoupai, mubiao = ai_judge_qiangxi(ID)
+		if fadong == true then
+			if skills_qiangxi(ID, ID_shoupai, mubiao) == true then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
 	--  貂蝉离间  --
 	if char_juese[ID].skill["离间"] == 1 then
 		fadong, ID_shoupai, mubiao = ai_judge_lijian(ID)
@@ -751,7 +779,7 @@ function ai_card_use(ID)
 		end
 	end
 
-	if (#char_juese[ID].fangju == 0 and char_juese[ID].skill["八阵"] ~= "available") or char_juese[ID].skill["枭姬"] == "available" or char_juese[ID].skill["旋风"] == "available" then
+	if (#char_juese[ID].fangju == 0 and char_juese[ID].skill["八阵"] ~= "available") or char_juese[ID].skill["枭姬"] == "available" or char_juese[ID].skill["旋风"] == "available" or ai_judge_withdraw_fangju(ID, true) == true then
 		local card_use = ai_card_search(ID, "防具", 1)
 		if #card_use ~= 0 then
 			local wuqi_card = char_juese[ID].shoupai[card_use[1]]

@@ -332,6 +332,7 @@ function gamerun_huihe_start()
 	char_sha_additional_target = 0
 	char_sha_able = true
 	char_hejiu = false
+	char_shuangxiong = nil
 	gamerun_qipai_n = 0
 	ai_skills_discard = {}
 	lordskill_used = {}
@@ -419,6 +420,11 @@ function gamerun_huihe_start()
 	
 	--  摸牌阶段  --
 	--  进入摸牌阶段前技能  --
+	--  颜良文丑双雄  --
+	if char_juese[char_acting_i].skill["双雄"] == "available" then
+		add_funcptr(skills_shuangxiong_1, char_acting_i)
+	end
+
 	--  张郃巧变  --
 	if char_juese[char_acting_i].skill["巧变"] == "available" then
 		add_funcptr(skills_qiaobian, {char_acting_i, "摸牌"})
@@ -697,6 +703,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 end
 function _panding_sub3()    -- 子函数3：用于延时
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
+	on.timer()
 end
 function _panding_huifu()	--  判定阶段：闪电伤害结算后恢复原有函数队列执行
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -827,6 +834,8 @@ function _jieshu_huihe_set(qipai)
 	if not qipai then
 	    msg = {char_juese[char_acting_i].name, "弃牌阶段"}
         push_message(table.concat(msg))
+	else
+		skills_skip_subqueue()
 	end
 end
 function _jieshu_sub1()
@@ -2273,76 +2282,77 @@ end
 function on.charIn(char)
 	local skills
 	if char_juese[char_current_i].name == "" then return end
-	if gamerun_huihe ~= "出牌" then return end
 	if gamerun_status == "AI出牌" then return end
 	
 	skills = char_juese[char_current_i].skillname
 	
-	--  选取主公技  --
-	if char == '0' then
-		if gamerun_status == "" and gamerun_lordskill_selected == false then
-			skills_lordskill_select_enter()
-		elseif gamerun_lordskill_selected == true then
-			gamerun_lordskill_selected = false
-			skills_rst()
+	if gamerun_huihe == "出牌" then
+		--  选取主公技  --
+		if char == '0' then
+			if gamerun_status == "" and gamerun_lordskill_selected == false then
+				skills_lordskill_select_enter()
+			elseif gamerun_lordskill_selected == true then
+				gamerun_lordskill_selected = false
+				skills_rst()
+			end
 		end
-	end
 
-	--  选取1~4号技能  --
-	if char == '1' then
-		if gamerun_skill_selected == 1 + 2 * skill_disrow then
-			gamerun_skill_selected = 0
-			skills_rst()
-		elseif gamerun_status == "" then
-			if skills[1 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[1 + 2 * skill_disrow]]~="locked" then 
-				if skills_func[skills[1 + 2 * skill_disrow]] ~= nil then
-					if skills_func[skills[1 + 2 * skill_disrow]]() then
-						gamerun_skill_selected = 1 + 2 * skill_disrow
+		--  选取1~4号技能  --
+		if char == '1' then
+			if gamerun_skill_selected == 1 + 2 * skill_disrow then
+				gamerun_skill_selected = 0
+				skills_rst()
+			elseif gamerun_status == "" then
+				if skills[1 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[1 + 2 * skill_disrow]]~="locked" then 
+					if skills_func[skills[1 + 2 * skill_disrow]] ~= nil then
+						if skills_func[skills[1 + 2 * skill_disrow]]() then
+							gamerun_skill_selected = 1 + 2 * skill_disrow
+						end
 					end
 				end
 			end
 		end
-	end
-	
-	if char == '2' then
-		if gamerun_skill_selected == 2 + 2 * skill_disrow then
-			gamerun_skill_selected = 0
-			skills_rst()
-		elseif gamerun_status == "" then
-			if skills[2 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[2 + 2 * skill_disrow]]~="locked" then
-				if skills_func[skills[2 + 2 * skill_disrow]] ~= nil then
-					if skills_func[skills[2 + 2 * skill_disrow]]() then
-						gamerun_skill_selected = 2 + 2 * skill_disrow
+		
+		if char == '2' then
+			if gamerun_skill_selected == 2 + 2 * skill_disrow then
+				gamerun_skill_selected = 0
+				skills_rst()
+			elseif gamerun_status == "" then
+				if skills[2 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[2 + 2 * skill_disrow]]~="locked" then
+					if skills_func[skills[2 + 2 * skill_disrow]] ~= nil then
+						if skills_func[skills[2 + 2 * skill_disrow]]() then
+							gamerun_skill_selected = 2 + 2 * skill_disrow
+						end
 					end
 				end
 			end
 		end
-	end
-	
-	if char == '3' then
-		if gamerun_skill_selected == 3 + 2 * skill_disrow then
-			gamerun_skill_selected = 0
-			skills_rst()
-		elseif gamerun_status == "" then
-			if skills[3 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[3 + 2 * skill_disrow]]~="locked" then
-				if skills_func[skills[3 + 2 * skill_disrow]] ~= nil then
-					if skills_func[skills[3 + 2 * skill_disrow]]() then
-						gamerun_skill_selected = 3 + 2 * skill_disrow
+		
+		if char == '3' then
+			if gamerun_skill_selected == 3 + 2 * skill_disrow then
+				gamerun_skill_selected = 0
+				skills_rst()
+			elseif gamerun_status == "" then
+				if skills[3 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[3 + 2 * skill_disrow]]~="locked" then
+					if skills_func[skills[3 + 2 * skill_disrow]] ~= nil then
+						if skills_func[skills[3 + 2 * skill_disrow]]() then
+							gamerun_skill_selected = 3 + 2 * skill_disrow
+						end
 					end
 				end
 			end
 		end
-	end
-	
-	if char == '4' then
-		if gamerun_skill_selected == 4 + 2 * skill_disrow then
-			gamerun_skill_selected = 0
-			skills_rst()
-		elseif gamerun_status == "" then
-			if skills[4 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[4 + 2 * skill_disrow]]~="locked" then
-				if skills_func[skills[4 + 2 * skill_disrow]] ~= nil then
-					if skills_func[skills[4 + 2 * skill_disrow]]() then
-						gamerun_skill_selected = 4 + 2 * skill_disrow
+		
+		if char == '4' then
+			if gamerun_skill_selected == 4 + 2 * skill_disrow then
+				gamerun_skill_selected = 0
+				skills_rst()
+			elseif gamerun_status == "" then
+				if skills[4 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[4 + 2 * skill_disrow]]~="locked" then
+					if skills_func[skills[4 + 2 * skill_disrow]] ~= nil then
+						if skills_func[skills[4 + 2 * skill_disrow]]() then
+							gamerun_skill_selected = 4 + 2 * skill_disrow
+						end
 					end
 				end
 			end
@@ -2351,16 +2361,18 @@ function on.charIn(char)
 	
 	--  选取武器牌  --
 	if char == 'a' then
-		--  丈八蛇矛技能发动  --
-		if gamerun_status == "" and gamerun_armskill_selected == false then
-			if card_zhangba_enter() then
-				gamerun_armskill_selected = true
+		if gamerun_huihe == "出牌" then
+			--  丈八蛇矛技能发动  --
+			if gamerun_status == "" and gamerun_armskill_selected == false then
+				if card_zhangba_enter() then
+					gamerun_armskill_selected = true
+				end
+				return
+			elseif gamerun_armskill_selected == true then
+				gamerun_armskill_selected = false
+				skills_rst()
+				return
 			end
-			return
-		elseif gamerun_armskill_selected == true then
-			gamerun_armskill_selected = false
-			skills_rst()
-			return
 		end
 
 		gamerun_card_select_zhuangbei(-1)

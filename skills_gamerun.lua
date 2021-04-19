@@ -28,6 +28,7 @@ skills_func =
 	["攻心"] = function() return skills_gongxin_enter() end,
 	["急袭"] = function() return skills_jixi_enter() end,
 	["激将"] = function() return skills_jijiang_current_enter() end,
+	["双雄"] = function() return skills_shuangxiong_2_enter() end,
 }
 
 --  主公技触发函数表  --

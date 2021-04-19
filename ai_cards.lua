@@ -113,6 +113,30 @@ function ai_judge_zhuque()
 	return true
 end
 
+--  AI决定是否要丢弃防具  --
+function ai_judge_withdraw_fangju(ID, necessary)
+	if #char_juese[ID].fangju ~= 0 then
+		if char_juese[ID].fangju == "白银狮" and char_juese[ID].tili < char_juese[ID].tili_max and necessary ~= true then
+			return true
+		end
+
+		if char_juese[ID].fangju == "藤甲" then
+			local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+			for i = #attack_mubiao, 1, -1 do
+				local distance = 1
+				if #char_juese[attack_mubiao[i]].wuqi > 0 then
+					distance = card_wuqi_r[char_juese[attack_mubiao[i]].wuqi[1]]
+				end
+
+				if char_calc_distance(attack_mubiao[i], ID) <= distance and char_juese[attack_mubiao[i]].wuqi[1] == "朱雀扇" then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
 --  AI决定是否出无懈可击  --
 function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 	if (name == "万箭齐发" or name == "南蛮入侵") and char_juese[ID_jiu].fangju[1] == "藤甲" then
@@ -1295,4 +1319,17 @@ function ai_pindian_judge(ID,is_enemy)
 		end
 	end
 	return card_pindian, card_pindian_dianshu
+end
+function _pindian_convert_dianshu(dianshu)
+	if dianshu == "A" then
+		return 1
+	elseif dianshu == "J" then
+		return 11
+	elseif dianshu == "Q" then
+		return 12
+	elseif dianshu == "K" then
+		return 13
+	else
+		return tonumber(dianshu)
+	end
 end

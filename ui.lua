@@ -148,11 +148,11 @@ function draw_opponent(gc)
 		local i, v, cnt, sel
 		v = table.copy(char_juese[id].panding)
 		if char_juese[id].hengzhi == true then
-			table.insert(v, {"铁锁连环"})
+			table.insert(v, {"铁索连环"})
 		end
 		
 		for i = 1, #v do
-			if v[i][1] ~= "乐不思蜀" and v[i][1] ~= "兵粮寸断" and v[i][1] ~= "闪电" and v[i][1] ~= "铁锁连环" then
+			if v[i][1] ~= "乐不思蜀" and v[i][1] ~= "兵粮寸断" and v[i][1] ~= "闪电" and v[i][1] ~= "铁索连环" then
 				sel = 4
 			else
 				sel = 1
@@ -166,7 +166,7 @@ function draw_opponent(gc)
 			if v[i][sel] == "闪电" then
 				gc:setColorRGB(0, 128, 255)
 			end
-			if v[i][sel] == "铁锁连环" then
+			if v[i][sel] == "铁索连环" then
 				gc:setColorRGB(233, 233, 216)
 			end
 			
@@ -551,11 +551,11 @@ function draw_self(gc)
 	local i, v, cnt, sel
 	v = table.copy(char_juese[char_current_i].panding)
 	if char_juese[char_current_i].hengzhi == true then
-		table.insert(v, {"铁锁连环"})
+		table.insert(v, {"铁索连环"})
 	end
 	
 	for i = 1, #v do
-		if v[i][1] ~= "乐不思蜀" and v[i][1] ~= "兵粮寸断" and v[i][1] ~= "闪电" and v[i][1] ~= "铁锁连环" then
+		if v[i][1] ~= "乐不思蜀" and v[i][1] ~= "兵粮寸断" and v[i][1] ~= "闪电" and v[i][1] ~= "铁索连环" then
 			sel = 4
 		else
 			sel = 1
@@ -569,7 +569,7 @@ function draw_self(gc)
 		if v[i][sel] == "闪电" then
 			gc:setColorRGB(0, 128, 255)
 		end
-		if v[i][sel] == "铁锁连环" then
+		if v[i][sel] == "铁索连环" then
 			gc:setColorRGB(233, 233, 216)
 		end
 		

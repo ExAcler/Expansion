@@ -291,3 +291,12 @@ function ai_judge_lieren(ID_s, ID_mubiao)
 		return false
 	end
 end
+
+--  AI决定志继选择  --
+function ai_judge_zhiji(ID)
+	if char_juese[ID].tili <= 2 then
+		return 1
+	else
+		return 2
+	end
+end

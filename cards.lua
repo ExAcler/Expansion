@@ -2144,8 +2144,8 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		funcptr_i = 0
 		timer.start(0.2)
 	else
-		msg = {char_juese[id].name, "放弃无懈"}
-		print(table.concat(msg))
+		--msg = {char_juese[id].name, "放弃无懈"}
+		--print(table.concat(msg))
 		--push_message(table.concat(msg))
 		if order < 5 then
 			_baiyin_skip()
@@ -3539,6 +3539,11 @@ function card_juedou(ID_shoupai, ID_s, ID_mubiao)
 	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
 
+	local card = char_juese[ID_s].shoupai[ID_shoupai[1]]
+	if char_juese[ID_s].skill["双雄"] == "available" and #ID_shoupai == 1 and card[1] ~= "决斗" then
+		add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '双雄'")
+	end
+
 	add_funcptr(_card_sub1, {ID_shoupai, ID_s, ID_mubiao, "决斗"})
 	skills_losecard(ID_s)
 	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
@@ -3546,8 +3551,6 @@ function card_juedou(ID_shoupai, ID_s, ID_mubiao)
 	end
 	
 	if #ID_shoupai == 1 then
-		local card = char_juese[ID_s].shoupai[ID_shoupai[1]]
-
 		local yanse, huase, dianshu = ai_judge_cardinfo(ID_s, {card})
 		--  孙策使用红色决斗，摸一张牌  --
 		if char_juese[ID_s].skill["激昂"] == "available" and yanse == "红色" then
@@ -3636,6 +3639,10 @@ function _juedou_ai(va_list)
 
 		_juedou_nextstep(ID_s, ID_mubiao, wushuang_flag)
 	else
+		if type(ai_skills_discard["双雄"]) == "number" and ID_s == char_acting_i then
+			ai_skills_discard["双雄"] = nil
+		end
+
 		add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
 		char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
 		add_funcptr(_nanman_zhudong_huifu)
@@ -3682,7 +3689,11 @@ function _juedou_exe_ji(ID_s, ID_mubiao, c_pos)    --  决斗：己方响应
 	end
 end
 function _juedou_exe_fangqi(ID_s, ID_mubiao)    --  决斗：己方放弃
-    gamerun_status = "手牌生效中"
+    if type(ai_skills_discard["双雄"]) == "number" and ID_s == char_acting_i then
+		ai_skills_discard["双雄"] = nil
+	end
+	
+	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
 	
 	add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
