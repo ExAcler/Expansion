@@ -441,3 +441,116 @@ function ai_judge_jiuchi(ID)
 		return false, 0
 	end
 end
+
+--  AI决定是否发动离魂  --
+--  返回是否发动、手牌ID、目标  --
+function ai_judge_lihun(ID)
+	local cards_jiu = ai_card_search(ID, "酒", 1)
+	local allow_no_jiu = false
+
+	local tili_threshold = 1
+	if #cards_jiu > 0 then
+		tili_threshold = 2
+	end
+
+	local ignore_card, mubiao
+
+	local cards_sha = ai_card_search(ID, "普通杀", 1)
+	if #cards_sha ~= 0 then
+		allow_no_jiu, mubiao, ignore_card = _ai_lihun_judge_target(ID, cards_sha, "杀", tili_threshold)
+	end
+
+	local cards_leisha = ai_card_search(ID, "雷杀", 1)
+	if #cards_leisha ~= 0 then
+		allow_no_jiu, mubiao, ignore_card = _ai_lihun_judge_target(ID, cards_leisha, "雷杀", tili_threshold)
+	end
+
+	local cards_huosha = ai_card_search(ID, "火杀", 1)
+	if #cards_huosha ~= 0 then
+		allow_no_jiu, mubiao, ignore_card = _ai_lihun_judge_target(ID, cards_huosha, "火杀", tili_threshold)
+	end
+
+	if ignore_card == -1 then
+		char_juese[ID].skill["离魂"] = "locked"
+		return false, 0, 0
+	end
+
+	if allow_no_jiu == false and #cards_jiu == 0 then
+		if #char_juese[ID].wuqi == 0 then
+			char_juese[ID].skill["离魂"] = "locked"
+			return false, 0, 0
+		else
+			if #char_juese[ID].wuqi[1] ~= "古锭刀" then
+				char_juese[ID].skill["离魂"] = "locked"
+				return false, 0, 0
+			end
+		end
+	end
+
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local has_shan = false
+	for i = #cards, 1, -1 do
+		if #cards_jiu > 0 and cards[i] == cards_jiu[1] then
+			table.remove(cards, i)
+		elseif cards[i] == ignore_card then
+			table.remove(cards, i)
+		elseif card_judge_if_shan(ID, cards[i]) and has_shan == false then
+			table.remove(cards, i)
+			has_shan = true
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+
+	if ai_judge_random_percent(75) == 1 or allow_no_jiu then
+		return true, cards[1], mubiao
+	else
+		char_juese[ID].skill["离魂"] = "locked"
+		return false, 0, 0
+	end
+end
+function _ai_lihun_judge_target(ID, cards, sha_leixing, tili_threshold)
+	local targets = ai_judge_target(ID, sha_leixing, {char_juese[ID].shoupai[cards[1]]}, 4)
+
+	local lock = false
+	local mubiao = -1
+	local ignore_card = -1
+	local allow_no_jiu = false
+
+	if sha_leixing == "火杀" then
+		for i = 1, #targets do
+			if #char_juese[targets[i]].fangju ~= 0 then
+				if char_juese[targets[i]].fangju[1] == "藤甲" and #char_juese[targets[i]].shoupai > 2 and char_juese[targets[i]].xingbie == "男" then
+					mubiao = targets[i]
+					lock = true
+					break
+				end
+			end
+		end
+	end
+	for i = 1, #targets do
+		if char_juese[targets[i]].tili <= tili_threshold and #char_juese[targets[i]].shoupai ~= 0 and char_juese[targets[i]].xingbie == "男" then
+			mubiao = targets[i]
+			allow_no_jiu = true
+			lock = true
+			break
+		end
+	end
+	for i = #targets, 1, -1 do
+		if #char_juese[targets[i]].shoupai <= 2 then
+			table.remove(targets, i)
+		elseif char_juese[targets[i]].xingbie ~= "男" then
+			table.remove(targets, i)
+		end
+	end
+
+	if #targets > 0 or lock == true then
+		if lock == false then
+			mubiao = targets[math.random(#targets)]
+		end
+		ignore_card = cards[1]
+	end
+
+	return allow_no_jiu, mubiao, ignore_card
+end

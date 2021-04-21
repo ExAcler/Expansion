@@ -71,7 +71,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神吕蒙"] = {{3, 3}, "神", false, {"涉猎", "攻心"}, "男", {"", ""}, true},	
 	["神曹操"] = {{3, 3}, "神", false, {"归心", "飞影"}, "男", {"", "锁定"}, true},
 	["神司马懿"] = {{4, 4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定", "觉醒", ""}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"忍戒","拜印","火计","攻心"}, "男", {"锁定","觉醒","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"英魂","甘露","离魂"}, "男", {"","",""}, true},
 }
 
 -- 武器攻击范围 --
@@ -420,7 +420,7 @@ function char_choose_zhudong()
 
 				if skillname == "焚心" then
 					
-				elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "攻心" or skillname == "强袭" then
+				elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "攻心" or skillname == "强袭" or skillname == "甘露" then
 					char_juese[char_current_i].skill[skillname] = 1
 				else
 					char_juese[char_current_i].skill[skillname] = "available"
@@ -440,7 +440,7 @@ function char_choose_zhudong()
 
 				if skillname == "激将" or skillname == "护驾" or skillname == "救援" or skillname == "黄天" or skillname == "血裔" or skillname == "颂威" or skillname == "暴虐" or skillname == "若愚" or skillname == "制霸" then
 					
-				elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "焚心" or skillname == "攻心" or skillname == "强袭" then
+				elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "焚心" or skillname == "攻心" or skillname == "强袭" or skillname == "甘露" then
 					char_juese[char_current_i].skill[skillname] = 1
 					table.insert(char_juese[char_current_i].skillname,skillname)
 				else
@@ -513,7 +513,7 @@ function _wujiang_sub1()
 
 				if skillname == "焚心" then
 					
-				elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "攻心" or skillname == "强袭" then
+				elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "攻心" or skillname == "强袭" or skillname == "甘露" then
 					char_juese[i].skill[skillname] = 1
 				else
 					char_juese[i].skill[skillname] = "available"
@@ -561,7 +561,7 @@ function _wujiang_sub2(va_list)
 
 			if skillname == "激将" or skillname == "护驾" or skillname == "救援" or skillname == "黄天" or skillname == "血裔" or skillname == "颂威" or skillname == "暴虐" or skillname == "若愚" or skillname == "制霸" then
 				
-			elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "焚心" or skillname == "攻心" or skillname == "强袭" then
+			elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "焚心" or skillname == "攻心" or skillname == "强袭" or skillname == "甘露" then
 				char_juese[i].skill[skillname] = 1
 				table.insert(char_juese[i].skillname,skillname)
 			else

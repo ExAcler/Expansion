@@ -1102,9 +1102,9 @@ function skills_dimeng_enter()
 		end
 		
 		if gamerun_status == "技能选择-目标B" then
-			if skills_dimeng(char_current_i, guankan_s, gamerun_target_selected) then
+			if skills_dimeng(guankan_s, gamerun_target_selected) then
 				skills_cs_2()
-				consent_func_queue(0.2)
+				consent_func_queue(0.6)
 			end
 		end
 		
@@ -1117,7 +1117,19 @@ function skills_dimeng_enter()
 	
 	return true
 end
-function skills_dimeng(ID_s, ID_first, ID_second)
+function skills_dimeng_ai(ID_shoupai, ID_s, ID_first, ID_second)
+	if #ID_shoupai ~= math.abs(#char_juese[ID_first].shoupai - #char_juese[ID_second].shoupai) then
+		return false
+	end
+
+	set_hints("")
+	gamerun_status = "手牌生效中"
+
+	ai_withdraw(ID_s, ID_shoupai, {0, 0, 0, 0, 0}, true)
+	_dimeng_exe(ID_s, ID_first, ID_second)
+	return true
+end
+function skills_dimeng(ID_first, ID_second)
 	if table.getn2(card_selected) ~= math.abs(#char_juese[ID_first].shoupai - #char_juese[ID_second].shoupai) then
 		return false
 	end
@@ -1125,13 +1137,18 @@ function skills_dimeng(ID_s, ID_first, ID_second)
 	funcptr_queue = {}
 	set_hints("")
 	gamerun_status = "手牌生效中"
-	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '缔盟'")
-	char_juese[ID_s].skill["缔盟"] = "locked"
-	
+
 	if table.getn2(card_selected) > 0 then
 		card_qipai_go()
-		skills_losecard(ID_s)
+		skills_losecard(char_current_i)
 	end
+
+	_dimeng_exe(char_current_i, ID_first, ID_second)
+	return true
+end
+function _dimeng_exe(ID_s, ID_first, ID_second)
+	add_funcptr(push_message, char_juese[ID_s].name.."发动了武将技能 '缔盟'")
+	char_juese[ID_s].skill["缔盟"] = "locked"
 
 	add_funcptr(_dimeng_sub1, {ID_s, ID_first, ID_second})
 	add_funcptr(_dimeng_lose_shoupai_1, ID_first)
@@ -1140,8 +1157,6 @@ function skills_dimeng(ID_s, ID_first, ID_second)
 	skills_losecard(ID_second)
 	add_funcptr(_dimeng_exchange_shoupai, {ID_first, ID_second})
 	add_funcptr(_dimeng_sub2)
-	
-	return true
 end
 function _dimeng_sub1(va_list)
 	local ID_s, ID_first, ID_second
@@ -1154,34 +1169,47 @@ function _dimeng_sub2()
 	dimeng_shoupai_1 = nil
 	dimeng_shoupai_2 = nil
 
-	card_selected = {}
-	card_highlighted = 1
-	set_hints("请您出牌")
-	gamerun_status = ""
+	if char_acting_i == char_current_i then
+		card_selected = {}
+		card_highlighted = 1
+		set_hints("请您出牌")
+		gamerun_status = ""
+	else
+		set_hints("")
+		gamerun_status = "AI出牌"
+
+		ai_card_use(char_acting_i)
+	end
 end
 function _dimeng_lose_shoupai_1(ID)
-	push_message(table.concat({char_juese[ID].name, "失去了所有手牌"}))
+	--push_message(table.concat({char_juese[ID].name, "失去了所有手牌"}))
 	dimeng_shoupai_1 = table.copy(char_juese[ID].shoupai)
 	char_juese[ID].shoupai = {}
+
+	skills_skip_subqueue()
 end
 function _dimeng_lose_shoupai_2(ID)
-	push_message(table.concat({char_juese[ID].name, "失去了所有手牌"}))
+	--push_message(table.concat({char_juese[ID].name, "失去了所有手牌"}))
 	dimeng_shoupai_2 = table.copy(char_juese[ID].shoupai)
 	char_juese[ID].shoupai = {}
+
+	skills_skip_subqueue()
 end
 function _dimeng_exchange_shoupai(va_list)
 	local ID_first, ID_second
 	ID_first = va_list[1]; ID_second = va_list[2]
 
-	push_message(table.concat({char_juese[ID_first].name, "获得了", char_juese[ID_second].name, "的所有手牌"}))
+	--push_message(table.concat({char_juese[ID_first].name, "获得了", char_juese[ID_second].name, "的所有手牌"}))
 	for i = 1, #dimeng_shoupai_2 do
 		card_insert(ID_first, dimeng_shoupai_2[i])
 	end
 
-	push_message(table.concat({char_juese[ID_second].name, "获得了", char_juese[ID_first].name, "的所有手牌"}))
+	--push_message(table.concat({char_juese[ID_second].name, "获得了", char_juese[ID_first].name, "的所有手牌"}))
 	for i = 1, #dimeng_shoupai_1 do
 		card_insert(ID_second, dimeng_shoupai_1[i])
 	end
+
+	skills_skip_subqueue()
 end
 
 --  鲁肃：好施  --
@@ -1344,14 +1372,11 @@ function skills_tianxiang_ai(ID, dianshu, shuxing)
 	fadong, ID_shoupai, ID_mubiao = ai_judge_tianxiang(ID, dianshu, shuxing)
 
 	if fadong == false then
+		skills_skip_subqueue()
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
-
+	skills_push_queue()
 	_tianxiang_exe(ID_shoupai, ID, ID_mubiao, dianshu)
 end
 function skills_tianxiang_enter(dianshu, shuxing)
@@ -1380,7 +1405,7 @@ function skills_tianxiang_enter(dianshu, shuxing)
 			_tianxiang_select_target(dianshu, shuxing, old_gamerun_status)
 		else
 			gamerun_status = old_gamerun_status
-			_tianxiang_huifu()
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 	end
@@ -1406,7 +1431,7 @@ function _tianxiang_select_target(dianshu, shuxing, old_gamerun_status)
 			if gamerun_OK == false then
 				gamerun_status = old_gamerun_status
 				set_hints("")
-				_tianxiang_huifu()
+				skills_pop_queue(true)
 				timer.start(0.6)
 			end
 			return
@@ -1441,7 +1466,7 @@ function _tianxiang_exe(ID_shoupai, ID, ID_mubiao, dianshu)
 		deduct_id_ignore_stack[#deduct_id_ignore_stack] = nil
 	end
 	
-	add_funcptr(_tianxiang_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
 end
 function _tianxiang_sub1(va_list)
@@ -2072,4 +2097,141 @@ function _xuanfeng_chai_exe(ID_s, ID_d, status)
 	
 	txt_messages:setVisible(false)
 	platform.window:invalidate()
+end
+
+--  吴国太：甘露  --
+function skills_judge_ganlu(ID_s, ID_first, ID_second)
+	local tili_lost = char_juese[ID_s].tili_max - char_juese[ID_s].tili
+	local n_arm_first = ai_arm_stat(ID_first)
+	local n_arm_second = ai_arm_stat(ID_second)
+
+	if n_arm_first == 0 and n_arm_second == 0 then
+		return false
+	end
+
+	if math.abs(n_arm_first - n_arm_second) > tili_lost then
+		return false
+	end
+
+	return true
+end
+function skills_ganlu_enter()
+	skills_enter("请选择目标A", "", "甘露", "技能选择-目标")
+	gamerun_select_target("init")
+	
+	gamerun_OK_ptr = function()
+		if gamerun_status == "技能选择-目标" then
+			--  进入阶段2  --
+			guankan_s = gamerun_target_selected
+			set_hints("请选择目标B")
+			gamerun_status = "技能选择-目标B"
+			gamerun_select_target("init")
+			platform.window:invalidate()
+			return
+		end
+		
+		if gamerun_status == "技能选择-目标B" then
+			if skills_ganlu(char_current_i, guankan_s, gamerun_target_selected) then
+				skills_cs_2()
+				consent_func_queue(0.6)
+			end
+		end
+	end
+	
+	gamerun_tab_ptr = function() end
+	
+	return true
+end
+function skills_ganlu(ID_s, ID_first, ID_second)
+	if skills_judge_ganlu(ID_s, ID_first, ID_second) == false then
+		return false
+	end
+	
+	funcptr_queue = {}
+	set_hints("")
+	gamerun_status = "手牌生效中"
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '甘露'")
+	char_juese[ID_s].skill["甘露"] = "locked"
+
+	add_funcptr(_ganlu_sub1, {ID_s, ID_first, ID_second})
+	add_funcptr(_ganlu_lose_arm_1, ID_first)
+	skills_losecard(ID_first)
+	add_funcptr(_ganlu_lose_arm_2, ID_second)
+	skills_losecard(ID_second)
+	add_funcptr(_ganlu_exchange_arm, {ID_first, ID_second})
+	add_funcptr(_ganlu_sub2)
+	
+	return true
+end
+function _ganlu_sub1(va_list)
+	local ID_s, ID_first, ID_second
+	ID_s = va_list[1]; ID_first = va_list[2]; ID_second = va_list[3]
+
+	push_message(table.concat({char_juese[ID_s].name, "令", char_juese[ID_first].name, "和", char_juese[ID_second].name, "交换装备区的牌"}))
+end
+function _ganlu_sub2()
+	ganlu_arm_1 = nil
+	ganlu_arm_2 = nil
+
+	if char_acting_i == char_current_i then
+		card_selected = {}
+		card_highlighted = 1
+		set_hints("请您出牌")
+		gamerun_status = ""
+	else
+		set_hints("")
+		gamerun_status = "AI出牌"
+
+		ai_card_use(char_acting_i)
+	end
+end
+function _ganlu_lose_arm_1(ID)
+	--push_message(table.concat({char_juese[ID].name, "失去了所有装备"}))
+	ganlu_arm_1 = {}
+
+	table.insert(ganlu_arm_1, table.copy(char_juese[ID].wuqi))
+	table.insert(ganlu_arm_1, table.copy(char_juese[ID].fangju))
+	table.insert(ganlu_arm_1, table.copy(char_juese[ID].gongma))
+	table.insert(ganlu_arm_1, table.copy(char_juese[ID].fangma))
+
+	char_juese[ID].wuqi = {}
+	char_juese[ID].fangju = {}
+	char_juese[ID].gongma = {}
+	char_juese[ID].fangma = {}
+
+	skills_skip_subqueue()
+end
+function _ganlu_lose_arm_2(ID)
+	--push_message(table.concat({char_juese[ID].name, "失去了所有装备"}))
+	ganlu_arm_2 = {}
+
+	table.insert(ganlu_arm_2, table.copy(char_juese[ID].wuqi))
+	table.insert(ganlu_arm_2, table.copy(char_juese[ID].fangju))
+	table.insert(ganlu_arm_2, table.copy(char_juese[ID].gongma))
+	table.insert(ganlu_arm_2, table.copy(char_juese[ID].fangma))
+
+	char_juese[ID].wuqi = {}
+	char_juese[ID].fangju = {}
+	char_juese[ID].gongma = {}
+	char_juese[ID].fangma = {}
+
+	skills_skip_subqueue()
+end
+function _ganlu_exchange_arm(va_list)
+	local ID_first, ID_second
+	ID_first = va_list[1]; ID_second = va_list[2]
+
+	--push_message(table.concat({char_juese[ID_first].name, "获得了", char_juese[ID_second].name, "的所有装备"}))
+	char_juese[ID_first].wuqi = ganlu_arm_2[1]
+	char_juese[ID_first].fangju = ganlu_arm_2[2]
+	char_juese[ID_first].gongma = ganlu_arm_2[3]
+	char_juese[ID_first].fangma = ganlu_arm_2[4]
+
+	--push_message(table.concat({char_juese[ID_second].name, "获得了", char_juese[ID_first].name, "的所有装备"}))
+	char_juese[ID_second].wuqi = ganlu_arm_1[1]
+	char_juese[ID_second].fangju = ganlu_arm_1[2]
+	char_juese[ID_second].gongma = ganlu_arm_1[3]
+	char_juese[ID_second].fangma = ganlu_arm_1[4]
+
+	skills_skip_subqueue()
 end

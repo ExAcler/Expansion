@@ -78,6 +78,7 @@ lordskill_used = {}		-- 当前回合中角色是否已经使用过主公技
 gamerun_qipai_n = 0		-- 当前回合于弃牌阶段弃牌总数
 
 ai_skills_discard = {}	-- 记录AI不再在本回合考虑的技能
+ai_attack_priority = nil	-- 记录AI是否有要在本回合优先攻击的对象 (决斗或杀)
 
 for i = 1, 5 do
 	kunfen_adjusted[i] = false
@@ -335,6 +336,7 @@ function gamerun_huihe_start()
 	char_shuangxiong = nil
 	gamerun_qipai_n = 0
 	ai_skills_discard = {}
+	ai_attack_priority = nil
 	lordskill_used = {}
 	for i = 1, 5 do
 		lordskill_used[i] = {}
@@ -717,20 +719,25 @@ function _panding_pass(id)    -- 将闪电传给下一个玩家
 		if p > 5 then p = 1 end
 		j = false
 		
-		--  若下家已死亡，则跳过  --
-		if char_juese[p].siwang == true then
-			j = true
+		if p == char_acting_i then
+			--  其他角色判定区都无法放闪电，只能留在自己的判定区  --
+			return
 		else
-			local yanse, huase, dianshu = ai_judge_cardinfo(p, {char_juese[char_acting_i].panding[id]})
-			if yanse == "黑色" and char_juese[p].skill["帷幕"] == "available" then
+			--  若下家已死亡，则跳过  --
+			if char_juese[p].siwang == true then
 				j = true
-			end
-
-			--  若下家判定区中已有闪电，则跳过之传给再下家  --
-			for _, v in ipairs(char_juese[p].panding) do
-				if v[1] == "闪电" then
+			else
+				local yanse, huase, dianshu = ai_judge_cardinfo(p, {char_juese[char_acting_i].panding[id]})
+				if yanse == "黑色" and char_juese[p].skill["帷幕"] == "available" then
 					j = true
-					break
+				end
+
+				--  若下家判定区中已有闪电，则跳过之传给再下家  --
+				for _, v in ipairs(char_juese[p].panding) do
+					if v[1] == "闪电" then
+						j = true
+						break
+					end
 				end
 			end
 		end
@@ -1365,9 +1372,8 @@ function on.enterKey()
 
 		if string.find(gamerun_status, "火攻B") then
 			if table.getn2(card_selected) ~= 0 then
-				local shoupai = char_juese[wuxie_va[1]].shoupai
 				funcptr_queue = {}
-				_huogong_beidong_exe_2(wuxie_va[1], wuxie_va[2], shoupai, card_highlighted)
+				_huogong_beidong_exe_2(wuxie_va[1], wuxie_va[2], card_highlighted)
 				consent_func_queue(0.6)
 			end
 			return

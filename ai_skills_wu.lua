@@ -119,6 +119,47 @@ end
 --  AI决定天香的发动目标  --
 --  返回是否发动、手牌ID、目标  --
 function ai_judge_tianxiang(ID, dianshu, shuxing)
+	local cards = ai_card_search(ID, "红桃", 1)
+	if #cards == 0 then
+		return false, 0, 0
+	end
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	local friend_hengzhi = ai_judge_friends_hengzhi(ID)
+	if shuxing == "火" or shuxing == "雷" then
+		for i = #attack_mubiao, 1, -1 do
+			if friend_hengzhi and char_juese[attack_mubiao[i]].hengzhi == true then
+				table.remove(attack_mubiao, i)
+			end
+		end
+	end
+
+	for i = #attack_mubiao, 1, -1 do
+		local target_tili = char_juese[attack_mubiao[i]].tili - _deduct_count({dianshu, attack_mubiao[i], -1, shuxing})
+		if target_tili <= 0 and #char_juese[attack_mubiao[i]].shoupai <= 2 then
+
+		elseif char_juese[attack_mubiao[i]].tili_max - target_tili > 2 then
+			table.remove(attack_mubiao, i)
+		end
+	end
+
+	attack_mubiao = random_pick(attack_mubiao, 1)
+
+	local mubiao = attack_mubiao[1]
+	if char_juese[ID].tili - dianshu <= 0 then
+		return true, cards[1], mubiao
+	else
+		local target_tili = char_juese[mubiao].tili - _deduct_count({dianshu, mubiao, -1, shuxing})
+		local target_tili_reduced = char_juese[mubiao].tili_max - target_tili
+		local percent = 100 - 25 * target_tili_reduced
+
+		if ai_judge_random_percent(percent) == 1 or target_tili <= 0 then
+			return true, cards[1], mubiao
+		else
+			return false, 0, 0
+		end
+	end
+
 	return false, 0, 0
 end
 
@@ -679,4 +720,160 @@ function ai_judge_xuanfeng(ID)
 	attack_mubiao = random_pick(attack_mubiao, 2)
 
 	return attack_mubiao
+end
+
+--  AI决定是否发动甘露  --
+--  返回含有角色ID的表，如为空则表示不发动  --
+function ai_judge_ganlu(ID)
+	local help_mubiao = ai_basic_judge_mubiao(ID, 4, true, false, true)
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	local possible_combinations = {}
+
+	for i = 1, #help_mubiao do
+		for j = 1, #attack_mubiao do
+			if skills_judge_ganlu(ID, help_mubiao[i], attack_mubiao[j]) == true then
+				table.insert(possible_combinations, {help_mubiao[i], attack_mubiao[j]})
+			end
+		end
+	end
+
+	local possible_combinations_fangju = table.copy(possible_combinations)
+	for i = #possible_combinations_fangju, 1, -1 do
+		local attack = possible_combinations_fangju[i][2]
+		local help = possible_combinations_fangju[i][1]
+
+		if #char_juese[help].fangju ~= 0 and ai_judge_withdraw_fangju(help) == false then
+			--  剔除有防具的我方，我方需替换装备的情况除外  --
+			table.remove(possible_combinations_fangju, i)
+		elseif #char_juese[attack].fangju == 0 then
+			--  剔除无防具的敌方  --
+			table.remove(possible_combinations_fangju, i)
+		elseif char_juese[attack].fangju[1] == "白银狮" then
+			--  剔除敌方白银狮子  --
+			table.remove(possible_combinations_fangju, i)
+		elseif (#char_juese[help].wuqi ~= 0 and #char_juese[help].fangju == 0) and (#char_juese[attack].wuqi == 0 and #char_juese[attack].fangju ~= 0) then
+			--  剔除我方只有武器敌方只有防具  --
+			table.remove(possible_combinations_fangju, i)
+		elseif char_juese[attack].skill["枭姬"] == "available" or char_juese[attack].skill["旋风"] == "available" then
+			--  剔除卖装备的敌方  --
+			table.remove(possible_combinations_fangju, i)
+		end
+	end
+
+	local mindef_combination = nil
+	local mindef = 1000
+	for i = 1, #possible_combinations_fangju do
+		local j = possible_combinations_fangju[i][1]
+
+		if ai_judge_withdraw_fangju(j) then
+			mindef_combination = i
+			break
+		end
+
+		if ai_judge_def(j, false, false) < mindef and #char_juese[j].fangju == 0 then
+			mindef_combination = i
+			mindef = ai_judge_def(j, false, false)
+		end
+	end
+
+	if #possible_combinations_fangju > 0 and mindef_combination ~= nil then
+		return possible_combinations_fangju[mindef_combination]
+	end
+
+	local possible_combinations_wuqi = table.copy(possible_combinations)
+	for i = #possible_combinations_wuqi, 1, -1 do
+		local attack = possible_combinations_wuqi[i][2]
+		local help = possible_combinations_wuqi[i][1]
+		if #char_juese[help].wuqi ~= 0 then
+			--  剔除有武器的本方  --
+			table.remove(possible_combinations_wuqi, i)
+		elseif #char_juese[attack].wuqi == 0 then
+			--  剔除无武器的敌方  --
+			table.remove(possible_combinations_wuqi, i)
+		elseif (#char_juese[help].wuqi == 0 and #char_juese[help].fangju ~= 0 and ai_judge_withdraw_fangju(help) == false) and (#char_juese[attack].wuqi ~= 0 and #char_juese[attack].fangju == 0) then
+			--  剔除我方只有防具敌方只有武器，我方需替换装备的情况除外  --
+			table.remove(possible_combinations_wuqi, i)
+		elseif char_juese[attack].skill["枭姬"] == "available" or char_juese[attack].skill["旋风"] == "available" then
+			--  剔除卖装备的敌方  --
+			table.remove(possible_combinations_wuqi, i)
+		end
+	end
+
+	while #possible_combinations_wuqi > 1 do
+		table.remove(possible_combinations_wuqi, math.random(#possible_combinations_wuqi))
+	end
+
+	if #possible_combinations_wuqi > 0 then
+		return possible_combinations_wuqi[1]
+	else
+		return {}
+	end
+end
+
+--  AI决定是否发动缔盟  --
+--  返回是否发动、手牌列表、目标列表  --
+function ai_judge_dimeng(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+
+	for i = #cards, 1, -1 do
+		if card_judge_if_shan(ID, cards[i]) then
+			table.remove(cards, i)
+			break
+		end
+	end
+
+	local help_mubiao = ai_basic_judge_mubiao(ID, 4, true, false, true)
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	local possible_combinations = {}
+
+	for i = 1, #help_mubiao do
+		for j = 1, #attack_mubiao do
+			local n_shoupai_help = #char_juese[help_mubiao[i]].shoupai
+			local n_shoupai_attack = #char_juese[attack_mubiao[j]].shoupai
+
+			if n_shoupai_help < n_shoupai_attack and math.abs(n_shoupai_help - n_shoupai_attack) <= 2 and #cards >= math.abs(n_shoupai_help - n_shoupai_attack) then
+				table.insert(possible_combinations, {help_mubiao[i], attack_mubiao[j]})
+			end
+		end
+	end
+
+	local chosen_help = nil
+	local choose_ignore = {}
+	for i = 1, #possible_combinations do
+		local help = possible_combinations[i][1]
+
+		local percent = math.floor(100 / (2 ^ #char_juese[help].shoupai))
+		if ai_judge_random_percent(percent) == 1 and choose_ignore[help] ~= true then
+			chosen_help = help
+			break
+		else
+			choose_ignore[help] = true
+		end
+	end
+	if chosen_help == nil then
+		return false, {}, {}
+	end
+
+	local maxdef_ID
+	local maxdef = -1
+	for i = 1, #possible_combinations do
+		local help = possible_combinations[i][1]
+		local attack = possible_combinations[i][2]
+
+		if help == chosen_help then
+			if #char_juese[attack].shoupai > maxdef then
+				maxdef_ID = i
+				maxdef = #char_juese[attack].shoupai
+			end
+		end
+	end
+
+	local help = possible_combinations[maxdef_ID][1]
+	local attack = possible_combinations[maxdef_ID][2]
+	while #cards > math.abs(#char_juese[attack].shoupai - #char_juese[help].shoupai) do
+		table.remove(cards, math.random(#cards))
+	end
+
+	table.sort(cards)
+	return true, cards, possible_combinations[maxdef_ID]
 end

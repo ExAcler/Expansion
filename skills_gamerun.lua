@@ -29,7 +29,7 @@ skills_func =
 	["急袭"] = function() return skills_jixi_enter() end,
 	["激将"] = function() return skills_jijiang_current_enter() end,
 	["双雄"] = function() return skills_shuangxiong_2_enter() end,
-	["甘露"] = function() return false end,
+	["甘露"] = function() return skills_ganlu_enter() end,
 	["乱武"] = function() return false end,
 }
 

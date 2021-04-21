@@ -19,6 +19,22 @@ function random_pick(_array, n)
     return result
 end
 
+--  AI判断是否有队友 (或自己) 处于横置状态  --
+function ai_judge_friends_hengzhi(ID)
+	if char_juese[ID].hengzhi == true then
+		return true
+	end
+
+	local friends = ai_basic_judge_mubiao(ID, 4, true, true, true)
+	for i = 1, #friends do
+		if char_juese[friends[i]].hengzhi == true then
+			return true
+		end
+	end
+
+	return false
+end
+
 --  AI决定是否出桃解救濒死角色  --
 function ai_judge_jiejiu(ID_s, ID_jiu)
 	local jiejiu = false
@@ -740,9 +756,48 @@ function ai_skill_use_priority(ID)
 	return false
 end
 
---  AI回合内使用技能  --
+--  AI回合内使用技能 (在使用杀之前的)  --
+function ai_skills_use_with_sha(ID)
+	local fadong, ID_shoupai, mubiao
+
+	--  SP貂蝉离魂  --
+	if char_juese[ID].skill["离魂"] == 1 then
+		fadong, ID_shoupai, mubiao = ai_judge_lihun(ID)
+		if fadong == true then
+			if skills_lihun_ai(ID_shoupai, ID, mubiao) then
+				ai_attack_priority = mubiao
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+end
+
+--  AI回合内使用技能 (在使用手牌之后的)  --
 function ai_skill_use(ID)
 	local fadong, ID_shoupai, mubiao
+
+	--  鲁肃缔盟  --
+	if char_juese[ID].skill["缔盟"] == 1 then
+		fadong, ID_shoupai, mubiao = ai_judge_dimeng(ID)
+		if fadong == true then
+			if skills_dimeng_ai(ID_shoupai, ID, mubiao[1], mubiao[2]) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  吴国太甘露  --
+	if char_juese[ID].skill["甘露"] == 1 then
+		mubiao = ai_judge_ganlu(ID)
+		if #mubiao > 0 then
+			if skills_ganlu(ID, mubiao[1], mubiao[2]) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
 
 	--  典韦强袭  --
 	if char_juese[ID].skill["强袭"] == 1 then
@@ -1078,6 +1133,10 @@ function ai_card_use(ID)
 		end
 	end
 
+	if ai_skills_use_with_sha(ID) then
+		return
+	end
+
 	local card_use = ai_card_search(ID, "杀", 1)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
@@ -1179,6 +1238,11 @@ function ai_next_card(ID)
 end
 
 function ai_stage_qipai(ID)
+	if lihun_target ~= nil then
+		skills_lihun_stage_2_ai()
+		return
+	end
+
 	funcptr_queue = {}
 	funcptr_i = 0
 	if gamerun_dangxian == true then

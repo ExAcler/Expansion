@@ -92,7 +92,12 @@ function ai_judge_guixin(ID_s)
 end
 
 --  AI决定是否发动极略获得完杀  --
+--  返回是否发动、优先攻击的角色  --
 function ai_judge_jilve_wansha(ID)
+	if char_alive_stat() == 2 then
+		return false, 0
+	end
+
 	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
 	
 	local has_attack_card = false
@@ -116,14 +121,14 @@ function ai_judge_jilve_wansha(ID)
 		end
 	end
 	if has_attack_card == false then
-		return false
+		return false, 0
 	end
 
 	for i = 1, #attack_mubiao do
 		if char_juese[attack_mubiao[i]].tili <= 1 then
-			return true
+			return true, attack_mubiao[i]
 		end
 	end
 
-	return false
+	return false, 0
 end

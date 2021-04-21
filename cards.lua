@@ -2686,6 +2686,11 @@ function _chai_sub1(va_list)    --  过河拆桥/顺手牵羊初始化 (寒冰�
 	local leixing, ID_s, ID_d, is_owned
 	leixing = va_list[1]; ID_s = va_list[2]; ID_d = va_list[3]; is_owned = va_list[4]
 	
+	if ai_card_stat(ID_d, true, true) == 0 then
+		skills_skip_subqueue()
+		return
+	end
+
 	if char_juese[ID_d].isantigovernment ~= nil then
 		if char_juese[ID_d].isantigovernment == false then
 			if char_juese[ID_d].shenfen == "主公" then
@@ -3376,6 +3381,12 @@ function _wanjian_zhudong_chu(ID_s)	--  万箭齐发：己方出杀
 	end
 	add_funcptr(_nanman_sha, {char_current_i, c_pos})
 	skills_losecard(char_current_i)
+
+	--  张角雷击  --
+	if char_juese[char_current_i].skill["雷击"] == "available" then
+		add_funcptr(skills_leiji, {char_current_i, ID_s})
+	end
+
 	add_funcptr(_wanjian_huifu)
 end
 function _wanjian_zhudong_fangqi(ID_s)	--  万箭齐发：己方放弃
@@ -3781,26 +3792,22 @@ function card_huogong(ID_shoupai, ID_s, ID_mubiao)
 		add_funcptr(skills_jizhi, ID_s)
 	end
 
-	local emulated_source_shoupai = table.copy(char_juese[ID_s].shoupai)
-	for i = #ID_shoupai, 1, -1 do
-		table.remove(emulated_source_shoupai, ID_shoupai[i])
-	end
-
 	card_wuxie("火攻", ID_s, ID_mubiao)
 	
 	funcptr_add_tag = "无懈无效结算"
 	if ID_mubiao ~= char_current_i then
 		if ID_s == char_current_i then
 			--  己方火攻AI  --
-			_huogong_exe_1(ID_s, ID_mubiao, emulated_source_shoupai, false)
+			add_funcptr(_huogong_exe_1, {ID_s, ID_mubiao, false})
 		else
 			--  AI互相火攻  --
-			_huogong_exe_1(ID_s, ID_mubiao, emulated_source_shoupai, true)
+			add_funcptr(_huogong_exe_1, {ID_s, ID_mubiao, true})
 		end
 	else
 		--  AI火攻己方  --
 		_huogong_beidong_exe_1(ID_s, ID_mubiao)
 	end
+
 	funcptr_add_tag = "无懈有效结算"
 	add_funcptr(_chai_sub2)
 	funcptr_add_tag = nil
@@ -3811,12 +3818,18 @@ function _huogong_beidong_exe_1(ID_s, ID_mubiao)	--  火攻 (己方被动) 执�
 	add_funcptr(_huogong_beidong_xiangying, {ID_s, ID_mubiao})
 end
 function _huogong_beidong_xiangying(va_list)
+	--  火攻结算时被攻方已经没有手牌  --
+	if #char_juese[va_list[2]].shoupai == 0 then
+		_huogong_sub1()
+		return
+	end
+
 	wuxie_va = va_list
 	gamerun_status = "主动出牌-火攻B"
 	jiaohu_text = "请展示一张手牌"
 	platform.window:invalidate()
 end
-function _huogong_beidong_exe_2(ID_s, ID_mubiao, emulated_source_shoupai, c_pos)		--  火攻 (己方被动) 执行二：攻方出牌并造成伤害
+function _huogong_beidong_exe_2(ID_s, ID_mubiao, c_pos)		--  火攻 (己方被动) 执行二：攻方出牌并造成伤害
 	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
 	
@@ -3831,10 +3844,11 @@ function _huogong_beidong_exe_2(ID_s, ID_mubiao, emulated_source_shoupai, c_pos)
 	
 	if ID_s ~= ID_mubiao then
 		local yanse, huase, dianshu = ai_judge_cardinfo(ID_mubiao, {card_source})
-		card_t_pos = ai_card_search(ID_s, huase, 1, emulated_source_shoupai)
+		card_t_pos = ai_card_search(ID_s, huase, 1)
 	else
 		card_t_pos = {c_pos}
 	end
+
 	if #card_t_pos == 0 then
 		if char_acting_i ~= char_current_i then
 			ai_skills_discard["火计"] = true
@@ -3849,10 +3863,23 @@ function _huogong_beidong_exe_2(ID_s, ID_mubiao, emulated_source_shoupai, c_pos)
 		add_funcptr(_huogong_sub1, nil)
 	end
 end
-function _huogong_exe_1(ID_s, ID_mubiao, emulated_source_shoupai, between_ai)    --  火攻执行一：被攻方展示手牌 (临时AI)
+function _huogong_exe_1(va_list)    --  火攻执行一：被攻方展示手牌 (临时AI)
+	local ID_s, ID_mubiao, between_ai
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; between_ai = va_list[3]
+
     local card, card_chosen, i
+
+	funcptr_queue = {}
+	funcptr_i = 0
 	
 	card = char_juese[ID_mubiao].shoupai
+
+	--  火攻结算时被攻方已经没有手牌  --
+	if #card == 0 then
+		_huogong_sub1()
+		return
+	end
+
 	i = math.random(#card)
 	if between_ai then
 		card_chosen = i
@@ -3862,11 +3889,14 @@ function _huogong_exe_1(ID_s, ID_mubiao, emulated_source_shoupai, between_ai)   
 	end
 
 	if between_ai then
-		_huogong_beidong_exe_2(ID_s, ID_mubiao, emulated_source_shoupai, card_chosen)
+		_huogong_beidong_exe_2(ID_s, ID_mubiao, card_chosen)
 	else
 		add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "展示了'", card[i][2], card[i][3], "的", card[i][1], "'"})
     	add_funcptr(_huogong_xiangying, nil)
 	end
+	
+	skills_skip_subqueue()
+	timer.start(0.6)
 end
 function _huogong_xiangying()    --  火攻：进入主动响应状态
     gamerun_status = "主动出牌-火攻A"

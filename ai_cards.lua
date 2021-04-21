@@ -409,9 +409,14 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 			end
 		end
 	elseif card_treated == "决斗" then
-		--剔除空城
 		for i=#possible_target,1,-1 do
-			if char_juese[possible_target[i]].skill["空城"] == "available" and #char_juese[possible_target[i]].shoupai == 0 then
+			if ai_attack_priority ~= nil and possible_target[i] ~= ai_attack_priority then
+				if char_juese[ai_attack_priority].siwang == false then
+					--有优先杀对象时剔除非优先杀的对象
+					table.remove(possible_target, i)
+				end
+			elseif char_juese[possible_target[i]].skill["空城"] == "available" and #char_juese[possible_target[i]].shoupai == 0 then
+				--剔除空城
 				table.remove(possible_target,i)
 			end
 		end
@@ -551,6 +556,23 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 								end
 							end
 						end
+					end
+				end
+			end
+		end
+		--有优先杀对象，且优先杀对象在目标列表中时，剔除非优先杀的其他对象
+		if ai_attack_priority ~= nil then
+			local inlist = false
+			for i = #possible_target, 1, -1 do
+				if possible_target[i] == ai_attack_priority and char_juese[ai_attack_priority].siwang == false then
+					inlist = true
+					break
+				end
+			end
+			if inlist then
+				for i = #possible_target, 1, -1 do
+					if possible_target[i] ~= ai_attack_priority then
+						table.remove(possible_target, i)
 					end
 				end
 			end

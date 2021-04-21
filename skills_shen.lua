@@ -17,8 +17,11 @@ end
 
 --  神司马懿：极略  --
 function skills_jilve_ai(ID_s)
-	if ai_judge_jilve_wansha(ID_s) and mark_ren[ID_s] > 0 and char_juese[ID_s].skill["完杀"] == nil then
+	local wansha_fadong, ID_priority = ai_judge_jilve_wansha(ID_s)
+
+	if wansha_fadong == true and mark_ren[ID_s] > 0 and char_juese[ID_s].skill["完杀"] == nil then
 		add_funcptr(skills_jilve_set, {ID_s, "完杀"})
+		ai_attack_priority = ID_priority
 		return true
 	end
 

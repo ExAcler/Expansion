@@ -556,7 +556,7 @@ function skills_weidi(ID)
 			end
 		end
 		if weidi_worked == true then
-			push_message(char_juese[ID].name.."触发了技能 '伪帝' ")
+			push_message(char_juese[ID].name.."触发了武将技能 '伪帝'")
 			for i = 1, #weidi_get do
 				table.insert(char_juese[ID].skillname, weidi_get[i])
 				char_juese[ID].skill[weidi_get[i]] = "available"
@@ -570,17 +570,14 @@ function skills_leiji(va_list)
 	local ID_s, _ID_mubiao
 	ID_s = va_list[1]; _ID_mubiao = va_list[2]
 
-	if ID == char_current_i then
+	if ID_s == char_current_i then
 		skills_leiji_enter()
 	else
 		skills_leiji_ai(va_list)
 	end
 end
 function skills_leiji_enter()
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	local old_gamerun_status = gamerun_status
 	gamerun_status = "确认操作"
@@ -596,8 +593,7 @@ function skills_leiji_enter()
 			set_hints("")
 			gamerun_status = old_gamerun_status
 			
-			_leiji_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -631,11 +627,7 @@ function skills_leiji_ai(va_list)
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
-	
+	skills_push_queue()
     _leiji_exe(ID_s, mubiao)
 end
 function _leiji_exe(ID_s, ID_mubiao)
@@ -679,7 +671,7 @@ function _leiji_jiesuan(va_list)
 		skills_card_qi_panding(ID_mubiao)
 	end
 	
-	add_funcptr(_leiji_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
 end
 function _leiji_huifu()
@@ -816,46 +808,84 @@ end
 function _lihun_exe(ID_shoupai, ID_s, ID_mubiao)
 	funcptr_queue = {}
 
+	add_funcptr(_lihun_sub1, {ID_shoupai, ID_s})
+	skills_losecard(ID_s)
+
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '离魂'")
+	add_funcptr(char_fanmian, ID_s)
+	add_funcptr(_lihun_sub2, {ID_s, ID_mubiao})
+	skills_losecard(ID_mubiao)
+
+	char_juese[ID_s].skill["离魂"] = "locked"
+
+	lihun_target = ID_mubiao
+	
+	add_funcptr(_lihun_sub3)
+	consent_func_queue(0.6)
+end
+function _lihun_sub1(va_list)
+	local ID_shoupai, ID_s
+	ID_shoupai = va_list[1]; ID_s = va_list[2]
+
 	local card = char_juese[ID_s].shoupai[ID_shoupai]
 	card_add_qipai(card)
 	card_remove({ID_s, ID_shoupai})
-	skills_losecard(ID_s)
-	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
-
-	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '离魂'")
-	add_funcptr(push_message, char_juese[ID_s].name .. "获得了" .. char_juese[ID_mubiao].name .. "的所有手牌")
-	char_juese[ID_s].skill["离魂"] = "locked"
+	push_message(table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+end
+function _lihun_sub2(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
 	for i = #char_juese[ID_mubiao].shoupai, 1, -1 do
 		card_insert(ID_s, char_juese[ID_mubiao].shoupai[i])
-		table.remove(char_juese[ID_mubiao].shoupai,i)
+		table.remove(char_juese[ID_mubiao].shoupai, i)
 	end
-	skills_losecard(ID_mubiao)
 
-	char_fanmian(ID_s)
-	lihun_target = ID_mubiao
-	skills_cs()
-	consent_func_queue(0.2)
+	push_message(char_juese[ID_s].name .. "获得了" .. char_juese[ID_mubiao].name .. "的所有手牌")
+end
+function _lihun_sub3()
+	if char_acting_i == char_current_i then
+		card_selected = {}
+		card_highlighted = 1
+		set_hints("请您出牌")
+		gamerun_status = ""
+	else
+		set_hints("")
+		gamerun_status = "AI出牌"
+
+		ai_card_use(char_acting_i)
+	end
+end
+function skills_lihun_stage_2_ai()
+	if char_juese[lihun_target].siwang ~= true then
+		local n_geipai = math.min(char_juese[lihun_target].tili, ai_card_stat(char_acting_i, true, false))
+		local qipai_id, qi_zhuangbei_id = ai_judge_withdraw(char_acting_i, n_geipai, true)
+
+		add_funcptr(_lihun_exe_2, {char_acting_i, lihun_target, qipai_id, qi_zhuangbei_id})
+		skills_losecard(char_current_i)
+
+		add_funcptr(_lihun_huifu)
+		timer.start(0.2)
+	else
+		lihun_target = nil
+		ai_stage_qipai(char_acting_i)
+	end
 end
 function skills_lihun_stage_2_enter()
 	if char_juese[lihun_target].siwang ~= true then
-		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-		timer.stop()
-		funcptr_queue = {}
-		funcptr_i = 0
-
-		local n_geipai = math.min(char_juese[lihun_target].tili,ai_card_stat(char_acting_i, true, false))
+		local n_geipai = math.min(char_juese[lihun_target].tili, ai_card_stat(char_acting_i, true, false))
 
 		skills_enter("您需给出" .. tostring(n_geipai) .. "张牌", "", "离魂", "技能选择-多牌")
 		gamerun_OK = false
 		gamerun_tab_ptr = nil
 		gamerun_wuqi_into_hand(char_acting_i)
+
 		gamerun_OK_ptr = function()
 			if gamerun_OK == true then
 				if table.getn2(card_selected) ~= n_geipai then
-					--gamerun_wuqi_out_hand(char_acting_i)
 					return
 				end
+
 				local ID_shoupai, ID_zhuangbei = {},{}
 				for i = -4, -1, 1 do
 					if card_selected[i] ~= nil then
@@ -867,13 +897,14 @@ function skills_lihun_stage_2_enter()
 						table.insert(ID_shoupai,i)
 					end
 				end
+
 				set_hints("")
 				gamerun_status = ""
 
 				add_funcptr(_lihun_exe_2, {char_current_i, lihun_target, ID_shoupai, ID_zhuangbei})
 				skills_losecard(char_current_i)
 
-				add_funcptr(gamerun_wuqi_out_hand,char_acting_i)
+				add_funcptr(gamerun_wuqi_out_hand_queued, char_acting_i)
 				add_funcptr(_lihun_huifu)
 				timer.start(0.2)
 			end
@@ -919,8 +950,11 @@ function _lihun_exe_2(va_list)
 	lihun_target = nil
 end
 function _lihun_huifu()
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
-	on.escapeKey()
+	if char_acting_i == char_current_i then
+		on.escapeKey()
+	else
+		ai_stage_qipai(char_acting_i)
+	end
 end
 
 --  庞德：猛进  --
