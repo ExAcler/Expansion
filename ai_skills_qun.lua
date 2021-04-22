@@ -453,7 +453,8 @@ function ai_judge_lihun(ID)
 		tili_threshold = 2
 	end
 
-	local ignore_card, mubiao
+	local ignore_card = -1
+	local mubiao = -1
 
 	local cards_sha = ai_card_search(ID, "普通杀", 1)
 	if #cards_sha ~= 0 then
@@ -502,6 +503,9 @@ function ai_judge_lihun(ID)
 	while #cards > 1 do
 		table.remove(cards, math.random(#cards))
 	end
+	if #cards == 0 then
+		return false, 0, 0
+	end
 
 	if ai_judge_random_percent(75) == 1 or allow_no_jiu then
 		return true, cards[1], mubiao
@@ -538,7 +542,9 @@ function _ai_lihun_judge_target(ID, cards, sha_leixing, tili_threshold)
 		end
 	end
 	for i = #targets, 1, -1 do
-		if #char_juese[targets[i]].shoupai <= 2 then
+		if char_juese[targets[i]].tili >= 5 then
+			table.remove(targets, i)
+		elseif #char_juese[targets[i]].shoupai <= 2 then
 			table.remove(targets, i)
 		elseif char_juese[targets[i]].xingbie ~= "男" then
 			table.remove(targets, i)
@@ -553,4 +559,158 @@ function _ai_lihun_judge_target(ID, cards, sha_leixing, tili_threshold)
 	end
 
 	return allow_no_jiu, mubiao, ignore_card
+end
+
+--  AI决定是否发动乱武  --
+function ai_judge_luanwu(ID)
+	local cur = ID + 1
+	if cur > 5 then
+		cur = 1
+	end
+
+	--  友方及敌方有可能被乱武击杀的角色数  --
+	local allies = 0
+	local enemies = 0
+	local visited = {}
+
+	for i = 1, 4 do
+		if char_juese[cur].siwang == false then
+			local mindis = skills_luanwu_calc_min_distance(ID)
+			local reach = {}
+			local c = cur + 1
+			if c > 5 then
+				c = 1
+			end
+
+			for j = 1, 4 do
+				if char_juese[c].siwang == false and mindis == char_calc_distance(cur, c) then
+					table.insert(reach, c)
+				end
+				c = c + 1
+				if c > 5 then
+					c = 1
+				end
+			end
+
+			for j = 1, #reach do
+				if ai_judge_same_identity(ID, cur, true) == 2 then
+					if ai_judge_same_identity(cur, reach[j], true) == 1 then
+						if char_juese[cur].tili <= 1 and #char_juese[cur].shoupai <= 2 and visited[cur] ~= true then
+							enemies = enemies + 1
+							visited[cur] = true
+						else
+							if #char_juese[cur].shoupai >= 3 and char_juese[reach[j]].tili <= 1 and #char_juese[reach[j]].shoupai <= 1 and (#char_juese[reach[j]].fangju == 0 or char_juese[reach[j]].fangju[1] == "白银狮") and visited[reach[j]] ~= true then
+								allies = allies + 1
+								visited[reach[j]] = true
+							end
+						end
+					end
+				elseif ai_judge_same_identity(ID, cur, true) == 1 then
+					if ai_judge_same_identity(cur, reach[j], true) == 2 then
+						if char_juese[cur].tili <= 1 and #char_juese[cur].shoupai <= 2 and visited[cur] ~= true then
+							allies = allies + 1
+							visited[cur] = true
+						else
+							if #char_juese[cur].shoupai >= 3 and char_juese[reach[j]].tili <= 1 and #char_juese[reach[j]].shoupai <= 1 and (#char_juese[reach[j]].fangju == 0 or char_juese[reach[j]].fangju[1] == "白银狮") and visited[reach[j]] ~= true then
+								enemies = enemies + 1
+								visited[reach[j]] = true
+							end
+						end
+					end
+				end
+			end
+		end
+
+		cur = cur + 1
+		if cur > 5 then
+			cur = 1
+		end
+	end
+
+	if allies == 0 and enemies == 0 then
+		return false
+	end
+
+	if char_alive_stat() > 3 and enemies < 2 then
+		return false
+	end
+
+	if allies < enemies then
+		return true
+	else
+		return false
+	end
+end
+
+--  AI决定响应乱武时杀的目标  --
+--  返回含有杀目标的列表，如为空则表示不响应  --
+function ai_judge_luanwu_target(ID)
+	local mindis = skills_luanwu_calc_min_distance(ID)
+
+	local j = ID + 1
+	if j > 5 then
+		j = 1
+	end
+
+	local lord_targets = {}
+	local shenfen_unknown_targets = {}
+
+	for i = 1, 4 do
+		if char_juese[j].siwang == false and mindis == char_calc_distance(ID, j) then
+			if card_if_d_limit("乱武", ID, j, nil) then
+				if ai_judge_same_identity(ID, j, true) == 2 then
+					return {j}
+				elseif ai_judge_same_identity(ID, j, true) == 3 then
+					table.insert(shenfen_unknown_targets, j)
+				else
+					table.insert(lord_targets, j)
+				end
+			end
+		end
+
+		j = j + 1
+		if j > 5 then
+			j = 1
+		end
+	end
+
+	if #shenfen_unknown_targets > 0 then
+		--  没有敌方时优先杀身份未知的  --
+		return {shenfen_unknown_targets[math.random(#shenfen_unknown_targets)]}
+	end
+
+	if char_juese[ID].shenfen == "主公" and char_juese[ID].tili == 1 and #lord_targets > 0 then
+		--  主公只剩一血时必须杀  --
+		return {lord_targets[math.random(#lord_targets)]}
+	else
+		for i = 1, #lord_targets do
+			--  友方牌多或者血多可以杀  --
+			if #char_juese[lord_targets[i]].shoupai >= 3 or (char_juese[lord_targets[i]].tili >= 3 and char_juese[ID].tili == 1) or (#char_juese[lord_targets[i]].fangju ~= 0 and char_juese[lord_targets[i]].fangju[1] ~= "白银狮") then
+				return {lord_targets[i]}
+			end
+		end
+
+		return {}
+	end
+end
+
+--  AI决定乱武要使用的杀  --
+--  返回手牌列表，如为空则表示没有牌可以出  --
+function ai_judge_luanwu_shoupai(ID)
+	local cards = ai_card_search(ID, "杀", 1)
+	if #cards > 0 then
+		return cards
+	end
+	
+	if #char_juese[ID].wuqi ~= 0 then
+		if #char_juese[ID].wuqi[1] == "丈八矛" then
+			cards = ai_card_search(ID, "随意", 2)
+			if #cards == 2 then
+				table.sort(cards)
+				return cards
+			end
+		end
+	end
+
+	return {}
 end

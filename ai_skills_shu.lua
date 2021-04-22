@@ -294,7 +294,11 @@ end
 
 --  AI决定志继选择  --
 function ai_judge_zhiji(ID)
-	if ai_judge_random_percent(50) == 1 then
+	if char_juese[ID].tili >= char_juese[ID].tili_max - 1 then
+		return 2
+	end
+
+	if ai_judge_random_percent(25 * (char_juese[ID].tili_max - char_juese[ID].tili)) == 1 then
 		return 1
 	else
 		return 2
@@ -424,4 +428,54 @@ function ai_judge_jijiang_zhudong(ID)
 	local attack_mubiao = ai_judge_target(ID, "杀", shoupai, 1)
 
 	return true, attack_mubiao[1]
+end
+
+--  AI决定是否发动挑衅  --
+--  返回是否发动、目标  --
+function ai_judge_tiaoxin(ID)
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+
+	for i = #attack_mubiao, 1, -1 do
+		if card_if_d_limit("挑衅", ID, attack_mubiao[i]) == false then
+			table.remove(attack_mubiao, i)
+		elseif ai_card_stat(attack_mubiao[i], true, false) == 0 then
+			table.remove(attack_mubiao, i)
+		elseif #char_juese[attack_mubiao[i]].shoupai >= 3 then
+			table.remove(attack_mubiao, i)
+		elseif #char_juese[attack_mubiao[i]].shoupai == 2 and ai_judge_random_percent(50) == 1 then
+			table.remove(attack_mubiao, i)
+		end
+	end
+
+	if #attack_mubiao == 0 then
+		return false, 0
+	end
+
+	attack_mubiao = random_pick(attack_mubiao, 1)
+	return true, attack_mubiao[1]
+end
+
+--  AI决定响应挑衅的目标  --
+--  返回含有杀目标的列表，如为空则表示不响应  --
+function ai_judge_tiaoxin_sha_target(ID, ID_req)
+	local n_targets = 1
+	if gamerun_judge_fangtian(ID) == true then
+		n_targets = 3
+	end
+
+	if n_targets == 1 then
+		return {ID_req}
+	end
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	for i = #attack_mubiao, 1, -1 do
+		if attack_mubiao[i] == ID_req then
+			table.remove(attack_mubiao, i)
+			break
+		end
+	end
+
+	attack_mubiao = random_pick(attack_mubiao, 2)
+	table.insert(attack_mubiao, 1, ID_req)
+	return attack_mubiao
 end

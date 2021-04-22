@@ -777,6 +777,15 @@ end
 function ai_skill_use(ID)
 	local fadong, ID_shoupai, mubiao
 
+	--  贾诩乱武  --
+	if char_juese[ID].skill["乱武"] == "available" then
+		if ai_judge_luanwu(ID) == true then
+			skills_luanwu_add(ID)
+			timer.start(0.6)
+			return true
+		end
+	end
+
 	--  鲁肃缔盟  --
 	if char_juese[ID].skill["缔盟"] == 1 then
 		fadong, ID_shoupai, mubiao = ai_judge_dimeng(ID)
@@ -796,6 +805,19 @@ function ai_skill_use(ID)
 				timer.start(0.6)
 				return true
 			end
+		end
+	end
+
+	--  姜维挑衅  --
+	if char_juese[ID].skill["挑衅"] == 1 and ai_skills_discard["挑衅"] ~= true then
+		fadong, mubiao = ai_judge_tiaoxin(ID)
+		if fadong == true then
+			if skills_tiaoxin(ID, mubiao) then
+				timer.start(0.6)
+				return true
+			end
+		else
+			ai_skills_discard["挑衅"] = true
 		end
 	end
 
@@ -1141,11 +1163,16 @@ function ai_card_use(ID)
 	if #card_use ~= 0 then
 		local ID_mubiao, targets
 		local shoupai = char_juese[ID].shoupai[card_use[1]]
+		local n_targets = 1
+
+		if gamerun_judge_fangtian(ID) == true then
+			n_targets = 3
+		end
 
 		if char_sha_add_target_able == false then
-			targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1)
+			targets = ai_judge_target(ID, shoupai[1], {shoupai}, n_targets)
 		else
-			targets = ai_judge_target(ID, shoupai[1], {shoupai}, 1 + char_sha_additional_target)
+			targets = ai_judge_target(ID, shoupai[1], {shoupai}, math.min(n_targets + char_sha_additional_target, 4))
 		end
 
 		if #targets > 0 and char_hejiu == false then

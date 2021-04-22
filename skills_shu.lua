@@ -532,8 +532,6 @@ function skills_tiaoxin_enter()
 	return true
 end
 function skills_tiaoxin(ID_req, ID_d)
-	local msg, c_pos
-	
 	if #char_juese[ID_d].wuqi ~= 0 then
 	    if char_calc_distance(ID_d, ID_req) > card_wuqi_r[char_juese[ID_d].wuqi[1]] then
 	        return false
@@ -548,25 +546,166 @@ function skills_tiaoxin(ID_req, ID_d)
 	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
 	
-	msg = {char_juese[ID_req].name.."发动了武将技能 '挑衅' (对", char_juese[ID_d].name, ")"}
+	local msg = {char_juese[ID_req].name.."发动了武将技能 '挑衅' (对", char_juese[ID_d].name, ")"}
 	char_juese[ID_req].skill["挑衅"] = "locked"
 	add_funcptr(push_message, table.concat(msg))
 	
-	c_pos = card_chazhao(ID_d, "杀")
-	if c_pos < 0 then
-		c_pos = card_chazhao(ID_d, "雷杀")
+	_tiaoxin_exe(ID_req, ID_d)
+	return true
+end
+function _tiaoxin_exe(ID_req, ID_d)
+	--  刘备激将  --
+	if char_juese[ID_d].skill["激将"] == "available" then
+		add_funcptr(skills_jijiang_req_side, {ID_d, "技能", {-1, ID_d, ID_req}})
 	end
-	if c_pos < 0 then
-		c_pos = card_chazhao(ID_d, "火杀")
-	end
-	if c_pos > -1 then
-	    card_sha({c_pos}, ID_d, {ID_req}, false)
+
+	if ID_d == char_current_i then
+		add_funcptr(_tiaoxin_sha_enter, ID_req)
 	else
-	    add_funcptr(_nanman_send_msg, {char_juese[ID_d].name, "放弃"})
+		add_funcptr(_tiaoxin_sha_ai, {ID_req, ID_d})
+	end
+end
+function _tiaoxin_sha_ai(va_list)
+	local ID_req, ID_d
+	ID_req = va_list[1]; ID_d = va_list[2]
+	local targets = ai_judge_tiaoxin_sha_target(ID_d, ID_req)
+
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local ID_shoupai = ai_card_search(ID_d, "杀", 1)
+	if #ID_shoupai > 0 then
+	    card_sha(ID_shoupai, ID_d, targets, false)
+	else
+	    _tiaoxin_fangqi(ID_req, ID_d)
+	end
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _tiaoxin_sha_go(ID_shoupai, ID_s, ID_mubiao)
+	if card_sha(ID_shoupai, ID_s, ID_mubiao, false) then
+		skills_cs()
+		timer.start(0.6)
+	end
+end
+function _tiaoxin_fangqi(ID_req, ID_d)
+	add_funcptr(_nanman_send_msg, {char_juese[ID_d].name, "放弃"})
+
+	if ai_card_stat(ID_d, true, false) == 0 then
+		add_funcptr(_chai_sub2)
+		return
+	end
+
+	if ID_req == char_current_i then
 		add_funcptr(_chai_sub1, {true, ID_req, ID_d})
+	else
+		add_funcptr(_chai_ai, {ID_req, ID_d, true})
+		add_funcptr(_chai_sub2)
+	end
+end
+function _tiaoxin_sha_enter(ID_req)
+	local n_targets = 1
+	if gamerun_judge_fangtian(char_current_i) then
+		n_targets = 3
+	end
+
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	skills_enter("请您出杀或'取消'放弃", "", "挑衅", "技能选择-多牌")
+	gamerun_OK = false
+	gamerun_OK_ptr = function()
+		if gamerun_OK then
+			if skills_luanwu_judge_if_sha() then
+				local ID_shoupai = skills_get_selected_shoupai()
+				card_selected = {}
+				card_highlighted = 1
+
+				if n_targets == 1 then
+					_tiaoxin_sha_go(ID_shoupai, char_current_i, {ID_req})
+				else
+					_tiaoxin_select_additional_targets(ID_shoupai, ID_req)
+				end
+			end
+		else
+			gamerun_status = "手牌生效中"
+			set_hints("")
+
+			_tiaoxin_fangqi(ID_req, char_current_i)
+			timer.start(0.6)
+		end
 	end
 	
-	return true
+	gamerun_tab_ptr = nil
+	platform.window:invalidate()
+end
+function _tiaoxin_select_additional_targets(ID_shoupai, ID_req)
+	gamerun_status = "选项选择"
+	choose_name = "挑衅"
+	jiaohu_text = "是否增加出杀目标?"
+	choose_option = {"增加一个", "增加两个", "否"}
+
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+	
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		funcptr_queue = {}
+		gamerun_status = "手牌生效中"
+		set_hints("")
+
+		if i == 1 or i == 2 then
+			_tiaoxin_add_target_enter(ID_shoupai, i, ID_req)
+	    else
+			_tiaoxin_sha_go(ID_shoupai, char_current_i, {ID_req})
+		end
+		platform.window:invalidate()
+	end
+	
+	platform.window:invalidate()
+end
+function _tiaoxin_add_target_enter(ID_shoupai, n, ID_req)
+	if n == 1 then
+		skills_enter("请选择目标", "", "挑衅2", "技能选择-目标")
+	else
+		skills_enter("请选择第一个目标", "", "挑衅2", "技能选择-目标")
+	end
+	gamerun_select_target("init")
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true and gamerun_target_selected ~= ID_req then
+			if n == 1 then
+				_tiaoxin_sha_go(ID_shoupai, char_current_i, {ID_req, gamerun_target_selected})
+			else
+				_tiaoxin_add_target_2_enter(ID_shoupai, ID_req)
+			end
+		else
+			_tiaoxin_sha_go(ID_shoupai, char_current_i, {ID_req})
+		end
+	end
+
+	gamerun_tab_ptr = nil
+	platform.window:invalidate()
+end
+function _tiaoxin_add_target_2_enter(ID_shoupai, ID_req)
+	guankan_s = gamerun_target_selected
+	skills_enter("请选择第二个目标", "", "挑衅2", "技能选择-目标B")
+	gamerun_select_target("init")
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true and gamerun_target_selected ~= ID_req then
+			_tiaoxin_sha_go(ID_shoupai, char_current_i, {ID_req, gamerun_target_selected, guankan_s})
+		else
+			_tiaoxin_sha_go(ID_shoupai, char_current_i, {ID_req})
+		end
+	end
+
+	gamerun_tab_ptr = nil
+	platform.window:invalidate()
 end
 
 --  刘备：仁德  --
@@ -1275,14 +1414,7 @@ function skills_jijiang_current_enter()
 			set_hints("")
 			skills_cs()
 
-			funcptr_queue = {}
-			funcptr_i = 0
-			add_funcptr(_rende_sub)
-
-			push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-			timer.stop()
-			funcptr_queue = {}
-			funcptr_i = 0
+			skills_push_queue()
 
 			skills_jijiang_add(char_current_i, "杀", {-1, char_current_i, gamerun_target_selected})
 			timer.start(0.6)
@@ -1307,10 +1439,7 @@ function skills_jijiang_req_side_ai(ID_req, mode, va)
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	skills_jijiang_add(ID_req, mode, va)
 	timer.start(0.6)
@@ -1318,10 +1447,7 @@ end
 function skills_jijiang_req_side_enter(mode, va)
 	local old_gamerun_status = gamerun_status
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	gamerun_status = "确认操作"
 	jiaohu_text = "是否发动 '激将'?"
@@ -1333,7 +1459,7 @@ function skills_jijiang_req_side_enter(mode, va)
 		if gamerun_OK == true then
 			skills_jijiang_add(char_current_i, mode, va)
 		else
-			_hujia_huifu()
+			skills_pop_queue(true)
 		end
 		timer.start(0.6)
 	end
@@ -1347,7 +1473,7 @@ function skills_jijiang_add(ID_req, mode, va)
 			add_funcptr(skills_jijiang, {ID_req, i, mode, va})
 		end
 	end
-	add_funcptr(_hujia_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function skills_jijiang(va_list)
 	local ID_req, ID_res, mode, va
@@ -1371,10 +1497,7 @@ function skills_jijiang_ai(ID_req, ID_res, mode, va)
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	_jijiang_exe(ID_req, ID_res, {c_pos}, mode, va)
 	timer.start(0.6)
@@ -1382,10 +1505,7 @@ end
 function skills_jijiang_enter(ID_req, mode, va)
 	local old_gamerun_status = gamerun_status
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	gamerun_status = "确认操作"
 	jiaohu_text = table.concat({"是否响应", char_juese[ID_req].name, "的'激将'?"})
@@ -1398,8 +1518,8 @@ function skills_jijiang_enter(ID_req, mode, va)
 			_jijiang_select_card(ID_req, mode, va, old_gamerun_status)
 		else
 			gamerun_status = old_gamerun_status
-			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
-			_hujia_huifu()
+			add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "不响应"}))
+			add_funcptr(skills_pop_queue)
 		end
 		timer.start(0.6)
 	end
@@ -1416,7 +1536,7 @@ function _jijiang_select_card(ID_req, mode, va, old_gamerun_status)
 				if card_judge_if_sha(char_current_i, c_pos[1]) then
 					qualified = true
 				end
-			elseif (mode == "借刀杀人" or mode == "杀") and #char_juese[char_current_i].wuqi > 0 then
+			elseif (mode == "借刀杀人" or mode == "杀" or mode == "技能") and #char_juese[char_current_i].wuqi > 0 then
 				if char_juese[char_current_i].wuqi[1] == "丈八矛" then
 					if #c_pos == 2 then
 						qualified = true
@@ -1437,8 +1557,8 @@ function _jijiang_select_card(ID_req, mode, va, old_gamerun_status)
 		else
 			gamerun_status = old_gamerun_status
 			set_hints("")
-			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
-			_hujia_huifu()
+			add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "不响应"}))
+			add_funcptr(skills_pop_queue)
 		end
 		timer.start(0.6)
 	end
@@ -1447,10 +1567,10 @@ function _jijiang_select_card(ID_req, mode, va, old_gamerun_status)
 end
 function _jijiang_exe(ID_req, ID_res, ID_shoupai, mode, va)
 	--  弹出第一层：激将响应  --
-	_hujia_huifu()
+	skills_pop_queue(true)
 
 	--  弹出第二层：激将请求  --
-	_hujia_huifu()
+	skills_pop_queue(true)
 
 	--  清空原有函数队列  --
 	funcptr_queue = {}
@@ -1469,7 +1589,7 @@ function _jijiang_exe(ID_req, ID_res, ID_shoupai, mode, va)
 		add_funcptr(_nanman_sha, {ID_res, ID_shoupai[1]})
 		skills_losecard(ID_res)
 		add_funcptr(_nanman_zhudong_huifu)
-	elseif mode == "借刀杀人" or mode == "杀" then
+	elseif mode == "借刀杀人" or mode == "杀" or mode == "技能" then
 		local ID_jiedao_req, ID_s, ID_mubiao
 		ID_jiedao_req = va[1]; ID_s = va[2]; ID_mubiao = va[3]
 
@@ -1490,6 +1610,8 @@ function _jijiang_sha(va_list)
 
 	if mode == "借刀杀人" then
 		_jiedao_sha(ID_shoupai, ID_req, ID_s, ID_mubiao)
+	elseif mode == "技能" then
+		card_sha(ID_shoupai, ID_s, {ID_mubiao}, false)
 	else
 		card_sha(ID_shoupai, ID_s, {ID_mubiao}, true)
 	end
@@ -1519,7 +1641,7 @@ function _jijiang_get_ids(va, mode)
 		return va[1]
 	elseif mode == "南蛮入侵" then
 		return va[1]
-	elseif mode == "借刀杀人" or mode == "杀" then
+	elseif mode == "借刀杀人" or mode == "杀" or mode == "技能" then
 		return va[2]
 	end
 	return nil
@@ -1529,7 +1651,7 @@ function _jijiang_get_idd(va, mode)
 		return va[2]
 	elseif mode == "南蛮入侵" then
 		return va[2]
-	elseif mode == "借刀杀人" or mode == "杀" then
+	elseif mode == "借刀杀人" or mode == "杀" or mode == "技能" then
 		return va[3]
 	end
 	return nil

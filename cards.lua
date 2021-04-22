@@ -1027,44 +1027,7 @@ function card_if_d_limit(cardname, ID_s, ID_d, ID_shoupai)
 	end
 	
 	if card == "杀" or card == "火杀" or card == "雷杀" then
-		--  空城状态的诸葛亮不能杀  --
-		if char_juese[ID_d].skill["空城"] == "available" and #char_juese[ID_d].shoupai == 0 then
-			return false
-		end
-	
-	    if #char_juese[ID_s].wuqi ~= 0 then
-		    local arm_zhuge
-		
-		    arm_zhuge = false
-	        --  装备诸葛连弩，出杀不受限制  --
-	        if char_juese[ID_s].wuqi[1] == "诸葛弩" then
-	            arm_zhuge = true
-	        end
-			
-			--  张飞出杀不受限制  --
-			if char_juese[ID_s].skill["咆哮"] == "available" then
-				arm_zhuge = true
-			end
-			
-		    if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then
-	            return false
-	        end
-		
-	        if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] and char_distance_infinity == false then
-	            return false
-	        end
-	    else
-			arm_zhuge = false
-			--  张飞出杀不受限制  --
-			if char_juese[ID_s].skill["咆哮"] == "available" then
-				arm_zhuge = true
-			end
-		
-		    if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then return false end
-	        if char_calc_distance(ID_s, ID_d) > 1 and char_distance_infinity == false then
-	            return false
-	        end
-	    end
+		return card_judge_sha(ID_s, {ID_d}, true)
 	end
 	
 	if card == "借刀杀人" and gamerun_status == "选择目标" then
@@ -1079,15 +1042,8 @@ function card_if_d_limit(cardname, ID_s, ID_d, ID_shoupai)
 		if ID_s == ID_d then
 			return false
 		end
-		if #char_juese[ID_s].wuqi ~= 0 then
-	        if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
-	            return false
-	        end
-	    else
-	        if char_calc_distance(ID_s, ID_d) > 1 then
-	            return false
-	        end
-	    end
+
+		return card_judge_sha(ID_s, {ID_d}, false)
 	end
 	
 	--  孙尚香结姻  --
@@ -1112,34 +1068,8 @@ function card_if_d_limit(cardname, ID_s, ID_d, ID_shoupai)
 		end
 	end
 
-	--  荀彧驱虎  --
-	if card == "驱虎2" then
-		if #char_juese[ID_s].wuqi ~= 0 then
-			if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
-				return false
-			end
-		else
-			if char_calc_distance(ID_s, ID_d) > 1 then
-				return false
-			end
-		end
-	end
-	
-	--  典韦强袭  --
-	if card == "强袭" then
-		if #char_juese[ID_s].wuqi ~= 0 then
-			if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
-				return false
-			end
-		else
-			if char_calc_distance(ID_s, ID_d) > 1 then
-				return false
-			end
-		end
-	end
-
-	--  大乔流离  --
-	if card == "流离" then
+	--  荀彧驱虎、典韦强袭、大乔流离  --
+	if card == "驱虎2" or card == "强袭" or card == "流离" or card == "挑衅2" then
 		if #char_juese[ID_s].wuqi ~= 0 then
 			if char_calc_distance(ID_s, ID_d) > card_wuqi_r[char_juese[ID_s].wuqi[1]] then
 				return false
@@ -1177,6 +1107,26 @@ function card_if_d_limit(cardname, ID_s, ID_d, ID_shoupai)
 		if ai_card_stat(ID_d, true, false) == 0 then
 			return false
 		end
+	end
+
+	--  吴国太甘露  --
+	if card == "甘露" and gamerun_status == "技能选择-目标B" then
+		if ai_arm_stat(ID_d) == 0 and ai_arm_stat(guankan_s) == 0 then
+			return false
+		end
+
+		if char_juese[char_acting_i].tili_max - char_juese[char_acting_i].tili < math.abs(ai_arm_stat(ID_d) - ai_arm_stat(guankan_s)) then
+			return false
+		end
+	end
+
+	--  贾诩乱武  --
+	if card == "乱武" then
+		if char_calc_distance(ID_s, ID_d) ~= skills_luanwu_calc_min_distance(ID_s) then
+			return false
+		end
+
+		return card_judge_sha(ID_s, {ID_d}, false)
 	end
 
 	--  选择主公技  --
@@ -1487,7 +1437,7 @@ function card_fangtian(n_mubiao, cancel_clicked)
 	end
 
 	if card_sha({card_highlighted}, char_current_i, ID_mubiao, true) then
-		if gamerun_judge_fangtian() == true then
+		if gamerun_judge_fangtian(char_current_i) == true then
 			push_message(char_juese[char_current_i].name .. "发动了'方天画戟'效果")
 		end
 
@@ -1766,10 +1716,10 @@ function _bagua_jiesuan(ID)
 
 	if huase == "红桃" or huase == "方块" then
 	    --  判定成功  --
-		push_message(table.concat({char_juese[ID].name, "的'八卦阵'判定成功"}))
+		add_funcptr(push_message, table.concat({char_juese[ID].name, "的'八卦阵'判定成功"}))
 		success = true
 	else
-		push_message(table.concat({char_juese[ID].name, "的'八卦阵'判定失败"}))
+		add_funcptr(push_message, table.concat({char_juese[ID].name, "的'八卦阵'判定失败"}))
 		success = false
 	end
 	
@@ -2155,7 +2105,7 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		--print(table.concat(msg))
 		--push_message(table.concat(msg))
 		if order < 5 then
-			_baiyin_skip()
+			skills_skip_subqueue()
 		end
 	end
 end
@@ -2266,6 +2216,8 @@ function _wuxie_exe()
 
 	funcptr_queue = table.copy(wuxie_queue_jinnang)
 	funcptr_i = 0
+
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 
@@ -3065,14 +3017,11 @@ function _nanman_exe(va_list)
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
 	if _nanman_judge_mian(ID_mubiao) then
-		_baiyin_skip()
+		skills_skip_subqueue()
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	--  刘备激将  --
 	if char_juese[ID_mubiao].skill["激将"] == "available" then
@@ -3085,7 +3034,7 @@ function _nanman_exe(va_list)
 		add_funcptr(_nanman_zhudong_enter, ID_s)
 	end
 
-	_baiyin_skip()
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _nanman_AI(ID_s, ID_mubiao)    --  南蛮入侵：响应AI
@@ -3100,7 +3049,7 @@ function _nanman_AI(ID_s, ID_mubiao)    --  南蛮入侵：响应AI
 		char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
 	end
 
-	add_funcptr(_nanman_zhudong_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _nanman_zhudong_enter(ID_s)	--  南蛮入侵：进入己方主动出牌状态
 	wuxie_va = ID_s
@@ -3131,7 +3080,7 @@ function _nanman_zhudong_chu(ID_s)	--  南蛮入侵：己方出杀
 	add_funcptr(_nanman_sha, {char_current_i, c_pos})
 	skills_losecard(char_current_i)
 
-	add_funcptr(_nanman_zhudong_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _nanman_zhudong_fangqi(ID_s)	--  南蛮入侵：己方放弃
 	gamerun_status = "手牌生效中"
@@ -3139,7 +3088,7 @@ function _nanman_zhudong_fangqi(ID_s)	--  南蛮入侵：己方放弃
 
 	add_funcptr(_nanman_send_msg, {char_juese[char_current_i].name, "放弃"})
 	char_tili_deduct({1, char_current_i, ID_s, "普通", char_current_i})
-	add_funcptr(_nanman_zhudong_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _nanman_zhudong_huifu()	--  南蛮入侵：恢复己方中断前函数队列
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -3255,14 +3204,11 @@ function _wanjian_exe(va_list)
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
 	if _wanjian_judge_mian(ID_mubiao) then
-		_baiyin_skip()
+		skills_skip_subqueue()
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	--  曹操护驾  --
 	if char_juese[ID_mubiao].skill["护驾"] == "available" then
@@ -3285,7 +3231,7 @@ function _wanjian_exe(va_list)
 	
 	add_funcptr(_wanjian_jiesuan, {ID_s, ID_mubiao, card})
 
-	_baiyin_skip()
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _wanjian_shan_replaced(ID_s, ID_mubiao)
@@ -3294,7 +3240,7 @@ function _wanjian_shan_replaced(ID_s, ID_mubiao)
 		add_funcptr(skills_leiji, {ID_mubiao, ID_s})
 	end
 
-	add_funcptr(_wanjian_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _wanjian_jiesuan(va_list)
 	local ID_s, ID_mubiao, fangju_card
@@ -3308,6 +3254,8 @@ function _wanjian_jiesuan(va_list)
 		if fangju_card[1] == "八卦阵" then
 			if _bagua_jiesuan(ID_mubiao) then
 				_wanjian_shan_replaced(ID_s, ID_mubiao)
+
+				skills_skip_subqueue()
 				timer.start(0.6)
 				return
 			end
@@ -3328,12 +3276,12 @@ function _wanjian_jiesuan(va_list)
 			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
 			char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
 		end
-		add_funcptr(_wanjian_huifu)
+		add_funcptr(skills_pop_queue)
 	else
 		add_funcptr(_wanjian_zhudong_enter, ID_s)
 	end
 
-	_baiyin_skip()
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _wanjian_shan(va_list)
@@ -3387,7 +3335,7 @@ function _wanjian_zhudong_chu(ID_s)	--  万箭齐发：己方出杀
 		add_funcptr(skills_leiji, {char_current_i, ID_s})
 	end
 
-	add_funcptr(_wanjian_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _wanjian_zhudong_fangqi(ID_s)	--  万箭齐发：己方放弃
 	gamerun_status = "手牌生效中"
@@ -3395,7 +3343,7 @@ function _wanjian_zhudong_fangqi(ID_s)	--  万箭齐发：己方放弃
 
 	add_funcptr(_nanman_send_msg, {char_juese[char_current_i].name, "放弃"})
 	char_tili_deduct({1, char_current_i, ID_s, "普通", char_current_i})
-	add_funcptr(_wanjian_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _wanjian_huifu()	--  万箭齐发：恢复己方中断前函数队列
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -4006,18 +3954,7 @@ end
 
 --  使用杀  --
 --  ID_shoupai为多  --
-function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
-    local card_shoupai, arm_zhuge, xingbie_diff
-	card_shoupai = {}
-
-	char_zhuque = false
-	char_liegong = {}
-	char_sha_mubiao = ID_mubiao
-	char_sha_mubiao_i = 1
-	for i = 1, #ID_mubiao do
-		char_liegong[ID_mubiao[i]] = false
-	end
-	
+function card_judge_sha(ID_s, ID_mubiao, iscur)
 	--  空城状态的诸葛亮不能杀  --
 	for i = 1, #ID_mubiao do
 		if char_juese[ID_mubiao[i]].skill["空城"] == "available" and #char_juese[ID_mubiao[i]].shoupai == 0 then
@@ -4025,44 +3962,53 @@ function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
 		end
 	end
 	
-    --  攻击范围内的角色才能杀  --
+	local range = 1
+	local arm_zhuge = false
+
 	if #char_juese[ID_s].wuqi ~= 0 then
-	    arm_zhuge = false
-	    --  装备诸葛连弩，出杀不受限制  --
-	    if char_juese[ID_s].wuqi[1] == "诸葛弩" then
+		range = card_wuqi_r[char_juese[ID_s].wuqi[1]]
+	end
+	
+	--  装备诸葛连弩，出杀不受限制  --
+	if #char_juese[ID_s].wuqi ~= 0 then
+		if char_juese[ID_s].wuqi[1] == "诸葛弩" then
 	        arm_zhuge = true
 	    end
+	end
 		
-		--  张飞出杀不受限制  --
-		if char_juese[ID_s].skill["咆哮"] == "available" then
-			arm_zhuge = true
-		end
-		
-		if iscur then
-			if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then
-				return false
-			end
-		end
-
-		for i = 1, #ID_mubiao do
-	    	if char_calc_distance(ID_s, ID_mubiao[i]) > card_wuqi_r[char_juese[ID_s].wuqi[1]] and char_distance_infinity == false then
-	        	return false
-	    	end
-		end
-	else
-		arm_zhuge = false
-		--  张飞出杀不受限制  --
-		if char_juese[ID_s].skill["咆哮"] == "available" then
-			arm_zhuge = true
-		end
+	--  张飞出杀不受限制  --
+	if char_juese[ID_s].skill["咆哮"] == "available" then
+		arm_zhuge = true
+	end
 	
-	    if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then return false end
-
-		for i = 1, #ID_mubiao do
-	    	if char_calc_distance(ID_s, ID_mubiao[i]) > 1 and char_distance_infinity == false then
-	        	return false
-	    	end
+	if iscur then
+		if (char_sha_time <= 0 and not arm_zhuge) or char_sha_able == false then
+			return false
 		end
+	end
+
+	for i = 1, #ID_mubiao do
+		if char_calc_distance(ID_s, ID_mubiao[i]) > range and char_distance_infinity == false then
+			return false
+		end
+	end
+
+	return true
+end
+function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
+    local card_shoupai, xingbie_diff
+	card_shoupai = {}
+
+	if card_judge_sha(ID_s, ID_mubiao, iscur) == false then
+		return false
+	end
+
+	char_zhuque = false
+	char_liegong = {}
+	char_sha_mubiao = ID_mubiao
+	char_sha_mubiao_i = 1
+	for i = 1, #ID_mubiao do
+		char_liegong[ID_mubiao[i]] = false
 	end
 
 	gamerun_status = "手牌生效中"
@@ -4351,6 +4297,8 @@ function _sha_zhudong_xiangying(va_list)
 		    if fangju_card[1] == "八卦阵" then
 				if _bagua_jiesuan(ID_mubiao) then
 					_sha_shan_replaced(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)
+
+					skills_skip_subqueue()
 					timer.start(0.6)
 					return
 				end
@@ -4359,8 +4307,8 @@ function _sha_zhudong_xiangying(va_list)
 	end
 
 	char_xiangying_2 = wushuang_flag
-
 	add_funcptr(_sha_zhudong_enter, {card_shoupai, ID_s, ID_mubiao, iscur})
+
 	skills_skip_subqueue()
 	timer.start(0.6)
 end
@@ -4761,6 +4709,8 @@ function _sha_ai_xiangying(va_list)
 		    if fangju_card[1] == "八卦阵" then
 				if _bagua_jiesuan(ID_mubiao) then
 					_sha_shan_replaced(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)
+
+					skills_skip_subqueue()
 					timer.start(0.6)
 					return
 				end
@@ -5213,14 +5163,6 @@ function _sha_sub2()
 	card_out_jiesuan()
 	gamerun_wuqi_out_hand(char_acting_i)
 
-	--  如果是夏侯渊发动神速，恢复被中断的函数队列  --
-	if gamerun_shensu == true then
-		gamerun_shensu = false
-		char_distance_infinity = false
-		_shensu_huifu()
-		return
-	end
-
 	local iscur = char_sha_params[5]
 	if iscur then
 		char_yisha = true
@@ -5238,6 +5180,21 @@ function _sha_sub2()
 	sha_va = nil
 	txt_messages:setVisible(true)
 	guankan_s = 0
+
+	--  如果是夏侯渊发动神速，恢复被中断的函数队列  --
+	if gamerun_shensu == true then
+		gamerun_shensu = false
+		char_distance_infinity = false
+		_shensu_huifu()
+		return
+	end
+
+	--  如果杀是在子函数队列中，则回到其母函数队列  --
+	if gamerun_sha_queued == true then
+		gamerun_sha_queued = false
+		skills_pop_queue()
+		return
+	end
 
 	if char_acting_i == char_current_i then
 		gamerun_status = ""
@@ -5324,9 +5281,9 @@ function card_jiedao(ID_shoupai, ID_req, ID_s, ID_d)
 	end
 
 	add_funcptr(_jiedao_sub1, {ID_shoupai, ID_req, ID_s, ID_d})
-	skills_losecard(ID_s)
-	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
-		add_funcptr(skills_jizhi, ID_s)
+	skills_losecard(ID_req)
+	if char_juese[ID_req].skill["集智"] == "available" or (char_juese[ID_req].skill["极略"] == "available" and mark_ren[ID_req] > 0) then
+		add_funcptr(skills_jizhi, ID_req)
 	end
 	
 	card_wuxie("借刀杀人", ID_req, ID_s)

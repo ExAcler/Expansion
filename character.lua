@@ -71,7 +71,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神吕蒙"] = {{3, 3}, "神", false, {"涉猎", "攻心"}, "男", {"", ""}, true},	
 	["神曹操"] = {{3, 3}, "神", false, {"归心", "飞影"}, "男", {"", "锁定"}, true},
 	["神司马懿"] = {{4, 4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定", "觉醒", ""}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"英魂","甘露","离魂"}, "男", {"","",""}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"挑衅","甘露","离魂","乱武"}, "男", {"","","","限定"}, true},
 }
 
 -- 武器攻击范围 --
@@ -1241,7 +1241,7 @@ function char_binsi_2(va_list)	--  濒死结算 (从其他函数调用)
 end
 function char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellblood, is_buqu, deduct_id_ignore)
 	if char_juese[id].tili > 0 or id == deduct_id_ignore then
-		_baiyin_skip()
+		skills_skip_subqueue()
 		return
 	end
 
@@ -1255,6 +1255,7 @@ function char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellbl
 	funcptr_i = 0
 
 	local target_tili = 1
+	local msg
 	if char_buqu[id] == true and is_buqu == false then
 		target_tili = char_juese[id].tili + dianshu
 	end
@@ -1328,6 +1329,8 @@ function char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellbl
 	
 	--  死亡结算  --
 	add_funcptr(_binsi_siwang, {id, ID_shanghai, shanghai_shuxing, has_sellblood})
+
+	skills_skip_subqueue()
 	if is_buqu == false then
 		timer.start(0.6)
 	else
@@ -1344,9 +1347,7 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 	if char_juese[ID_jiu].siwang == false then
 		--  注：不屈和救援不兼容！ --
 		if char_juese[ID_s].tili >= target_tili then
-			--msg = {char_juese[ID_s].name, "已被救活, ", char_juese[ID_jiu].name, "不使用桃"}
-			--push_message(table.concat(msg))
-			_baiyin_skip()
+			skills_skip_subqueue()
 			return
 		end
 
@@ -1356,16 +1357,14 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 			return
 		end
 
+		skills_push_queue()
 		binsi_tili_recovered = char_juese[ID_s].tili
-
-		if ID_s ~= ID_jiu and char_juese[ID_s].skill["救援"] == "available" and char_juese[ID_jiu].shili == "吴" then
-			push_message(table.concat({char_juese[ID_jiu].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
-		end
 
 		local n_tao = 0
 		local n_jiu = 0
 		local c_pos, card
 		local card_msg = {}
+		local jijiu = false
 
 		while char_juese[ID_s].tili < target_tili do
 			c_pos = card_chazhao(ID_jiu, "桃")
@@ -1374,10 +1373,19 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 				--  华佗在他人的回合可以使用急救  --
 				if ID_jiu ~= char_acting_i and char_juese[ID_jiu].skill["急救"] == "available" then
 					c_pos = skills_jijiu_chazhao(ID_jiu)
+
+					if c_pos > 0 and jijiu == false then
+						add_funcptr(push_message, table.concat({char_juese[ID_jiu].name, "发动了武将技能 '急救'"}))
+						jijiu = true
+					end
 				end
 			end
 
 			if c_pos > 0 then
+				if ID_s ~= ID_jiu and char_juese[ID_s].skill["救援"] == "available" and char_juese[ID_jiu].shili == "吴" then
+					add_funcptr(push_message, table.concat({char_juese[ID_jiu].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
+				end
+
 				card = char_juese[ID_jiu].shoupai[c_pos]
 				card_add_qipai(card)
 				card_remove({ID_jiu, c_pos})
@@ -1414,9 +1422,15 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 		end
 
 		msg = _binsi_create_msg(n_tao, n_jiu, ID_jiu, card_msg)
-		push_message(table.concat(msg))
+		add_funcptr(push_message, table.concat(msg))
 
 		binsi_tili_recovered = math.min(char_juese[ID_s].tili, 1) - binsi_tili_recovered
+		add_funcptr(skills_pop_queue)
+
+		skills_skip_subqueue()
+		timer.start(0.6)
+	else
+		skills_skip_subqueue()
 	end
 end
 function _binsi_create_msg(n_tao, n_jiu, ID_jiu, card_msg)	--  濒死结算：返回显示信息
@@ -1476,22 +1490,17 @@ function _binsi_zhudong(va_list)	--  濒死结算：己方做出决定
 	binsi_tili_recovered = 0
 
 	if char_juese[char_current_i].siwang == true then
+		skills_skip_subqueue()
 		return
 	end
 
 	if char_juese[ID_s].tili >= target_tili then
-		--msg = {char_juese[ID_s].name, "已被救活, ", char_juese[char_current_i].name, "不使用桃"}
-		--push_message(table.concat(msg))
-		_baiyin_skip()
+		skills_skip_subqueue()
 		return
 	end
 
 	binsi_tili_recovered = char_juese[ID_s].tili
-
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	local tao_needed
 	if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
@@ -1537,9 +1546,10 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 	local n_tao = 0
 	local n_jiu = 0
 	local card_msg = {}
+	local jijiu = false
 
 	if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
-		push_message(table.concat({char_juese[char_current_i].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
+		add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
 	end
 
 	for i = 1, #qualified_cards do
@@ -1548,6 +1558,11 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 		if card_judge_if_jiu(char_current_i, qualified_cards[i]) then
 			n_jiu = n_jiu + 1
 		else
+			if char_juese[char_current_i].skill["急救"] == "available" and card[1] ~= "桃" and jijiu == false then
+				add_funcptr(push_message, table.concat({char_juese[ID_jiu].name, "发动了武将技能 '急救'"}))
+				jijiu = true
+			end
+
 			n_tao = n_tao + 1
 		end
 
@@ -1567,7 +1582,7 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 
 	msg = _binsi_create_msg(n_tao, n_jiu, char_current_i, card_msg)
 	add_funcptr(push_message, table.concat(msg))
-	add_funcptr(_binsi_zhudong_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _binsi_zhudong_fangqi(ID_s)	--  濒死结算：己方放弃
 	gamerun_wuqi_out_hand(char_current_i)
@@ -1581,10 +1596,7 @@ function _binsi_zhudong_fangqi(ID_s)	--  濒死结算：己方放弃
 
 	msg = {char_juese[char_current_i].name, "不使用桃"}
 	add_funcptr(push_message, table.concat(msg))
-	add_funcptr(_binsi_zhudong_huifu)
-end
-function _binsi_zhudong_huifu()		--  濒死结算：(己方响应) 恢复原有函数队列
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
+	add_funcptr(skills_pop_queue)
 end
 function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	local id, ID_shanghai, shanghai_shuxing, has_sellblood
@@ -1596,22 +1608,19 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 			char_buqu[id] = false
 		end
 
-		_binsi_huifu()
+		skills_pop_queue()
 		return
 	end
 
 	--  判断周泰不屈条件  --
 	if char_buqu[id] == true and _buqu_check_condition(id) == true then
 		if #card_buqu[id] >= 1 - char_juese[id].tili then
-			_binsi_huifu()
+			skills_pop_queue()
 			return
 		end
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 	char_juese[id].hengzhi = false
 	
 	--  设置死亡标志  --
@@ -1655,6 +1664,7 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	end
 
 	add_funcptr(_binsi_remove_sellblood, {has_sellblood, id})
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _binsi_siwang_qipai(ID_siwang)
@@ -1679,17 +1689,11 @@ function _binsi_remove_sellblood(va_list)	--  濒死结算：角色已死亡，�
 	deduct_tianxiang_stack[#deduct_tianxiang_stack] = false
 	funcptr_queue = v_funcptr_queue
 	funcptr_i = v_funcptr_i
-	_baiyin_skip()
-end
-function _binsi_huifu()		--  濒死结算：角色未死亡，恢复濒死结算前的函数队列
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
+	skills_skip_subqueue()
 end
 function _binsi_sub1(id)
-	msg = {char_juese[id].name, "阵亡，身份为", char_juese[id].shenfen}
+	local msg = {char_juese[id].name, "阵亡，身份为", char_juese[id].shenfen}
 	push_message(table.concat(msg))
-end
-function _binsi_sub2()
-	timer.start(0.2)
 end
 
 --  当前玩家死亡，跳过其接下来所有阶段  --
@@ -1706,6 +1710,7 @@ function char_judge_siwang_skip_all_stages()
 
 	if skip then
 		timer.stop()
+		clear_zhudong_queue()
 		funcptr_queue = {}
 
 		gamerun_wuqi_out_hand(char_acting_i)
@@ -1713,6 +1718,6 @@ function char_judge_siwang_skip_all_stages()
 		gamerun_status = ""
 		set_hints("请按'确定'继续")
 	else
-		_baiyin_skip()
+		skills_skip_subqueue()
 	end
 end

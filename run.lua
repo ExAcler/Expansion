@@ -66,6 +66,7 @@ gamerun_dangxian = false  -- 廖化当先发动与否的存储
 gamerun_shensu = false	-- 夏侯渊神速发动与否的存储
 gamerun_fangquan = false  -- 刘禅放权发动与否的存储
 gamerun_qiaobian = false	-- 张郃巧变发动与否的存储
+gamerun_sha_queued = false	-- 杀是否在子函数队列的存储
 fenxin_pending = nil	-- 玩家当前需要决定是否发动焚心的死亡角色ID (无则为nil)，如果是，则暂时隐藏死亡角色的身份牌
 kunfen_adjusted = {}  --困奋是否已经修改的存储
 skill_double = {}  --同一角色是否存在重复技能的存储
@@ -112,6 +113,12 @@ function pop_zhudong_queue()
 	table.remove(zhudong_queue_stack_i)
 
 	return queue, i
+end
+
+--  清除所有函数堆栈内的队列  --
+function clear_zhudong_queue()
+	zhudong_queue_stack = {}
+	zhudong_queue_stack_i = {}
 end
 
 --  table 库增补函数：获得 table 实际项数
@@ -1157,12 +1164,15 @@ function gamerun_skills_reset()
 end
 
 --  判断是否符合方天画戟发动条件  --
-function gamerun_judge_fangtian()
-	local carda = char_juese[char_current_i].shoupai[card_highlighted][1]
+function gamerun_judge_fangtian(ID)
+	if #char_juese[ID].shoupai ~= 1 then
+		return false
+	end
+	local carda = char_juese[ID].shoupai[1][1]
 
-	if #char_juese[char_current_i].wuqi > 0 then
-		if char_juese[char_current_i].wuqi[1] == "方天戟" then
-			if #char_juese[char_current_i].shoupai == 1 and (carda == "杀" or carda == "火杀" or carda == "雷杀") then
+	if #char_juese[ID].wuqi > 0 then
+		if char_juese[ID].wuqi[1] == "方天戟" then
+			if #char_juese[ID].shoupai == 1 and (carda == "杀" or carda == "火杀" or carda == "雷杀") then
 				return true
 			end
 		end
@@ -1516,7 +1526,7 @@ function on.enterKey()
 			local n_sha_mubiao = 1
 			
 			--  判断是否符合方天画戟发动条件  --
-			if gamerun_judge_fangtian() == true then
+			if gamerun_judge_fangtian(char_current_i) == true then
 				fangtian = true
 				n_sha_mubiao = 3
 			end
@@ -1850,7 +1860,7 @@ function on.escapeKey()
 		card = char_juese[char_current_i].shoupai[card_highlighted][1]
 
 		--  判断是否符合方天画戟发动条件  --
-		if gamerun_judge_fangtian() == true then
+		if gamerun_judge_fangtian(char_current_i) == true then
 			fangtian = true
 		end
 
@@ -2249,7 +2259,7 @@ function on.tabKey()
 		local fangtian = false
 
 		--  判断是否符合方天画戟发动条件  --
-		if gamerun_judge_fangtian() == true then
+		if gamerun_judge_fangtian(char_current_i) == true then
 			fangtian = true
 		end
 
@@ -2310,7 +2320,8 @@ function on.charIn(char)
 				gamerun_skill_selected = 0
 				skills_rst()
 			elseif gamerun_status == "" then
-				if skills[1 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[1 + 2 * skill_disrow]]~="locked" then 
+				local skill_status = char_juese[char_current_i].skill[skills[1 + 2 * skill_disrow]]
+				if skills[1 + 2 * skill_disrow] ~= nil and skill_status ~= "locked" and skill_status ~= "locked_whole_game" then 
 					if skills_func[skills[1 + 2 * skill_disrow]] ~= nil then
 						if skills_func[skills[1 + 2 * skill_disrow]]() then
 							gamerun_skill_selected = 1 + 2 * skill_disrow
@@ -2325,7 +2336,8 @@ function on.charIn(char)
 				gamerun_skill_selected = 0
 				skills_rst()
 			elseif gamerun_status == "" then
-				if skills[2 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[2 + 2 * skill_disrow]]~="locked" then
+				local skill_status = char_juese[char_current_i].skill[skills[2 + 2 * skill_disrow]]
+				if skills[2 + 2 * skill_disrow] ~= nil and skill_status ~= "locked" and skill_status ~= "locked_whole_game" then
 					if skills_func[skills[2 + 2 * skill_disrow]] ~= nil then
 						if skills_func[skills[2 + 2 * skill_disrow]]() then
 							gamerun_skill_selected = 2 + 2 * skill_disrow
@@ -2340,7 +2352,8 @@ function on.charIn(char)
 				gamerun_skill_selected = 0
 				skills_rst()
 			elseif gamerun_status == "" then
-				if skills[3 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[3 + 2 * skill_disrow]]~="locked" then
+				local skill_status = char_juese[char_current_i].skill[skills[3 + 2 * skill_disrow]]
+				if skills[3 + 2 * skill_disrow] ~= nil and skill_status ~= "locked" and skill_status ~= "locked_whole_game" then
 					if skills_func[skills[3 + 2 * skill_disrow]] ~= nil then
 						if skills_func[skills[3 + 2 * skill_disrow]]() then
 							gamerun_skill_selected = 3 + 2 * skill_disrow
@@ -2355,7 +2368,8 @@ function on.charIn(char)
 				gamerun_skill_selected = 0
 				skills_rst()
 			elseif gamerun_status == "" then
-				if skills[4 + 2 * skill_disrow] ~= nil and char_juese[char_current_i].skill[skills[4 + 2 * skill_disrow]]~="locked" then
+				local skill_status = char_juese[char_current_i].skill[skills[4 + 2 * skill_disrow]]
+				if skills[4 + 2 * skill_disrow] ~= nil and skill_status ~= "locked" and skill_status ~= "locked_whole_game" then
 					if skills_func[skills[4 + 2 * skill_disrow]] ~= nil then
 						if skills_func[skills[4 + 2 * skill_disrow]]() then
 							gamerun_skill_selected = 4 + 2 * skill_disrow

@@ -790,6 +790,8 @@ function skills_lihun_enter()
 		if gamerun_status == "技能选择-目标" then
 			if char_juese[gamerun_target_selected].xingbie == "男" and gamerun_OK == true then
 				_lihun_exe(card_highlighted, char_current_i, gamerun_target_selected)
+
+				skills_cs()
 				gamerun_status = ""
 				set_hints("")
 			end
@@ -808,10 +810,10 @@ end
 function _lihun_exe(ID_shoupai, ID_s, ID_mubiao)
 	funcptr_queue = {}
 
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '离魂'")
 	add_funcptr(_lihun_sub1, {ID_shoupai, ID_s})
 	skills_losecard(ID_s)
 
-	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '离魂'")
 	add_funcptr(char_fanmian, ID_s)
 	add_funcptr(_lihun_sub2, {ID_s, ID_mubiao})
 	skills_losecard(ID_mubiao)
@@ -1714,4 +1716,238 @@ function _shuangxiong_2_exe()
 		skills_cs()
 		consent_func_queue(0.6)
 	end
+end
+
+--  贾诩：乱武  --
+function skills_luanwu_judge_if_sha()
+	if #char_juese[char_current_i].wuqi ~= 0 then
+		if char_juese[char_current_i].wuqi[1] == "丈八矛" then
+			if table.getn2(card_selected) == 2 then
+				return true
+			end
+		end
+	end
+
+	local cards = skills_get_selected_shoupai()
+	if table.getn2(card_selected) == 1 then
+		if card_judge_if_sha(char_current_i, cards[1]) then
+			return true
+		end
+	end
+
+	return false
+end
+function skills_luanwu_calc_min_distance(ID)
+	local mindis = 1000
+	local j = ID + 1
+	if j > 5 then
+		j = 1
+	end
+
+	for i = 1, 4 do
+		if char_juese[j].siwang == false then
+			local dis = char_calc_distance(ID, j)
+			if dis < mindis then
+				mindis = dis
+			end
+		end
+
+		j = j + 1
+		if j > 5 then
+			j = 1
+		end
+	end
+
+	return mindis
+end
+function skills_luanwu_enter()
+	gamerun_status = "确认操作"
+	jiaohu_text = "按'确定'发动乱武"
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			funcptr_queue = {}
+			gamerun_status = "手牌生效中"
+			set_hints("")
+
+			skills_luanwu_add(char_current_i)
+			skills_cs()
+			consent_func_queue(0.6)
+		end
+	end
+
+	platform.window:invalidate()
+	return true
+end
+function skills_luanwu_add(ID)
+	add_funcptr(_luanwu_sub1, ID)
+
+	local j = ID + 1
+	if j > 5 then
+		j = 1
+	end
+
+	for i = 1, 4 do
+		if char_juese[j].siwang == false then
+			add_funcptr(_luanwu_exe, j)
+		end
+
+		j = j + 1
+		if j > 5 then
+			j = 1
+		end
+	end
+
+	add_funcptr(_luanwu_sub2)
+end
+function _luanwu_sub1(ID)
+	gamerun_status = "手牌生效中"
+	set_hints("")
+	push_message(char_juese[ID].name .. "发动了武将技能 '乱武'")
+	char_juese[ID].skill["乱武"] = "locked_whole_game"
+end
+function _luanwu_sub2()
+	if char_acting_i == char_current_i then
+		set_hints("请您出牌")
+		gamerun_status = ""
+	else
+		set_hints("")
+		gamerun_status = "AI出牌"
+
+		ai_card_use(char_acting_i)
+	end
+end
+function _luanwu_exe(ID)
+	if char_juese[ID].siwang == true then
+		skills_skip_subqueue()
+		return
+	end
+
+	skills_push_queue()
+
+	if ID == char_current_i then
+		_luanwu_select_target_enter()
+	else
+		_luanwu_select_target_ai(ID)
+	end
+end
+function _luanwu_select_target_ai(ID)
+	local mubiao = ai_judge_luanwu_target(ID)
+
+	if #mubiao == 0 then
+		_luanwu_tili_deduct(ID)
+	else
+		_luanwu_sha_go(ID, mubiao[1])
+	end
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _luanwu_select_target_enter()
+	local mindis = skills_luanwu_calc_min_distance(char_current_i)
+
+	skills_enter("请选择目标或'取消'放弃", "", "乱武", "技能选择-目标")
+	gamerun_select_target("init")
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			if card_if_d_limit("乱武", char_current_i, gamerun_target_selected, nil) then
+				gamerun_status = "手牌生效中"
+				set_hints("")
+
+				card_selected = {}
+				card_highlighted = 1
+
+				funcptr_queue = {}
+				funcptr_i = 0
+
+				_luanwu_sha_go(char_current_i, gamerun_target_selected)
+				timer.start(0.6)
+			end
+		else
+			gamerun_status = "手牌生效中"
+			set_hints("")
+
+			_luanwu_tili_deduct(char_current_i)
+			timer.start(0.6)
+		end
+	end
+
+	gamerun_tab_ptr = nil
+	platform.window:invalidate()
+end
+function _luanwu_sha_go(ID_s, ID_mubiao)
+	gamerun_sha_queued = true
+
+	--  刘备激将  --
+	if char_juese[ID_s].skill["激将"] == "available" then
+		add_funcptr(skills_jijiang_req_side, {ID_s, "技能", {-1, ID_s, ID_mubiao}})
+	end
+
+	if ID_s == char_current_i then
+		add_funcptr(_luanwu_select_sha_enter, ID_mubiao)
+	else
+		add_funcptr(_luanwu_select_sha_ai, {ID_s, ID_mubiao})
+	end
+end
+function _luanwu_select_sha_ai(va_list)
+	local ID_s, ID_mubiao
+	ID_s = va_list[1]; ID_mubiao = va_list[2]
+
+	gamerun_sha_queued = false
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	local ID_shoupai = ai_judge_luanwu_shoupai(ID_s)
+	if #ID_shoupai == 0 then
+		_luanwu_tili_deduct(ID_s)
+	else
+		if card_sha(ID_shoupai, ID_s, {ID_mubiao}, false) then
+			gamerun_sha_queued = true
+		else
+			_luanwu_tili_deduct(ID_s)
+		end
+	end
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _luanwu_select_sha_enter(ID_mubiao)
+	gamerun_sha_queued = false
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	skills_enter("请选择要使用的杀", "", "乱武", "技能选择-多牌")
+	gamerun_OK = false
+	gamerun_OK_ptr = function()
+		if gamerun_OK then
+			if skills_luanwu_judge_if_sha() then
+				local ID_shoupai = skills_get_selected_shoupai()
+				card_selected = {}
+				card_highlighted = 1
+
+				if card_sha(ID_shoupai, char_current_i, {ID_mubiao}, false) then
+					gamerun_sha_queued = true
+					skills_cs()
+					timer.start(0.6)
+				end
+			end
+		else
+			gamerun_status = "手牌生效中"
+			set_hints("")
+
+			_luanwu_tili_deduct(char_current_i)
+			timer.start(0.6)
+		end
+	end
+	
+	gamerun_tab_ptr = nil
+	platform.window:invalidate()
+end
+function _luanwu_tili_deduct(ID)
+	add_funcptr(push_message, char_juese[ID].name .. "放弃")
+	char_tili_deduct({1, ID, -1, "流失", ID})
+	add_funcptr(skills_pop_queue)
 end

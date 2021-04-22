@@ -30,7 +30,7 @@ skills_func =
 	["激将"] = function() return skills_jijiang_current_enter() end,
 	["双雄"] = function() return skills_shuangxiong_2_enter() end,
 	["甘露"] = function() return skills_ganlu_enter() end,
-	["乱武"] = function() return false end,
+	["乱武"] = function() return skills_luanwu_enter() end,
 }
 
 --  主公技触发函数表  --
@@ -109,7 +109,7 @@ function skills_judge_huase(ID, huase)    --  判断选择的手牌是否为某�
 	return false
 end
 
-function skills_enter(text1, text2, imp, status, text3)
+function skills_enter(text1, text2, imp, status)
 	skill_text_1 = text1
 	skill_text_2 = text2
 	imp_card = imp
