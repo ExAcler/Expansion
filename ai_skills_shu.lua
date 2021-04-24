@@ -442,7 +442,7 @@ function ai_judge_tiaoxin(ID)
 			table.remove(attack_mubiao, i)
 		elseif #char_juese[attack_mubiao[i]].shoupai >= 3 then
 			table.remove(attack_mubiao, i)
-		elseif #char_juese[attack_mubiao[i]].shoupai == 2 and ai_judge_random_percent(50) == 1 then
+		elseif #char_juese[attack_mubiao[i]].shoupai == 2 and ai_judge_random_percent(75) == 1 then
 			table.remove(attack_mubiao, i)
 		end
 	end

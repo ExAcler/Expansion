@@ -723,33 +723,6 @@ function _napai_sub7(ID, ID_get, hide_msg, is_passive)    --  获得+1马
     char_juese[ID].fangma = {}
 end
 
---  在玩家手牌中查找手牌  --
-function card_chazhao(ID, name)
-    local i, v
-	
-	for i, v in pairs(char_juese[ID].shoupai) do
-	    if v[1] == name then
-		    return i
-		end
-	end
-	
-	return -1
-end
-
---  在玩家手牌中查找指定花色的手牌  --
-function card_chazhao_with_huase(ID, name)
-    local i, v
-	
-	for i, v in pairs(char_juese[ID].shoupai) do
-	    if v[2] == name then
-		    return i
-		end
-	end
-	
-	return -1
-end
-
-
 --  拼点结算  --
 function card_pindian(va_list)
 	local ID_s, ID_mubiao, win_fp, keep_card, chosen_pindian_card_id
@@ -2046,7 +2019,13 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		return
 	end
 
-	local n = card_chazhao(id, "无懈可击")
+	local n = ai_card_search(id, "无懈可击", 1)
+	if #n == 0 then
+		n = -1
+	else
+		n = n[1]
+	end
+
 	local is_kanpo = false
 	if n < 0 then
 		if char_juese[id].skill["看破"] == "available" then
@@ -2954,15 +2933,17 @@ function card_nanman(ID_shoupai, _ID_s)
 	
 	for i = 1, 4 do
 		local weimu = (yanse == "黑色" and char_juese[id].skill["帷幕"] == "available")
-		if char_juese[id].siwang == false and char_juese[id].skill["祸首"] ~= "available" and char_juese[id].skill["巨象"] ~= "available" and id ~= _ID_s and not weimu then
+		if char_juese[id].siwang == false and char_juese[id].skill["祸首"] ~= "available" and id ~= _ID_s and not weimu then
 			funcptr_add_tag = "无懈执行前"
 			add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了南蛮入侵"})
 			funcptr_add_tag = nil
 
-			if _nanman_judge_mian(id) == false then
-				card_wuxie("南蛮入侵", ID_s, id)
-			else
+			if _nanman_judge_mian(id) == true then
 				_nanman_tengjia(id)
+			elseif char_juese[id].skill["巨象"] == "available" then
+				_nanman_juxiang(id)
+			else
+				card_wuxie("南蛮入侵", ID_s, id)
 			end
 
 			funcptr_add_tag = "无懈无效结算"
@@ -3422,6 +3403,7 @@ function _wugu_mopai()	--  五谷丰登：从主牌堆摸一张牌到五谷丰�
 end
 function _wugu_get_card_exe(ID_s)		--  五谷丰登：执行获得五谷丰登手牌动作
 	gamerun_status = "手牌生效中"
+	local ID_mubiao
 
 	for counter = 0, 4 do
 		if ID_s + counter > 5 then
@@ -3454,7 +3436,7 @@ end
 function _wugu_get_card(va_list)	--  五谷丰登：获得五谷丰登牌堆中的牌（其他角色）
 	local ID_s = va_list[1]
 
-	local wugu_card_i = math.random(#wugucards)
+	local wugu_card_i = ai_judge_wugu(ID_s, wugucards)
 	card_insert(ID_s, wugucards[wugu_card_i])
 	push_message(char_juese[ID_s].name .. "选择并获得了" .. wugucards[wugu_card_i][2] .. wugucards[wugu_card_i][3] .. "的" .. wugucards[wugu_card_i][1])
 
@@ -3562,14 +3544,10 @@ function _juedou_go(va_list)
 	local ID_s, ID_mubiao, wushuang_flag
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
-
+	skills_push_queue()
 	_juedou_exe(ID_s, ID_mubiao, true)
 
-	_baiyin_skip()
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _juedou_exe(ID_s, ID_mubiao, first_response)
@@ -3599,7 +3577,9 @@ function _juedou_ai(va_list)
 	funcptr_i = 0
 
 	local c_pos = ai_chazhao_sha(ID_mubiao, char_juese[ID_mubiao].shoupai)
-	if c_pos > -1 then
+	local use = ai_judge_juedou(ID_mubiao, ID_s, wushuang_flag)
+
+	if c_pos > -1 and use == true then
 		add_funcptr(_juedou_sha, {ID_mubiao, ID_s, c_pos})
 		skills_losecard(ID_mubiao)
 
@@ -3610,11 +3590,17 @@ function _juedou_ai(va_list)
 		end
 
 		add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
-		char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
-		add_funcptr(_nanman_zhudong_huifu)
+
+		local tili = 1
+		if char_luoyi and ID_mubiao ~= char_acting_i then
+			tili = 2
+		end
+
+		char_tili_deduct({tili, ID_mubiao, ID_s, "普通", ID_mubiao})
+		add_funcptr(skills_pop_queue)
 	end
 
-	_baiyin_skip()
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _juedou_nextstep(ID_s, ID_mubiao, wushuang_flag)
@@ -3664,7 +3650,7 @@ function _juedou_exe_fangqi(ID_s, ID_mubiao)    --  决斗：己方放弃
 	
 	add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
 	char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
-	add_funcptr(_nanman_zhudong_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _juedou_sha(va_list)    --  决斗：出杀
     local ID_s, ID_mubiao, c_pos, msg, card
@@ -4013,6 +3999,9 @@ function card_sha(ID_shoupai, ID_s, ID_mubiao, iscur)
 
 	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
+
+	card_selected = {}
+	card_highlighted = 1
 	
 	--[[
 	if char_juese[ID_mubiao].isantigovernment ~= nil then
@@ -4135,13 +4124,7 @@ function _sha_go(ID_shoupai, card_shoupai, ID_s, ID_mubiao, iscur)		--  杀：�
 	--  吕布无双、董卓肉林  --
 	local wushuang_flag = _sha_judge_if_xiangying_2(ID_s, ID_mubiao, true)
 
-	if ID_mubiao == char_current_i then
-		--  杀的目标是己方  --
-		add_funcptr(_sha_exe_ai_1_queued, {card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag})
-	else
-		--  杀的目标是AI  --
-		add_funcptr(_sha_exe_1_queued, {card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag})
-	end
+	add_funcptr(_sha_exe_1_queued, {card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag})
 end
 function _sha_judge_if_xiangying_2(ID_s, ID_mubiao, tishi)		--  杀：判断是否需要使用两张闪抵消
 	--  吕布无双、董卓肉林  --
@@ -4191,84 +4174,6 @@ function _sha_judge_fangju_ying(card_zhuangbei, card_shoupai, sha_leixing, ID_s,
 		return true
 	end
 	return false
-end
-function _sha_exe_ai_1_queued(va_list)
-	local card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag
-	card_shoupai = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]; iscur = va_list[4]; wushuang_flag = va_list[5]
-
-	_sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)
-end
-function _sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)	--  杀：己方响应
-	local card, hint_1
-
-	--  如果大乔流离了此杀  --
-	if char_sha_mubiao[char_sha_mubiao_i] ~= ID_mubiao then
-		ID_mubiao = char_sha_mubiao[char_sha_mubiao_i]
-	end
-
-	hint_1 = _sha_get_leixing(card_shoupai)
-	--  青釭剑，设置无视防具标志  --
-	if #char_juese[ID_s].wuqi ~= 0 then
-	    if char_juese[ID_s].wuqi[1] == "青釭剑" then
-	        char_wushi = true
-	    end
-		if char_juese[ID_s].wuqi[1] == "朱雀扇" then
-			if char_zhuque == true then
-		    	hint_1 = "火杀"
-			end
-		end
-	end
-
-	if (_sha_judge_if_xiangying_2(ID_s, ID_mubiao, false) == true and wushuang_flag == true) or _sha_judge_if_xiangying_2(ID_s, ID_mubiao, false) == false then
-		push_message(table.concat({char_juese[ID_s].name, "'", hint_1, "'", char_juese[ID_mubiao].name}))
-
-		--  刘禅享乐  --
-		if char_juese[ID_mubiao].skill["享乐"] == "available" then
-			add_funcptr(skills_xiangle, {ID_mubiao, ID_s})
-		end
-	end
-
-	--  若装备防具，进行判断  --
-	card = table.copy(char_juese[ID_mubiao].fangju)
-
-	--  卧龙诸葛若未装备防具，视为装备八卦阵  --
-	if char_juese[ID_mubiao].skill["八阵"] == "available" and #card == 0 then
-		card[1] = "八卦阵"
-	end
-
-	if #card ~= 0 or (char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0) then
-		local yanse, huase, dianshu = ai_judge_cardinfo(ID_s, card_shoupai)
-		if char_juese[ID_mubiao].skill["毅重"] == "available" and #card == 0 and yanse == "黑色" then
-			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了武将技能 '毅重'，此杀无效"})
-			add_funcptr(_sha_sub2, nil)
-			return
-		elseif not char_wushi then
-			if _sha_judge_fangju_ying(card, card_shoupai, hint_1, ID_s, ID_mubiao) then
-				add_funcptr(_sha_sub2, nil)
-			    return
-			end
-		else
-			add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "触发了'青釭剑'效果"})
-		end
-	end
-
-	--  如果发动烈弓，则杀不可被闪避  --
-	if char_liegong[ID_mubiao] == true then
-		_sha_zhudong_fangqi({card_shoupai, ID_s, ID_mubiao, iscur}, false)
-		return
-	end
-
-	--  曹操护驾  --
-	if char_juese[ID_mubiao].skill["护驾"] == "available" then
-		add_funcptr(skills_hujia_req_side, {ID_mubiao, "杀", {card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag}})
-	end
-
-	if ID_mubiao == char_current_i then
-		_sha_exe_ai_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
-	else
-		--  大乔流离此杀的情况  --
-		_sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
-	end
 end
 function _sha_exe_ai_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
 	if #card ~= 0 then
@@ -4354,7 +4259,7 @@ function _sha_zhudong_chu(va_list)	--  杀：己方出闪
 
 		_sha_shan_post_ai(card_shoupai, ID_s, ID_mubiao, iscur)
 	else
-		_sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, false)
+		_sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, false)
 	end
 end
 function _sha_zhudong_fangqi(va_list, is_from_zhudong)	--  杀：杀的来源是AI时，放弃后处理
@@ -4367,7 +4272,7 @@ function _sha_zhudong_fangqi(va_list, is_from_zhudong)	--  杀：杀的来源是
 	end
 
 	add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "放弃"})
-	if #char_juese[ID_s].wuqi ~= 0 and #card_shoupai == 1 and iscur then
+	if #char_juese[ID_s].wuqi ~= 0 then
 		if char_juese[ID_s].wuqi[1] == "寒冰剑" then
 			add_funcptr(_sha_hanbing_ai_judge, {card_shoupai, ID_s, ID_mubiao, iscur})
 		else
@@ -4378,8 +4283,8 @@ function _sha_zhudong_fangqi(va_list, is_from_zhudong)	--  杀：杀的来源是
 	end
 end
 function _sha_shan_post_ai(card_shoupai, ID_s, ID_mubiao, iscur)	--  杀：杀的来源是AI时，出闪后处理
-	if iscur and #char_juese[ID_s].wuqi ~= 0 and #card_shoupai == 1 then
-		if char_juese[ID_s].wuqi[1] == "青龙刀" and ai_judge_qinglong(ID_s, ID_mubiao) then    --  青龙刀，可再出杀追杀
+	if #char_juese[ID_s].wuqi ~= 0 then
+		if char_juese[ID_s].wuqi[1] == "青龙刀" then    --  青龙刀，可再出杀追杀
 			add_funcptr(_sha_qinglong_ai_judge, {ID_s, ID_mubiao, iscur})
 		elseif char_juese[ID_s].wuqi[1] == "贯石斧" and ai_judge_guanshi(ID_s, ID_mubiao) then
 			add_funcptr(_sha_guanshi_ai_judge, {card_shoupai, ID_s, ID_mubiao, iscur})
@@ -4467,6 +4372,7 @@ function _sha_hanbing_ai_judge(va_list)		--  杀：判断寒冰剑发动条件�
 		_sha_tili_deduct(card_shoupai, ID_s, ID_mubiao, iscur)
 	end
 
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _sha_hanbing_ai(ID_s, ID_mubiao)	--  杀：AI使用寒冰剑
@@ -4491,27 +4397,61 @@ function _sha_qinglong_ai_judge(va_list)	--  杀：判断青龙刀发动条件�
 	local ID_s, ID_mubiao, iscur
 	ID_s = va_list[1]; ID_mubiao = va_list[2]; iscur = va_list[3]
 
+	if card_judge_sha(ID_s, {ID_mubiao}, iscur) == false or char_juese[ID_s].wuqi[1] ~= "青龙刀" then
+		_sha_sub2()
+		return
+	end
+
 	timer.stop()
 	funcptr_queue = {}
 	funcptr_i = 0
-	char_hejiu = false
-	if char_juese[ID_s].wuqi[1] == "青龙刀" and ai_judge_qinglong(ID_s, ID_mubiao) then    --  青龙刀，可再出杀追杀
-		_sha_qinglong_ai(ID_s, ID_mubiao, iscur)
-	else
-		add_funcptr(_sha_sub2, nil)
+	
+	--  刘备激将  --
+	if char_juese[ID_s].skill["激将"] == "available" then
+		add_funcptr(skills_jijiang_req_side, {ID_s, "青龙刀", {iscur, ID_s, ID_mubiao}})	--  iscur代ID_req
 	end
 
+	local fadong, ID_shoupai = ai_judge_qinglong(ID_s, ID_mubiao)
+	if fadong == true then
+		add_funcptr(_sha_qinglong_go_queued, {{ID_shoupai}, ID_s, ID_mubiao, iscur})
+	else
+		add_funcptr(_sha_sub2)
+	end
+
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
-function _sha_qinglong_ai(ID_s, ID_mubiao, iscur)	--  杀：AI青龙刀追杀
+function _sha_qinglong_go_queued(va_list)
+	local ID_shoupai, ID_s, ID_mubiao, iscur
+	ID_shoupai = va_list[1]; ID_s = va_list[2]; ID_mubiao = va_list[3]; iscur = va_list[4]
+
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	_sha_qinglong_go(ID_shoupai, ID_s, ID_mubiao, iscur)
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _sha_qinglong_go(ID_shoupai, ID_s, ID_mubiao, iscur)	--  杀：青龙刀追杀
 	--  上一张杀进弃牌堆  --
 	card_out_jiesuan()
 
-	local c_pos = ai_chazhao_sha(ID_s, char_juese[ID_s].shoupai)
-	local card = {char_juese[ID_s].shoupai[c_pos]}
+	--  因青龙刀暂时覆盖原有杀目标，存储之  --
+	if char_qinglong == false then
+		char_qinglong = true
+		backup_char_liegong = char_liegong
+		backup_char_sha_mubiao = char_sha_mubiao
+		backup_char_sha_mubiao_i = char_sha_mubiao_i
+		backup_char_sha_params = char_sha_params
+		backup_char_hejiu = char_hejiu
+		backup_char_zhuque = char_zhuque
+		char_hejiu = false
+	end
 
 	add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "发动了'青龙偃月刀'效果"})
-	_sha_go({c_pos}, card, ID_s, ID_mubiao, iscur)
+	card_sha(ID_shoupai, ID_s, {ID_mubiao}, iscur)
 end
 function _sha_guanshi_ai_judge(va_list)		--  杀：判断贯石斧发动条件，如不发动直接结束结算
 	local card_shoupai, ID_s, ID_mubiao, iscur
@@ -4649,7 +4589,6 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 	end
 
 	if ID_mubiao == char_current_i then
-		--  大乔流离此杀的情况  --
 		_sha_exe_ai_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
 	else
 		_sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
@@ -4676,11 +4615,7 @@ function _sha_shan_replaced(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)
 	end
 
 	if wushuang_flag == true then
-		if ID_mubiao == char_current_i then
-			_sha_exe_ai_1(card_shoupai, ID_s, ID_mubiao, iscur, false)
-		else
-			_sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, false)
-		end
+		_sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, false)
 	else
 		--  庞德猛进  --
 		if char_juese[ID_s].skill["猛进"] == "available" then
@@ -4689,7 +4624,7 @@ function _sha_shan_replaced(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)
 
 		if ID_s == char_current_i then
 			--  杀的来源是己方  --
-			_sha_shan_post(ID_s, card_shoupai, iscur)
+			_sha_shan_post(ID_s, ID_mubiao, card_shoupai, iscur)
 		else
 			--  杀的来源是AI  --
 			_sha_shan_post_ai(card_shoupai, ID_s, ID_mubiao, iscur)
@@ -4720,8 +4655,19 @@ function _sha_ai_xiangying(va_list)
 
 	--  AI出闪  --
 	local shoupai = char_juese[ID_mubiao].shoupai
-	c_pos = ai_chazhao_shan(ID_mubiao, shoupai)
-	if c_pos > -1 then
+	local c_pos = ai_chazhao_shan(ID_mubiao, shoupai)
+	local use = ai_judge_shan(ID_mubiao, wushuang_flag)
+
+	if c_pos > -1 and use == true then
+		local card = char_juese[ID_mubiao].shoupai[c_pos]
+		if card[1] ~= "闪" then
+			if char_juese[ID_mubiao].skill["倾国"] == "available" then
+				add_funcptr(push_message, table.concat({char_juese[ID_mubiao].name, "发动了武将技能 '倾国'"}))
+			elseif char_juese[ID_mubiao].skill["龙胆"] == "available" then
+				add_funcptr(push_message, table.concat({char_juese[ID_mubiao].name, "发动了武将技能 '龙胆'"}))
+			end
+		end
+
 		add_funcptr(_sha_shan, {ID_mubiao, c_pos})
 		skills_losecard(ID_mubiao)
 			
@@ -4738,7 +4684,7 @@ function _sha_ai_xiangying(va_list)
 
 			if ID_s == char_current_i then
 				--  杀的来源是己方  --
-				_sha_shan_post(ID_s, card_shoupai, iscur)
+				_sha_shan_post(ID_s, ID_mubiao, card_shoupai, iscur)
 			else
 				--  杀的来源是AI  --
 				_sha_shan_post_ai(card_shoupai, ID_s, ID_mubiao, iscur)
@@ -4759,12 +4705,12 @@ function _sha_ai_xiangying(va_list)
 	skills_skip_subqueue()
 	timer.start(0.6)
 end
-function _sha_shan_post(ID_s, card_shoupai, iscur)		--  杀：杀的来源是己方时，出闪后处理
-	if iscur and #char_juese[ID_s].wuqi ~= 0 and #card_shoupai == 1 then
+function _sha_shan_post(ID_s, ID_mubiao, card_shoupai, iscur)		--  杀：杀的来源是己方时，出闪后处理
+	if #char_juese[ID_s].wuqi ~= 0 then
 		if char_juese[ID_s].wuqi[1] == "青龙刀" then    --  青龙刀，可再出杀追杀
-			add_funcptr(_sha_qinglong, nil)
+			add_funcptr(_sha_qinglong_judge, {ID_mubiao, iscur})
 		elseif char_juese[ID_s].wuqi[1] == "贯石斧" then
-			add_funcptr(_sha_guanshi, card_shoupai)
+			add_funcptr(_sha_guanshi, {card_shoupai, ID_mubiao})
 		else
 			add_funcptr(_sha_sub2, nil)
 		end
@@ -4824,20 +4770,15 @@ function _sha_chazhao_redblack(id, tb, red)
 	
 	return -1
 end
-function _sha_exe_2(ID_s, ID_mubiao, c_pos)    --  杀：青龙刀追杀
-	local card_shoupai
-
-	--  上一张杀进弃牌堆  --
-	card_out_jiesuan()
-
-    gamerun_status = "手牌生效中"
+function _sha_exe_2(ID_s, ID_mubiao, c_pos, iscur)    --  杀：青龙刀追杀
+	gamerun_status = "手牌生效中"
 	jiaohu_text = ""
-	
-	card_shoupai = {char_juese[ID_s].shoupai[c_pos]}
-	add_funcptr(_sha_sub1, {{c_pos}, ID_s, ID_mubiao})
 
-	local wushuang_flag = _sha_judge_if_xiangying_2(ID_s, ID_mubiao, true)
-	add_funcptr(_sha_exe_1_queued, {card_shoupai, ID_s, ID_mubiao, true, wushuang_flag})
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	_sha_qinglong_go({c_pos}, ID_s, ID_mubiao, iscur)
+	timer.start(0.6)
 end
 function _sha_exe_2_g()    --  杀：放弃使用装备效果
 	_sha_sub2()
@@ -4965,26 +4906,47 @@ function _sha_shan(va_list)    --  杀：AI出闪
 	card_add_qipai(card)
 	card_remove({ID_mubiao, c_pos})
 	
-	if card[1] ~= "闪" then
-		if char_juese[ID_mubiao].skill["倾国"] == "available" then
-			push_message(char_juese[ID_mubiao].name.."发动了武将技能 '倾国'")
-		end
-		
-		if char_juese[ID_mubiao].skill["龙胆"] == "available" then
-			push_message(char_juese[ID_mubiao].name.."发动了武将技能 '龙胆'")
-		end
-	end	
-	
 	msg = {char_juese[ID_mubiao].name, "出'闪' (", card[2], card[3], "的", card[1], ")"}
 	push_message(table.concat(msg))
 	msg = nil; --collectgarbage()
 end
-function _sha_qinglong()    --  杀：青龙刀追杀状态设置
+function _sha_qinglong_judge(va_list)	--  杀：己方判断能否青龙刀追杀
+	local ID_mubiao, iscur
+	ID_mubiao = va_list[1]; iscur = va_list[2]
+
+	if card_judge_sha(char_current_i, {ID_mubiao}, iscur) == false or char_juese[char_current_i].wuqi[1] ~= "青龙刀" then
+		_sha_sub2()
+		return
+	end
+
+	timer.stop()
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	--  刘备激将  --
+	if char_juese[char_current_i].skill["激将"] == "available" then
+		add_funcptr(skills_jijiang_req_side, {char_current_i, "青龙刀", {iscur, char_current_i, ID_mubiao}})	--  iscur代ID_req
+	end
+
+	add_funcptr(_sha_qinglong, {ID_mubiao, iscur})
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _sha_qinglong(va_list)    --  杀：青龙刀追杀状态设置
+	local ID_mubiao, iscur
+	ID_mubiao = va_list[1]; iscur = va_list[2]
+
+	wuxie_va = {char_current_i, ID_mubiao, iscur}
     gamerun_status = "主动出牌-青龙"
 	jiaohu_text = "您可再出杀"
 	platform.window:invalidate()
 end
-function _sha_guanshi(card_shoupai)    --  杀：贯石斧状态设置
+function _sha_guanshi(va_list)    --  杀：贯石斧状态设置
+	local card_shoupai, ID_mubiao
+	card_shoupai = va_list[1]; ID_mubiao = va_list[2]
+
+	wuxie_va = {char_current_i, ID_mubiao}
     gamerun_status = "主动出牌-贯石"
 	jiaohu_text = "您可弃2张牌强制命中"
 	guankan_s = card_shoupai
@@ -5025,10 +4987,7 @@ function _sha_zhuque(ID_shoupai, ID_mubiao)    --  杀：朱雀羽扇状态设�
 end
 function _sha_qilin(ID)		--  杀：麒麟弓状态设置
 	if #char_juese[ID].gongma > 0 or #char_juese[ID].fangma > 0 then
-		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-		timer.stop()
-		funcptr_queue = {}
-		funcptr_i = 0
+		skills_push_queue()
 
 		add_funcptr(_sha_qilin_enter, ID)
 		timer.start(0.6)
@@ -5046,15 +5005,11 @@ function _sha_qilin_enter(ID)    --  杀：麒麟弓进入选牌界面
 	        add_funcptr(_sha_exe_4, {char_current_i, gamerun_target_selected})
 		    consent_func_queue(0.6)
 	    else
-		    _sha_qilin_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 	end
 	platform.window:invalidate()
-end
-function _sha_qilin_huifu()	--  杀：(麒麟弓) 恢复己方中断前函数队列
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 function _sha_cixiong(ID_shoupai, ID_mubiao)    --  杀：雌雄双股剑状态设置
     gamerun_status = "确认操作"
@@ -5154,6 +5109,17 @@ function _sha_sub1(va_list)
 	gamerun_wuqi_out_hand(ID_s)
 end
 function _sha_sub2()
+	--  青龙刀追杀完毕，恢复原有杀的目标  --
+	if char_qinglong then
+		char_qinglong = false
+		char_liegong = backup_char_liegong
+		char_sha_mubiao = backup_char_sha_mubiao
+		char_sha_mubiao_i = backup_char_sha_mubiao_i
+		char_sha_params = backup_char_sha_params
+		char_hejiu = backup_char_hejiu
+		char_zhuque = backup_char_zhuque
+	end
+
 	--  如果杀还有剩余目标，则继续下一个目标  --
 	if char_sha_mubiao_i < #char_sha_mubiao then
 		_sha_next_mubiao()
@@ -5168,9 +5134,9 @@ function _sha_sub2()
 		char_yisha = true
 		char_sha_time = char_sha_time - 1
 		char_hejiu = false
-		char_wushi = false
 	end
 
+	char_wushi = false
 	char_sha_params = nil
 	char_sha_mubiao = nil
 	char_sha_mubiao_i = nil
@@ -5309,10 +5275,7 @@ function _jiedao_exe(va_list)
 	local ID_req, ID_s, ID_d
 	ID_req = va_list[1]; ID_s = va_list[2]; ID_d = va_list[3]
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	--  刘备激将  --
 	if char_juese[ID_s].skill["激将"] == "available" and _jiedao_judge_kongcheng(ID_d) == false then
@@ -5325,7 +5288,7 @@ function _jiedao_exe(va_list)
 		add_funcptr(_jiedao_zhudong_xiangying_enter, {ID_req, ID_s, ID_d})
 	end
 
-	_baiyin_skip()
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function _jiedao_ai(va_list)
@@ -5333,15 +5296,17 @@ function _jiedao_ai(va_list)
 	ID_req = va_list[1]; ID_s = va_list[2]; ID_d = va_list[3]
 
 	local c_pos = ai_chazhao_sha(ID_s, char_juese[ID_s].shoupai)
-	if c_pos > -1 and _jiedao_judge_kongcheng(ID_d) == false then
+	local use = ai_judge_jiedao(ID_s, ID_d)
+
+	if c_pos > -1 and _jiedao_judge_kongcheng(ID_d) == false and use == true then
 		_jiedao_sha({c_pos}, ID_req, ID_s, ID_d)
 	else
 		_jiedao_fangqi(ID_req, ID_s, ID_d)
-		add_funcptr(_nanman_zhudong_huifu)
+		add_funcptr(skills_pop_queue)
 	end
 end
 function _jiedao_sha(c_pos, ID_req, ID_s, ID_d)
-	_nanman_zhudong_huifu()
+	skills_pop_queue(true)
 	funcptr_queue = {}
 	funcptr_i = 0
 

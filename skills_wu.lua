@@ -231,15 +231,6 @@ function skills_tianyi_set(win)
 end
 
 --  孙坚：英魂  --
-function skills_yinghun_check_and_run()
-	skills_push_queue()
-	if char_juese[char_acting_i].skill["英魂"] == "available" and char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
-		add_funcptr(skills_yinghun, char_acting_i)
-	end
-	add_funcptr(skills_pop_queue)
-	skills_skip_subqueue()
-	timer.start(0.6)
-end
 function skills_yinghun(ID)
 	if ID == char_current_i then
 		skills_yinghun_enter(ID)
@@ -513,15 +504,6 @@ function buyi_tili_huifu(ID)
 end
 
 --  周瑜：英姿  --
-function skills_yingzi_check_and_run()
-	skills_push_queue()
-	if char_juese[char_acting_i].skill["英姿"] == "available" then
-		add_funcptr(skills_yingzi, char_acting_i)
-	end
-	add_funcptr(skills_pop_queue)
-	skills_skip_subqueue()
-	timer.start(0.2)
-end
 function skills_yingzi(ID)
 	if game_skip_mopai == true then
 		return
@@ -1610,18 +1592,12 @@ function skills_liuli_ai(ID_sha, ID_sha_mubiao, sha_mubiao_i)
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	_liuli_exe(ID_shoupai, ID_sha, ID_sha_mubiao, ID_transfer, sha_mubiao_i)
 end
 function skills_liuli_enter(card_shoupai, ID_sha, sha_mubiao_i)
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	local old_gamerun_status = gamerun_status
 	local sha_type = _sha_get_leixing(card_shoupai)
@@ -1643,8 +1619,7 @@ function skills_liuli_enter(card_shoupai, ID_sha, sha_mubiao_i)
 			_liuli_select_target(ID_sha, sha_mubiao_i, old_gamerun_status)
 		else
 			gamerun_status = old_gamerun_status
-			_liuli_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 	end
@@ -1658,9 +1633,15 @@ function _liuli_select_target(ID_sha, sha_mubiao_i, old_gamerun_status)
 	gamerun_OK_ptr = function()
 		if gamerun_status == "技能选择-目标" then
 			if gamerun_OK == true then
-				if table.getn2(card_selected) == 1 and card_if_d_limit("流离", char_current_i, gamerun_target_selected, nil) then
+				if table.getn2(card_selected) == 1 and card_if_d_limit("流离", char_current_i, gamerun_target_selected, nil) and gamerun_target_selected ~= ID_sha then
 					_liuli_exe(card_highlighted, ID_sha, char_current_i, gamerun_target_selected, sha_mubiao_i)
 				end
+			else
+				gamerun_status = old_gamerun_status
+				set_hints("")
+
+				skills_pop_queue(true)
+				timer.start(0.6)
 			end
 			return
 		end
@@ -1669,8 +1650,8 @@ function _liuli_select_target(ID_sha, sha_mubiao_i, old_gamerun_status)
 			if gamerun_OK == false then
 				gamerun_status = old_gamerun_status
 				set_hints("")
-				_liuli_huifu()
-				--funcptr_i = funcptr_i + 1
+
+				skills_pop_queue(true)
 				timer.start(0.6)
 			end
 			return
@@ -1698,7 +1679,7 @@ function _liuli_exe(ID_shoupai, ID_sha, ID_sha_mubiao, ID_transfer, sha_mubiao_i
 
 	char_sha_mubiao[sha_mubiao_i] = ID_transfer
 
-	add_funcptr(_liuli_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
 end
 function _liuli_sub1(va_list)
@@ -1711,9 +1692,6 @@ function _liuli_sub1(va_list)
 	push_message(table.concat({char_juese[ID].name, "弃掉了", card[2], card[3], "的", card[1]}))
 
 	gamerun_wuqi_out_hand(ID)
-end
-function _liuli_huifu()
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  孙策：制霸  --

@@ -71,8 +71,14 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神吕蒙"] = {{3, 3}, "神", false, {"涉猎", "攻心"}, "男", {"", ""}, true},	
 	["神曹操"] = {{3, 3}, "神", false, {"归心", "飞影"}, "男", {"", "锁定"}, true},
 	["神司马懿"] = {{4, 4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定", "觉醒", ""}, true},
-	["孙笑川"] = {{4,4}, "神", false, {"挑衅","甘露","离魂","乱武"}, "男", {"","","","限定"}, true},
+	["神周瑜"] = {{4, 4}, "神", false, {"琴音", "业炎"}, "男", {"", "限定"}, false},
+	["孙笑川"] = {{4,4}, "神", false, {"挑衅","甘露","化身","新生"}, "男", {"","","禁止","禁止"}, true},
 }
+
+-- 技能分类列表 --
+char_jineng_gong = {["铁骑"] = 1, ["观星"] = 1, ["集智"] = 1, ["奇才"] = 1, ["烈弓"] = 1, ["连环"] = 1, ["火计"] = 1, ["再起"] = 1, ["烈刃"] = 1, ["挑衅"] = 1, ["放权"] = 1, ["当先"] = 1, ["突袭"] = 1, ["洛神"] = 1, ["据守"] = 1, ["神速"] = 1, ["驱虎"] = 1, ["强袭"] = 1, ["断粮"] = 1, ["巧变"] = 1, ["绝情"] = 1, ["将驰"] = 1, ["制衡"] = 1, ["奇袭"] = 1, ["苦肉"] = 1, ["英姿"] = 1, ["反间"] = 1, ["国色"] = 1, ["结姻"] = 1, ["天义"] = 1, ["好施"] = 1, ["英魂"] = 1, ["直谏"] = 1, ["激昂"] = 1, ["甘露"] = 1, ["旋风"] = 1, ["双雄"] = 1, ["无双"] = 1, ["离间"] = 1, ["青囊"] = 1, ["猛进"] = 1, ["乱击"] = 1, ["酒池"] = 1, ["庸肆"] = 1, ["涉猎"] = 1, ["攻心"] = 1}
+char_jineng_fang = {["龙胆"] = 1, ["空城"] = 1, ["看破"] = 1, ["八阵"] = 1, ["祸首"] = 1, ["巨象"] = 1, ["享乐"] = 1, ["奸雄"] = 1, ["鬼才"] = 1, ["遗计"] = 1, ["倾国"] = 1, ["刚烈"] = 1, ["节命"] = 1, ["放逐"] = 1, ["伤逝"] = 1, ["毅重"] = 1, ["谦逊"] = 1, ["连营"] = 1, ["流离"] = 1, ["天香"] = 1, ["枭姬"] = 1, ["固政"] = 1, ["雷击"] = 1, ["鬼道"] = 1, ["悲歌"] = 1, ["帷幕"] = 1, ["义从"] = 1, ["竭缘"] = 1, ["归心"] = 1, ["飞影"] = 1}
+char_jineng_jin = {["困奋"] = 1, ["不屈"] = 1, ["肉林"] = 1, ["崩坏"] = 1, ["忍戒"] = 1}
 
 -- 武器攻击范围 --
 card_wuqi_r = 
@@ -256,6 +262,7 @@ char_liegong = nil		-- 黄忠发动烈弓标志
 char_sha_params = nil	-- 杀参数存储
 char_sha_mubiao = nil	-- 当前作用杀的目标列表
 char_sha_mubiao_i = nil	-- 当前作用杀的目标ID
+char_qinglong = false	--  发动青龙偃月刀标志
 char_zhuque = false		-- 发动朱雀羽扇标志
 char_haoshi = false		-- 鲁肃发动好施标志
 char_bagua = false		-- 发动八卦阵标志
@@ -330,7 +337,7 @@ function _id_sub1()
 	push_message("身份分配完毕")
 end
 
---  分配武将 (暂为随机分配)  --
+--  分配武将  --
 function char_fenpei_wujiang()
     local i, t = 0
 	
@@ -341,6 +348,7 @@ function char_fenpei_wujiang()
 	add_funcptr(char_choose_wujiang, nil)
 	add_funcptr(char_choose_zhudong, nil)
 	add_funcptr(char_choose_shili, nil)
+
 	-- 其他身份分配武将 --
 	for i = 1, 5 do
 	    add_funcptr(_wujiang_sub2, {i})
@@ -348,14 +356,17 @@ function char_fenpei_wujiang()
 	
 end
 
-
 function char_choose_wujiang()
 	local ID
 	ID = char_current_i
+
 	if char_juese[char_current_i].shenfen == "主公" then
 		is_zhugong = true
+	else
+		is_zhugong = false
 	end
-	wujiang_choose ={}
+
+	wujiang_choose = {}
 	local wujiang_number = 5
 	char_wujiang_f = char_wujiang
 	if is_zhugong then
@@ -368,7 +379,10 @@ function char_choose_wujiang()
 		wujiang_number = 2
 	end
 	math.randomseed(timer.getMilliSecCounter())
+
+	--  总是显示孙笑川选项  --
 	table.insert(wujiang_choose,{char_juese_jineng[char_wujiang_f[9]][2], char_wujiang_f[9], char_juese_jineng[char_wujiang_f[9]][1][1], char_juese_jineng[char_wujiang_f[9]][1][2], char_juese_jineng[char_wujiang_f[9]][5]})
+
 	while wujiang_number > 0 do
 		local t = math.random(#char_wujiang_f)
 		if char_juese_jineng[char_wujiang_f[t]][7] == true then
@@ -386,10 +400,7 @@ function char_choose_zhudong()
 	ID = char_current_i
 
 	local old_gamerun_status = gamerun_status
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	gamerun_status = "选项选择"
 	if is_zhugong == true then
@@ -408,69 +419,60 @@ function char_choose_zhudong()
 	gamerun_item = function(i)
 		funcptr_queue = {}
 		txt_messages:setVisible(true)
+
 		push_message("您选择了武将"..wujiang_choose[i][2])
 		char_juese[char_current_i].name = wujiang_choose[i][2]
 		char_juese[char_current_i].shili = wujiang_choose[i][1]
 		char_juese[char_current_i].xingbie = wujiang_choose[i][5]
+
 		if is_zhugong then
 			char_juese[char_current_i].tili_max = wujiang_choose[i][3] + 1
 			char_juese[char_current_i].tili = wujiang_choose[i][4] + 1
-			for j = 1,#char_juese_jineng[char_juese[char_current_i].name][4] do
-				local skillname = char_juese_jineng[char_juese[char_current_i].name][4][j]
-
-				if skillname == "焚心" then
-					
-				elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "攻心" or skillname == "强袭" or skillname == "甘露" then
-					char_juese[char_current_i].skill[skillname] = 1
-				else
-					char_juese[char_current_i].skill[skillname] = "available"
-				end
-				table.insert(char_juese[char_current_i].skillname,skillname)
-			end
-			table.remove(wujiang_choose, i)
-			for j = 1, #wujiang_choose do
-				table.insert(char_wujiang_f,#char_wujiang_f,wujiang_choose[j][2])
-			end
-			wujiang_choose = {}
 		else
 			char_juese[char_current_i].tili_max = wujiang_choose[i][3]
 			char_juese[char_current_i].tili = wujiang_choose[i][4]
-			for j = 1,#char_juese_jineng[char_juese[char_current_i].name][4] do
-				local skillname = char_juese_jineng[char_juese[char_current_i].name][4][j]
-
-				if skillname == "激将" or skillname == "护驾" or skillname == "救援" or skillname == "黄天" or skillname == "血裔" or skillname == "颂威" or skillname == "暴虐" or skillname == "若愚" or skillname == "制霸" then
-					
-				elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "焚心" or skillname == "攻心" or skillname == "强袭" or skillname == "甘露" then
-					char_juese[char_current_i].skill[skillname] = 1
-					table.insert(char_juese[char_current_i].skillname,skillname)
-				else
-					char_juese[char_current_i].skill[skillname] = "available"
-					table.insert(char_juese[char_current_i].skillname,skillname)
-				end
-			end
-			table.remove(wujiang_choose, i)
 		end
+		
+		for j = 1, #char_juese_jineng[char_juese[char_current_i].name][4] do
+			local skillname = char_juese_jineng[char_juese[char_current_i].name][4][j]
+
+			if is_zhugong == false and (skillname == "激将" or skillname == "护驾" or skillname == "救援" or skillname == "黄天" or skillname == "血裔" or skillname == "颂威" or skillname == "暴虐" or skillname == "若愚" or skillname == "制霸") then
+
+			elseif is_zhugong == true and skillname == "焚心" then
+				
+			elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "焚心" or skillname == "攻心" or skillname == "强袭" or skillname == "甘露" then
+				char_juese[char_current_i].skill[skillname] = 1
+			else
+				char_juese[char_current_i].skill[skillname] = "available"
+			end
+			table.insert(char_juese[char_current_i].skillname,skillname)
+		end
+
+		table.remove(wujiang_choose, i)
+		for j = 1, #wujiang_choose do
+			table.insert(char_wujiang_f, #char_wujiang_f, wujiang_choose[j][2])
+		end
+		wujiang_choose = {}
+		
 		gamerun_status = old_gamerun_status
-		_huashen_huifu()
+		skills_pop_queue(true)
 		timer.start(0.2)
 	end
 	platform.window:invalidate()
 end
 
-
 --  神将选择势力  --
 function char_choose_shili()
 	if char_juese[char_current_i].shili ~= "神" then
+		skills_skip_subqueue()
 		return
 	end
+
 	local ID
 	ID = char_current_i
 
 	local old_gamerun_status = gamerun_status
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	gamerun_status = "选项选择"
 	choose_name = "您选了神武将"..char_juese[char_current_i].name.."，请选势力"
@@ -482,10 +484,12 @@ function char_choose_shili()
 	gamerun_item = function(i)
 		funcptr_queue = {}
 		txt_messages:setVisible(true)
+
 		push_message("您选择了"..choose_option[i].."势力")
 		char_juese[char_current_i].shili = choose_option[i]
+
 		gamerun_status = old_gamerun_status
-		_huashen_huifu()
+		skills_pop_queue(true)
 		timer.start(0.2)
 	end
 	platform.window:invalidate()
@@ -586,7 +590,7 @@ function _wujiang_sub2(va_list)
 end
 
 --  计算玩家与其他玩家的距离  --
-function char_calc_distance(_ID_s, _ID_d)
+function char_calc_distance(_ID_s, _ID_d, horse_ignore, delta)
     local dist, avg, count
 	local ID_s, ID_d
 	
@@ -637,26 +641,31 @@ function char_calc_distance(_ID_s, _ID_d)
 	end
 	
 	--  攻击马计算距离时，减1  --
-	if #char_juese[_ID_s].gongma ~= 0 and dist > 1 then
+	if #char_juese[_ID_s].gongma ~= 0 and horse_ignore == nil then
 	    dist = dist - 1
 	end
 	
 	--  马超、庞德拥有马术，距离减1  --
-	if char_juese[_ID_s].skill["马术"] == "available" and dist > 1 then
+	if char_juese[_ID_s].skill["马术"] == "available" then
 		dist = dist - 1
 	end
 
 	--  公孙瓒拥有义从，体力大于等于3距离减1  --
-	if char_juese[_ID_s].skill["义从"] == "available" and char_juese[_ID_s].tili >= 3 and dist > 1 then
+	if char_juese[_ID_s].skill["义从"] == "available" and char_juese[_ID_s].tili >= 3 then
 		dist = dist - 1
 	end
 
 	--  邓艾拥有屯田，距离减'田'的数量  --
 	if char_juese[_ID_s].skill["屯田"] == "available" then
-		dist = math.max(dist - #card_tian[_ID_s], 1)
+		dist = dist - #card_tian[_ID_s]
 	end
-	
-	return dist
+
+	--  计算距离时需要额外增减的距离 (如邓艾使用急袭)  --
+	if delta ~= nil then
+		dist = dist + delta
+	end
+
+	return math.max(dist, 1)
 end
 function distance_remove(ID_s, ID_d)    -- 删除已死亡角色
 	local i
@@ -802,19 +811,19 @@ function _shengli_info(win_shenfen)
 	end
 
 	local msg
-	msg = "游戏结束，获胜者为"
-	for i, v in ipairs(winner) do
+	msg = "游戏结束，失败者为"
+	for i, v in ipairs(loser) do
 		msg = msg .. table.concat({v[1], " (", v[2], ")"})
-		if i < #winner then
+		if i < #loser then
 			msg = msg .. "，"
 		end
 	end
 	add_funcptr(push_message, msg)
 
-	msg = "失败者为"
-	for i, v in ipairs(loser) do
+	msg = "获胜者为"
+	for i, v in ipairs(winner) do
 		msg = msg .. table.concat({v[1], " (", v[2], ")"})
-		if i < #loser then
+		if i < #winner then
 			msg = msg .. "，"
 		end
 	end
@@ -1365,23 +1374,30 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 		local c_pos, card
 		local card_msg = {}
 		local jijiu = false
+		local jiuchi = false
 
 		while char_juese[ID_s].tili < target_tili do
-			c_pos = card_chazhao(ID_jiu, "桃")
+			c_pos = ai_card_search(ID_jiu, "桃", 1)
+			if #c_pos == 0 then
+				c_pos = -5
+			else
+				c_pos = c_pos[1]
+			end
 
-			if c_pos <= 0 then
+			if c_pos < -4 then
 				--  华佗在他人的回合可以使用急救  --
 				if ID_jiu ~= char_acting_i and char_juese[ID_jiu].skill["急救"] == "available" then
+					gamerun_wuqi_into_hand(ID_jiu)
 					c_pos = skills_jijiu_chazhao(ID_jiu)
 
-					if c_pos > 0 and jijiu == false then
+					if c_pos >= -4 and jijiu == false then
 						add_funcptr(push_message, table.concat({char_juese[ID_jiu].name, "发动了武将技能 '急救'"}))
 						jijiu = true
 					end
 				end
 			end
 
-			if c_pos > 0 then
+			if c_pos >= -4 then
 				if ID_s ~= ID_jiu and char_juese[ID_s].skill["救援"] == "available" and char_juese[ID_jiu].shili == "吴" then
 					add_funcptr(push_message, table.concat({char_juese[ID_jiu].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
 				end
@@ -1390,6 +1406,7 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 				card_add_qipai(card)
 				card_remove({ID_jiu, c_pos})
 				table.insert(card_msg, table.concat({card[2], card[3], "的", card[1]}))
+				gamerun_wuqi_out_hand(ID_jiu)
 
 				if ID_s ~= ID_jiu and char_juese[ID_s].skill["救援"] == "available" and char_juese[ID_jiu].shili == "吴" then
 					char_juese[ID_s].tili = math.min(char_juese[ID_s].tili + 2, char_juese[ID_s].tili_max)
@@ -1409,6 +1426,11 @@ function _binsi_ai(va_list)		--  濒死结算：AI做出决定
 				c_pos = ai_chazhao_jiu(ID_jiu)
 				if c_pos > 0 then
 					card = char_juese[ID_jiu].shoupai[c_pos]
+					if card[1] ~= "酒" and char_juese[ID_jiu].skill["酒池"] == "available" and jiuchi == false then
+						add_funcptr(push_message, table.concat({char_juese[ID_jiu].name, "发动了武将技能 '酒池'"}))
+						jiuchi = true
+					end
+
 					card_add_qipai(card)
 					card_remove({ID_jiu, c_pos})
 					table.insert(card_msg, table.concat({card[2], card[3], "的", card[1]}))
@@ -1517,7 +1539,7 @@ function _binsi_zhudong(va_list)	--  濒死结算：己方做出决定
 		msg = {"您可出", tao_needed, "张桃"}
 	end
 
-	if ID_s ~= char_current_i and char_juese[char_current_i].skill["急救"] == "available" then
+	if char_acting_i ~= char_current_i and char_juese[char_current_i].skill["急救"] == "available" then
 		gamerun_wuqi_into_hand(char_current_i)
 	end
 
@@ -1547,6 +1569,7 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 	local n_jiu = 0
 	local card_msg = {}
 	local jijiu = false
+	local jiuchi = false
 
 	if ID_s ~= char_current_i and char_juese[ID_s].skill["救援"] == "available" and char_juese[char_current_i].shili == "吴" then
 		add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "触发了", char_juese[ID_s].name, "的武将技能 '救援'"}))
@@ -1556,10 +1579,15 @@ function _binsi_zhudong_chu(ID_s, qualified_cards)		--  濒死结算：己方解
 		local card = char_juese[char_current_i].shoupai[qualified_cards[i]]
 
 		if card_judge_if_jiu(char_current_i, qualified_cards[i]) then
+			if card[1] ~= "酒" and char_juese[char_current_i].skill["酒池"] == "available" and jiuchi == false then
+				add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "发动了武将技能 '酒池'"}))
+				jiuchi = true
+			end
+
 			n_jiu = n_jiu + 1
 		else
 			if char_juese[char_current_i].skill["急救"] == "available" and card[1] ~= "桃" and jijiu == false then
-				add_funcptr(push_message, table.concat({char_juese[ID_jiu].name, "发动了武将技能 '急救'"}))
+				add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "发动了武将技能 '急救'"}))
 				jijiu = true
 			end
 
@@ -1626,6 +1654,9 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	--  设置死亡标志  --
 	char_juese[id].siwang = true
 	char_buqu[id] = false
+
+	--  将死亡武将的武将牌加回将池  --
+	table.insert(char_wujiang_f, char_juese[id].name)
 
 	--  曹丕发动行殇  --
 	for i = 1, 5 do

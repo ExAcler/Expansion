@@ -96,16 +96,39 @@ function ai_judge_hanbing(ID_s, ID_mubiao)
 end
 
 --  AI决定是否发动青龙刀  --
+--  返回是否发动、手牌ID  --
 function ai_judge_qinglong(ID_s, ID_mubiao)
 	if ai_judge_same_identity(ID_s, ID_mubiao, true) == 1 then
-		return false
+		return false, 0
 	end
 
-	if ai_chazhao_sha(ID_s, char_juese[ID_s].shoupai) > 0 then
-		return true
+	local cards = ai_card_search(ID_s, "随意", #char_juese[ID_s].shoupai)
+	for i = #cards, 1, -1 do
+		if card_judge_if_sha(ID_s, cards[i]) == false then
+			table.remove(cards, i)
+		else
+			if #char_juese[ID_mubiao].fangju ~= 0 or char_juese[ID_mubiao].skill["毅重"] == "available" then
+				if char_juese[ID_mubiao].fangju[1] == "藤甲" then
+					if char_juese[ID_s].shoupai[cards[i]][1] ~= "雷杀" and char_juese[ID_s].shoupai[cards[i]][1] ~= "火杀" then
+						table.remove(cards, i)
+					end
+				elseif char_juese[ID_mubiao].fangju[1] == "仁王盾" or char_juese[ID_mubiao].skill["毅重"] == "available" then
+					local yanse, huase, dianshu = ai_judge_cardinfo(ID_s, {char_juese[ID_s].shoupai[cards[i]]})
+					if yanse == "黑色" then
+						table.remove(cards, i)
+					end
+				end
+			end
+		end
+	end
+	while #cards > 1 do
+		table.remove(cards, math.random(#cards))
+	end
+	if #cards == 0 then
+		return false, 0
 	end
 
-	return false
+	return true, cards[1]
 end
 
 --  AI决定是否发动朱雀羽扇  --
@@ -186,6 +209,154 @@ function ai_judge_wuxie(id, ID_s, ID_jiu, name)
 	else
 		return false
 	end
+end
+
+--  AI决定是否出闪  --
+function ai_judge_shan(ID, is_wushuang)
+	local n_shan = 0
+	for i = 1, #char_juese[ID].shoupai do
+		if card_judge_if_shan(ID, i) then
+			n_shan = n_shan + 1
+		end
+	end
+
+	if is_wushuang and char_juese[ID].skill["雷击"] ~= "available" then
+		if #char_juese[ID].wuqi ~= 0 and char_juese[ID].wuqi[1] == "八卦阵" then
+			if n_shan == 0 then
+				return false
+			end
+		else
+			if n_shan < 2 then
+				return false
+			end
+		end
+	end
+
+	if n_shan == 0 then
+		return false
+	end
+
+	return true
+end
+
+--  AI决定是否响应决斗  --
+function ai_judge_juedou(ID_s, ID_d, is_wushuang)
+	if ai_judge_same_identity(ID_s, ID_d, true) == 1 and char_juese[ID_d].tili == 1 then
+		return false
+	end
+
+	local n_sha = 0
+	for i = 1, #char_juese[ID_s].shoupai do
+		if card_judge_if_sha(ID_s, i) then
+			n_sha = n_sha + 1
+		end
+	end
+
+	if is_wushuang then
+		if n_sha < 2 then
+			return false
+		end
+	end
+
+	if n_sha == 0 then
+		return false
+	end
+
+	return true
+end
+
+--  AI决定借刀杀人是否出杀  --
+function ai_judge_jiedao(ID_s, ID_d)
+	if ai_judge_same_identity(ID_s, ID_d, true) == 1 then
+		return false
+	else
+		return true
+	end
+end
+
+--  AI决定五谷丰登选牌  --
+function ai_judge_wugu(ID, wugu_cards)
+	local cards
+
+	if char_juese[ID].tili < char_juese[ID].tili_max then
+		cards = ai_card_search(ID, "桃", 1, wugu_cards)
+		if #cards > 0 then
+			return cards[1]
+		end
+	end
+
+	if #char_juese[ID].fangju == 0 or ai_judge_withdraw_fangju(ID) then
+		cards = ai_card_search(ID, "防具", 1, wugu_cards)
+		if #cards > 0 then
+			return cards[1]
+		end
+	end
+
+	if ai_chazhao_shan(ID, char_juese[ID].shoupai) < 0 then
+		cards = ai_card_search(ID, "闪", 1, wugu_cards)
+		if #cards > 0 then
+			return cards[1]
+		end
+	end
+
+	cards = ai_card_search(ID, "无中生有", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	cards = ai_card_search(ID, "无懈可击", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	if #char_juese[ID].wuqi == 0 then
+		cards = ai_card_search(ID, "武器", 1, wugu_cards)
+		if #cards > 0 then
+			return cards[1]
+		end
+	end
+
+	cards = ai_card_search(ID, "乐不思蜀", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	cards = ai_card_search(ID, "兵粮寸断", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	cards = ai_card_search(ID, "火杀", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	cards = ai_card_search(ID, "雷杀", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	cards = ai_card_search(ID, "普通杀", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	cards = ai_card_search(ID, "决斗", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	cards = ai_card_search(ID, "火攻", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	cards = ai_card_search(ID, "随意", 1, wugu_cards)
+	if #cards > 0 then
+		return cards[1]
+	end
+
+	return nil
 end
 
 --  AI计算要弃的牌数  --
@@ -1258,8 +1429,10 @@ function ai_judge_withdraw_other(ID,ID_s,is_zhuangbei_included,is_panding_includ
 					end
 					if is_gain then
 						_napai_sub3({ID,ID_s,1,true})
+						return
 					else
 						_qipai_sub3({ID,1,true})
+						return
 					end
 				else
 					return
@@ -1272,8 +1445,10 @@ function ai_judge_withdraw_other(ID,ID_s,is_zhuangbei_included,is_panding_includ
 				if char_juese[ID].panding[i][1] == "乐不思蜀" then
 					if is_gain then
 						_napai_sub3({ID,ID_s,i,true})
+						return
 					else
 						_qipai_sub3({ID,i,true})
+						return
 					end
 				end
 			end
@@ -1281,15 +1456,19 @@ function ai_judge_withdraw_other(ID,ID_s,is_zhuangbei_included,is_panding_includ
 				if char_juese[ID].panding[i][1] == "兵粮寸断" then
 					if is_gain then
 						_napai_sub3({ID,ID_s,i,true})
+						return
 					else
 						_qipai_sub3({ID,i,true})
+						return
 					end
 				end
 			end
 			if is_gain then
 				_napai_sub3({ID,ID_s,1,true})
+				return
 			else
 				_qipai_sub3({ID,1,true})
+				return
 			end
 		else
 			if char_juese[ID].fangju[1] == "白银狮" and char_juese[ID].tili < char_juese[ID].tili_max then

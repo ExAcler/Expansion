@@ -4,6 +4,7 @@ function init_run()
 -- 函数执行队列 (定时器) --
 funcptr_queue = {}
 funcptr_i = 1
+funcptr_lock = false
 
 -- 游戏记录 --
 message_list = {}
@@ -351,7 +352,7 @@ function gamerun_huihe_start()
 
 	--  廖化当先额外出牌阶段  --
 	if char_juese[char_acting_i].skill["当先"] == "available" and gamerun_dangxian == false then
-		msg = {char_juese[char_acting_i].name, "触发了技能 '当先'"}
+		msg = {char_juese[char_acting_i].name, "触发了武将技能 '当先'"}
 		push_message(table.concat(msg))
 		if char_acting_i == char_current_i then
 			add_funcptr(_start_sub1, nil)
@@ -401,19 +402,58 @@ function gamerun_huihe_start()
 		add_funcptr(skills_zhiji)
 	end
 	
-	--  孙坚英魂  --
-	add_funcptr(skills_yinghun_check_and_run)
+	add_funcptr(_start_skills_kaishi)
 	
+	--  判定阶段  --
+	--  进入判定阶段前技能  --
+	add_funcptr(_start_skills_panding)
+
+	--  判定  --
+	add_funcptr(gamerun_huihe_panding)
+	
+	--  摸牌阶段  --
+	--  进入摸牌阶段前技能  --
+	add_funcptr(_start_skills_mopai)
+
+	--  摸牌  --
+	add_funcptr(card_mopai, nil)
+
+	--  出牌阶段  --
+	--  进入出牌阶段前技能  --
+	add_funcptr(_start_skills_chupai)
+	
+	--  出牌  --
+	if char_acting_i == char_current_i then
+		add_funcptr(_start_sub1, nil)
+	else
+		add_funcptr(_start_chupai_ai, nil)
+	end
+end
+function _start_skills_kaishi()		--  回合开始：开始阶段技能 (除觉醒技)
+	skills_push_queue()
+
 	--  诸葛亮观星  --
-	add_funcptr(skills_guanxing_check_and_run)
-	
+	if char_juese[char_acting_i].skill["观星"] == "available" then
+		add_funcptr(skills_guanxing, char_acting_i)
+	end
+
+	--  孙坚英魂  --
+	if char_juese[char_acting_i].skill["英魂"] == "available" and char_juese[char_acting_i].tili < char_juese[char_acting_i].tili_max then
+		add_funcptr(skills_yinghun, char_acting_i)
+	end
+
 	--  甄姬洛神  --
 	if char_juese[char_acting_i].skill["洛神"] == "available" then
 		add_funcptr(skills_luoshen, char_acting_i)
 	end
-	
-	--  判定阶段  --
-	--  进入判定阶段前技能  --
+
+	add_funcptr(skills_pop_queue)
+	timer.start(0.2)
+	skills_skip_subqueue()
+end
+function _start_skills_panding()	--  回合开始：进入判定阶段前技能
+	skills_push_queue()
+
 	--  夏侯渊神速  --
 	if char_juese[char_acting_i].skill["神速"] == "available" then
 		add_funcptr(skills_shensu, {char_acting_i, true})
@@ -424,11 +464,13 @@ function gamerun_huihe_start()
 		add_funcptr(skills_qiaobian, {char_acting_i, "判定"})
 	end
 
-	--  判定  --
-	add_funcptr(gamerun_huihe_panding)
-	
-	--  摸牌阶段  --
-	--  进入摸牌阶段前技能  --
+	add_funcptr(skills_pop_queue)
+	timer.start(0.2)
+	skills_skip_subqueue()
+end
+function _start_skills_mopai()		--  回合开始：进入摸牌阶段前技能
+	skills_push_queue()
+
 	--  颜良文丑双雄  --
 	if char_juese[char_acting_i].skill["双雄"] == "available" then
 		add_funcptr(skills_shuangxiong_1, char_acting_i)
@@ -440,7 +482,9 @@ function gamerun_huihe_start()
 	end
 
 	--  周瑜英姿  --
-	add_funcptr(skills_yingzi_check_and_run)
+	if char_juese[char_acting_i].skill["英姿"] == "available" then
+		add_funcptr(skills_yingzi, char_acting_i)
+	end
 
 	--  袁术庸肆  --
 	if char_juese[char_acting_i].skill["庸肆"] == "available" then
@@ -487,11 +531,13 @@ function gamerun_huihe_start()
 		end
 	end
 
-	--  摸牌  --
-	add_funcptr(card_mopai, nil)
+	add_funcptr(skills_pop_queue)
+	timer.start(0.2)
+	skills_skip_subqueue()
+end
+function _start_skills_chupai()		--	回合开始：进入出牌阶段前技能
+	skills_push_queue()
 
-	--  出牌阶段  --
-	--  进入出牌阶段前技能  --
 	--  鲁肃好施  --
 	if char_juese[char_acting_i].skill["好施"] == "available" then
 		add_funcptr(skills_haoshi_stage_2, char_acting_i)
@@ -511,13 +557,10 @@ function gamerun_huihe_start()
 	if char_juese[char_acting_i].skill["放权"] == "available" then
 		add_funcptr(skills_fangquan, char_acting_i)
 	end
-	
-	--  出牌  --
-	if char_acting_i == char_current_i then
-		add_funcptr(_start_sub1, nil)
-	else
-		add_funcptr(_start_chupai_ai, nil)
-	end
+
+	add_funcptr(skills_pop_queue)
+	timer.start(0.2)
+	skills_skip_subqueue()
 end
 function _start_sub1()	--  回合开始：当前玩家进入出牌阶段
     local msg
@@ -1191,7 +1234,7 @@ function on.timer()
 	if funcptr_i == 0 then
 		funcptr_i = 1
 	end
-	
+
 	if funcptr_i <= #funcptr_queue then
 		funcptr_i = funcptr_i + 1
 		if funcptr_queue[funcptr_i - 1].func ~= nil then
@@ -1296,7 +1339,7 @@ function on.enterKey()
 
 		elseif string.find(gamerun_status, "杀") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
-			add_funcptr(_sha_qilin_huifu)
+			add_funcptr(skills_pop_queue)
 
 		elseif string.find(gamerun_status, "寒1") then
 			add_funcptr(card_chai_shun_exe, {true, gamerun_guankan_selected, guankan_s, guankan_d})
@@ -1459,7 +1502,7 @@ function on.enterKey()
 				card = char_juese[char_current_i].shoupai[card_highlighted][1]
 				if card_judge_if_sha(char_current_i, card_highlighted) then
 					funcptr_queue = {}
-					_sha_exe_2(char_current_i, gamerun_target_selected, card_highlighted)
+					_sha_exe_2(wuxie_va[1], wuxie_va[2], card_highlighted, wuxie_va[3])
 					consent_func_queue(0.6)
 				end
 			end
@@ -1476,7 +1519,7 @@ function on.enterKey()
 				card_qipai_go()
 				skills_losecard(char_current_i)
 				
-				_sha_exe_3(char_current_i, gamerun_target_selected, guankan_s)
+				_sha_exe_3(wuxie_va[1], wuxie_va[2], guankan_s)
 				consent_func_queue(0.6)
 			end
 			return

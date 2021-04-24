@@ -58,6 +58,8 @@ function ai_judge_jushou(ID)
 	end
 	if char_juese[ID].fanmian == true then
 		return true
+	elseif char_juese[ID].shoupai == 0 then
+		return true
 	elseif live <= 2 then
 		return true
 	elseif ai_judge_random_percent(150 - 25 * live) == 1 then
@@ -82,6 +84,69 @@ end
 --  AI决定是否发动将驰  --
 --  1多摸一张，2少摸一张，3不发动  --
 function ai_judge_jiangchi(ID)
+	if #char_juese[ID].shoupai <= 1 then
+		if ai_judge_random_percent(60 - 40 * (char_juese[ID].shoupai - 1)) == 1 then
+			return 1
+		end
+	end
+
+	if char_juese[ID].tili == 1 then
+		return 3
+	end
+
+	local n_useful_sha = 0
+	local n_useful_sha_distance_inf = 0
+	local n_sha = 0
+
+	for i = 1, #char_juese[ID].shoupai do
+		local card = char_juese[ID].shoupai[i]
+		if card[1] == "杀" or card[1] == "雷杀" or card[1] == "火杀" then
+			local targets = ai_judge_target(ID, card[1], {card}, 1)
+			if #targets > 0 then
+				n_useful_sha = n_useful_sha + 1
+			end
+
+			char_distance_infinity = true
+			targets = ai_judge_target(ID, card[1], {card}, 1)
+			if #targets > 0 then
+				n_useful_sha_distance_inf = n_useful_sha_distance_inf + 1
+			end
+			char_distance_infinity = false
+
+			n_sha = n_sha + 1
+		end
+	end
+
+	if n_sha >= 2 then
+		--  有诸葛连弩且不发动将驰本来就可以杀到目标  --
+		if #char_juese[ID].wuqi ~= 0 and char_juese[ID].wuqi[1] == "诸葛弩" and n_useful_sha >= 2 then
+			return 3
+		end
+
+		--  发动将驰后仍然没有一张杀能杀到目标  --
+		if n_useful_sha_distance_inf == 0 then
+			return 3
+		end
+
+		--  发动将驰后能杀到目标的杀数量和不发动的没有区别  --
+		if n_useful_sha == n_useful_sha_distance_inf then
+			if ai_judge_random_percent(30) == 1 then
+				return 3
+			end
+		end
+
+		return 2
+	elseif n_sha >= 1 then
+		--  发动将驰前不能杀到目标，发动将驰后可以杀到目标  --
+		if n_useful_sha == 0 and n_useful_sha_distance_inf > 0 then
+			if ai_judge_random_percent(50) == 1 then
+				return 2
+			end
+		end
+		
+		return 3
+	end
+
 	return 3
 end
 
@@ -163,6 +228,7 @@ function ai_judge_shensu(ID, is_panding)
 
 				if #char_juese[zhugong_id].fangju > 0 then
 					if char_juese[zhugong_id].fangju[1] == "藤甲" then
+						percent = 0
 						if #char_juese[ID].wuqi == 0 then
 							percent = 100
 						else
@@ -454,111 +520,109 @@ end
 function ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
 	local skill_available = skills_judge_guicai_guidao(id)
 
-	if id == ID_mubiao then
-		--  延时类锦囊自救  --
+	if id == ID_mubiao or ai_judge_same_identity(id, ID_mubiao, false) == 1 then
+		--  延时类锦囊自救/解救队友  --
 		if panding_leixing == "乐不思蜀" and card_panding_card[2] ~= "红桃" and skill_available ~= "鬼道" then
-			local card_id = card_chazhao_with_huase(id, "红桃")
-			if card_id < 0 then
+			local card_id = ai_card_search(id, "红桃", 1)
+			if #card_id == 0 then
 				return nil
 			else
-				return card_id
+				return card_id[1]
 			end
 		end
 
 		if panding_leixing == "兵粮寸断" and card_panding_card[2] ~= "草花" then
-			local card_id = card_chazhao_with_huase(id, "草花")
-			if card_id < 0 then
+			local card_id = ai_card_search(id, "草花", 1)
+			if #card_id == 0 then
 				return nil
 			else
-				return card_id
+				return card_id[1]
 			end
 		end
 
 		if panding_leixing == "闪电" and card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
-			local card_id = card_chazhao_with_huase(id, "草花")
-			if card_id < 0 and skill_available ~= "鬼道" then
-				card_id = card_chazhao_with_huase(id, "红桃")
+			local card_id = ai_card_search(id, "草花", 1)
+			if #card_id == 0 and skill_available ~= "鬼道" then
+				card_id = ai_card_search(id, "红桃", 1)
 			end
-			if card_id < 0 and skill_available ~= "鬼道" then
-				card_id = card_chazhao_with_huase(id, "方块")
+			if #card_id == 0 and skill_available ~= "鬼道" then
+				card_id = ai_card_search(id, "方块", 1)
 			end
 
-			if card_id < 0 then
+			if #card_id == 0 then
 				return nil
 			else
-				return card_id
+				return card_id[1]
 			end
 		end
 
 		--  张角发动雷击，改判使其生效  --
 		if panding_leixing == "雷击" and card_panding_card[2] ~= "黑桃" then
-			local card_id = card_chazhao_with_huase(id, "黑桃")
-			if card_id < 0 then
+			local card_id = ai_card_search(id, "黑桃", 1)
+			if #card_id == 0 then
 				return nil
 			else
-				return card_id
+				return card_id[1]
 			end
 		end
 
 		return nil
 	end
 
-	if id == ID_laiyuan then
-		--  八卦阵，改判使其失效  --
-		if panding_leixing == "八卦阵" and card_panding_card[2] == "红桃" or card_panding_card[2] == "方块" and ai_judge_same_identity(id, ID_mubiao, false) == 2 then
-			local card_id = card_chazhao_with_huase(id, "草花")
-			if card_id < 0 then
-				card_id = card_chazhao_with_huase(id, "黑桃")
+	--  敌方发动八卦阵效果，改判使其失效  --
+	if panding_leixing == "八卦阵" and (card_panding_card[2] == "红桃" or card_panding_card[2] == "方块") then
+		if (id == ID_laiyuan and ai_judge_same_identity(id, ID_mubiao, false) == 2) or (id ~= ID_laiyuan and ai_judge_same_identity(id, ID_mubiao, true) == 2) then
+			local card_id = ai_card_search(id, "草花", 1)
+			if #card_id == 0 then
+				card_id = ai_card_search(id, "黑桃", 1)
 			end
 
-			if card_id < 0 then
+			if #card_id == 0 then
 				return nil
 			else
-				return card_id
+				return card_id[1]
 			end
 		end
+	end
 
-		--  被夏侯惇刚烈，改判使其失效  --
-		if panding_leixing == "刚烈" and card_panding_card[2] ~= "红桃" and skill_available ~= "鬼道" then
-			local card_id = card_chazhao_with_huase(id, "红桃")
-			if card_id < 0 then
-				return nil
-			else
-				return card_id
-			end
+	--  自己或队友被夏侯惇刚烈，改判使其失效  --
+	if panding_leixing == "刚烈" and card_panding_card[2] ~= "红桃" and skill_available ~= "鬼道" and (id == ID_laiyuan or ai_judge_same_identity(id, ID_laiyuan, false) == 1) then
+		local card_id = ai_card_search(id, "红桃", 1)
+		if #card_id == 0 then
+			return nil
+		else
+			return card_id[1]
+		end
+	end
+
+	--  自己或队友被张角雷击，改判使其失效  --
+	if panding_leixing == "雷击" and card_panding_card[2] == "黑桃" and (id == ID_laiyuan or ai_judge_same_identity(id, ID_laiyuan, false) == 1) then
+		local card_id = ai_card_search(id, "草花", 1)
+		if #card_id == 0 and skill_available ~= "鬼道" then
+			card_id = ai_card_search(id, "红桃", 1)
+		end
+		if #card_id == 0 and skill_available ~= "鬼道" then
+			card_id = ai_card_serach(id, "方块", 1)
 		end
 
-		--  被张角雷击，改判使其失效  --
-		if panding_leixing == "雷击" and card_panding_card[2] == "黑桃" then
-			local card_id = card_chazhao_with_huase(id, "草花")
-			if card_id < 0 and skill_available ~= "鬼道" then
-				card_id = card_chazhao_with_huase(id, "红桃")
-			end
-			if card_id < 0 and skill_available ~= "鬼道" then
-				card_id = card_chazhao_with_huase(id, "方块")
-			end
-
-			if card_id < 0 then
-				return nil
-			else
-				return card_id
-			end
+		if #card_id == 0 then
+			return nil
+		else
+			return card_id[1]
 		end
+	end
 
-		--  被马超铁骑，改判使其失效  --
-		if panding_leixing == "铁骑" and (card_panding_card[2] == "红桃" or card_panding_card[2] == "方块") then
-			local card_id = card_chazhao_with_huase(id, "草花")
-			if card_id < 0 then
-				card_id = card_chazhao_with_huase(id, "黑桃")
-			end
-			if card_id < 0 then
-				return nil
-			else
-				return card_id
-			end
+	--  自己或队友被马超铁骑，改判使其失效  --
+	if panding_leixing == "铁骑" and (card_panding_card[2] == "红桃" or card_panding_card[2] == "方块") and (id == ID_laiyuan or ai_judge_same_identity(id, ID_laiyuan, false) == 1) then
+		local card_id = ai_card_search(id, "草花", 1)
+		if #card_id == 0 then
+			card_id = ai_card_search(id, "黑桃", 1)
 		end
-		
-		return nil
+		if #card_id == 0 then
+			return nil
+		else
+			return card_id[1]
+		end
 	end
 
 	return nil
@@ -657,56 +721,24 @@ function ai_judge_fangzhu_mubiao(ID_s,ID_mubiao)
 	return nil
 end
 
--- AI决定是否反馈 --
+--  AI决定是否反馈  --
 function ai_judge_fankui_mubiao(ID_s, ID_mubiao)
 	if ID_mubiao ~= nil then
-		if ID_s == ID_mubiao then
-			return ID_mubiao
-		elseif char_juese[ID_mubiao].siwang == true then
-			
-		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "内奸" and ai_judge_blackjack(ID_s) == true) then
-			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
-				
-			else
-				return ID_mubiao
-			end
-		elseif char_juese[ID_s].shenfen == "反贼" then
-			if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
-				
-			else
-				return ID_mubiao
-			end
-		elseif char_juese[ID_s].shenfen == "内奸" then
-			return ID_mubiao
+		if ai_judge_same_identity(ID_s, ID_mubiao, false) == 1 then
+			return nil
 		end
 	end
-	return nil
+	return ID_mubiao
 end
 
 --  AI决定是否刚烈  --
 function ai_judge_ganglie_mubiao(ID_s, ID_mubiao)
 	if ID_mubiao ~= nil then
-		if ID_s == ID_mubiao then
-			
-		elseif char_juese[ID_mubiao].siwang == true then
-			
-		elseif char_juese[ID_s].shenfen == "主公" or char_juese[ID_s].shenfen == "忠臣" or (char_juese[ID_s].shenfen == "内奸" and ai_judge_blackjack(ID_s) == true) then
-			if char_juese[ID_mubiao].shenfen == "主公" or (char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true) then
-				
-			else
-				return ID_mubiao
-			end
-		elseif char_juese[ID_s].shenfen == "反贼" then
-			if char_juese[ID_mubiao].isantigovernment == true and char_juese[ID_mubiao].isblackjack ~= true then
-				
-			else
-				return ID_mubiao
-			end
-		elseif char_juese[ID_s].shenfen == "内奸" then
-			return ID_mubiao
+		if ai_judge_same_identity(ID_s, ID_mubiao, false) == 1 then
+			return nil
 		end
 	end
-	return nil
+	return ID_mubiao
 end
 
 --  AI决定遗计的目标  --

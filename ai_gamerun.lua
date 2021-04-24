@@ -424,56 +424,24 @@ function ai_get_in_range(ID, targets)
 	return attack_mubiao
 end
 
--- AI距离与攻击范围测算 --
--- 第一个参数是否在指定距离内，第二个参数返回是否在攻击范围内
-function ai_judge_distance(ID_s,ID_d,limdis,weapon_ignore,horse_ignore)
-	-- local distance_shun,distance_ni,indis,range,inrange=math.max(ID_d,ID_s)-math.min(ID_d,ID_s),math.min(ID_d,ID_s)+5-math.max(ID_d,ID_s),false,1,false
+--  AI距离与攻击范围测算  --
+--  第一个参数是否在指定距离内，第二个参数返回是否在攻击范围内  --
+function ai_judge_distance(ID_s, ID_d, limdis, weapon_ignore, horse_ignore, delta)
 	local indis, range, inrange = false, 1, false
-	local distance = char_calc_distance(ID_s, ID_d)
+	local distance = char_calc_distance(ID_s, ID_d, horse_ignore, delta)
 
-	-- for i = 1,5 do
-	-- 	if char_juese[i].siwang == true then
-	-- 		if i < math.max(ID_d,ID_s) and i > math.min(ID_d,ID_s) then
-	-- 			distance_ni = distance_ni - 1
-	-- 		else
-	-- 			distance_shun = distance_shun - 1
-	-- 		end
-	-- 	end
-	-- end
-	-- distance = math.min(distance_ni,distance_shun)
-	-- if #char_juese[ID_s].gongma ~= 0 and ID_s ~= ID_d and horse_ignore == nil then
-	-- 	distance = distance-1
-	-- end
-	-- if #char_juese[ID_d].fangma ~= 0 and ID_s ~= ID_d then
-	-- 	distance = distance+1
-	-- end
-	-- if char_juese[ID_s].skill["马术"] == "available" and ID_s ~= ID_d then
-	-- 	distance = distance-1
-	-- end
-	-- if char_juese[ID_s].skill["义从"] == "available" and char_juese[ID_s].tili > 2 and ID_s ~= ID_d then
-	-- 	distance = distance-1
-	-- end
-	-- if char_juese[ID_d].skill["义从"] == "available" and char_juese[ID_d].tili <= 2 and ID_s ~= ID_d then
-	-- 	distance = distance+1
-	-- end
-	-- if char_juese[ID_d].skill["飞影"] == "available" and ID_s ~= ID_d then
-	-- 	distance = distance+1
-	-- end
-	-- if char_juese[ID_s].skill["屯田"] == "available" then
-	-- 	distance = math.max(distance - #card_tian[ID_s], 1)
-	-- end
 	if #char_juese[ID_s].wuqi ~= 0 and weapon_ignore == nil then
 		range = card_wuqi_r[char_juese[ID_s].wuqi[1]]
 	end
-	-- distance = distance + delta
-	
+
 	if distance <= limdis then
 		indis = true
 	end
 	if distance <= range then
 		inrange = true
 	end
-	return indis,inrange
+
+	return indis, inrange
 end
 
 --  AI计算对阵双方实力强弱 (不含内奸)  --
@@ -637,7 +605,7 @@ function ai_skill_use_priority(ID)
 	end
 	
 	--  卧龙诸葛火计  --
-	if char_juese[ID].skill["火计"] == "available" and ai_skills_discard["火攻"] ~= true then
+	if char_juese[ID].skill["火计"] == "available" and ai_skills_discard["火计"] ~= true then
 		fadong, ID_shoupai, mubiao = ai_judge_huoji(ID)
 		if fadong == true then
 			if card_huogong({ID_shoupai}, ID, mubiao) then
