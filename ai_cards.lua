@@ -359,6 +359,82 @@ function ai_judge_wugu(ID, wugu_cards)
 	return nil
 end
 
+--  AI决定铁索连环目标  --
+function ai_judge_tiesuo_target(ID)
+	local targets_jie = {}
+	local targets_lian = {}
+	local final_targets = {}
+	local enemies = ai_basic_judge_mubiao(ID, 4, false, true, true)
+
+	for i = 1, 5 do
+		if char_juese[i].siwang == true then
+
+		elseif (ID == i or ai_judge_same_identity(ID, i, true) == 1) and char_juese[i].hengzhi == true then
+			table.insert(targets_jie, i)
+		elseif ai_judge_same_identity(ID, i, true) == 2 and char_juese[i].hengzhi == false then
+			table.insert(targets_lian, i)
+		end
+	end
+
+	if #targets_jie >= 2 then
+		final_targets = random_pick(targets_jie, 2)
+	elseif #targets_jie == 1 then
+		if #targets_lian == 0 then
+			final_targets = targets_jie
+		else
+			final_targets = {targets_jie[1]}
+			if #targets_lian == 1 and #targets_lian == #enemies then
+
+			else
+				local final_p2 = random_pick(targets_lian, 1)
+				table.insert(final_targets, final_p2[1])
+			end
+		end
+	else
+		if #targets_lian == 1 and #targets_lian == #enemies then
+
+		else
+			final_targets = random_pick(targets_lian, 2)
+		end
+	end
+
+	return final_targets
+end
+
+--  AI决定对方处于横置状态时是否要出杀  --
+function ai_judge_sha_lianhuan(card_treated, ID_s, ID_mubiao)
+	if char_juese[ID_mubiao].hengzhi == false then
+		return true
+	end
+
+	if card_treated ~= "火杀" and card_treated ~= "雷杀" and char_juese[ID_s].wuqi[1] ~= "朱雀扇" then
+		return true
+	end
+
+	local use_jiu = false
+	local cards = ai_card_search(ID_s, "酒", 1)
+	if #cards > 0 or (char_juese[ID_s].skill["酒池"] == "available" and ai_judge_jiuchi(ID_s) == true) then
+		use_jiu = true
+	end
+
+	for i = 1, 5 do
+		if ai_judge_same_identity(ID_s, i, false) == 1 and char_juese[i].hengzhi == true then
+			if use_jiu then
+				--  剔除酒+属性杀
+				return false
+			elseif char_juese[i].tili <= 1 then
+				--  剔除队友体力低时属性杀
+				return false
+			elseif (char_juese[ID_mubiao].fangju[1] == "藤甲" or char_juese[i].fangju[1] == "藤甲") and (card_treated == "火杀" or char_juese[ID_s].wuqi[1] == "朱雀扇") then
+				--  剔除对方或队友装藤甲时火杀
+				return false
+			end
+		end
+	end
+
+	return true
+end
+
 --  AI计算要弃的牌数  --
 function ai_withdraw_need(ID)
 	local limit, need = char_juese[ID].tili, 0
@@ -458,7 +534,7 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 	for i=5,1,-1 do
 		if char_juese[possible_target[i]].siwang == true then
 			table.remove(possible_target,i)
-		elseif card_treated ~= "借刀杀人" and string.find(card_treated,"杀") ~= nil and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["帷幕"] == "available" then
+		elseif (card_get_leixing(card_treated) == "非延时类锦囊" or card_get_leixing(card_treated) == "延时类锦囊") and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["帷幕"] == "available" then
 			table.remove(possible_target,i)
 		elseif ID == possible_target[i] and card_treated == "铁索连环" and char_juese[ID].hengzhi == true then
 			
@@ -524,7 +600,7 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 			end
 			if pk == true then
 				
-			elseif char_juese[i].shenfen == "主公" and char_juese[i].tili == 1 then
+			elseif char_juese[i].shenfen == "主公" and char_juese[i].tili <= 2 then
 				table.remove(possible_target,i)
 			elseif ai_judge_blackjack(ID) == false then
 				if char_juese[possible_target[i]].isantigovernment ~= false then
@@ -645,14 +721,7 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 			end
 		end
 	elseif card_treated == "铁索连环" then
-		--剔除已经横置的对手
-		for i=#possible_target,1,-1 do
-			if char_juese[possible_target[i]].hengzhi == true and (char_juese[ID].shenfen == "主公" or char_juese[ID].shenfen == "忠臣") and char_juese[possible_target[i]].isantigovernment ~= false then
-				table.remove(possible_target,i)
-			elseif char_juese[possible_target[i]].hengzhi == true and char_juese[ID].shenfen == "反贼" and char_juese[possible_target[i]].isantigovernment ~= true then
-				table.remove(possible_target,i)
-			end
-		end
+		possible_target = ai_judge_tiesuo_target(ID)
 	elseif string.find(card_treated,"杀") ~= nil then
 		--剔除距离不够的目标
 		if char_distance_infinity == false then
@@ -670,7 +739,7 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 			end
 		end
 		local shuxing = false
-		if card_treated == "火杀" or card_treated=="雷杀" then
+		if card_treated == "火杀" or card_treated == "雷杀" then
 			shuxing = true
 		end
 		--剔除牌多的雷击
@@ -680,7 +749,7 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 			end
 		end
 		local shuxing = false
-		if card_treated == "火杀" or card_treated=="雷杀" then
+		if card_treated == "火杀" or card_treated == "雷杀" then
 			shuxing = true
 		end
 		--剔除普杀藤甲
@@ -693,6 +762,21 @@ function ai_judge_target(ID, card_treated, cards, target_number)
 		for i=#possible_target,1,-1 do
 			if (char_juese[possible_target[i]].fangju[1] == "仁王盾" and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[ID].wuqi[1] ~= "青釭剑") or (#char_juese[possible_target[i]].fangju == 0 and ai_judge_cardinfo(ID,cards) == "黑色" and char_juese[possible_target[i]].skill["毅重"] == "available") then
 				table.remove(possible_target,i)
+			end
+		end
+		--剔除没其他基本牌时杀刘禅
+		for i = #possible_target, 1, -1 do
+			if char_juese[possible_target[i]].skill["享乐"] == "available" then
+				local cards_jiben = ai_card_search(ID, "基本", #char_juese[ID].shoupai)
+				if #cards_jiben <= 1 then
+					table.remove(possible_target, i)
+				end
+			end
+		end
+		--剔除高伤害且队友被连的属性杀
+		for i = #possible_target, 1, -1 do
+			if ai_judge_sha_lianhuan(card_treated, ID, possible_target[i]) == false then
+				table.remove(possible_target, i)
 			end
 		end
 		--剔除能流离给队友的角色

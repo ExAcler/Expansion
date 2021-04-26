@@ -72,7 +72,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神曹操"] = {{3, 3}, "神", false, {"归心", "飞影"}, "男", {"", "锁定"}, true},
 	["神司马懿"] = {{4, 4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定", "觉醒", ""}, true},
 	["神周瑜"] = {{4, 4}, "神", false, {"琴音", "业炎"}, "男", {"", "限定"}, false},
-	["孙笑川"] = {{4,4}, "神", false, {"挑衅","甘露","化身","新生"}, "男", {"","","禁止","禁止"}, true},
+	["孙笑川"] = {{4,4}, "神", false, {"挑衅","甘露","观星","空城"}, "男", {"","","","锁定"}, true},
 }
 
 -- 技能分类列表 --
@@ -92,7 +92,7 @@ card_wuqi_r =
 
 function init_character()
 -- 各角色武将牌 --
-char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "孙笑川", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张郃", "张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张紘", "凌统", "吴国太", "颜良文丑", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈", "公孙瓒", "神曹操", "神司马懿", "神吕蒙", "曹彰", "廖化", "灵雎", "SP貂蝉", "SP姜维", "袁术", "贾诩"}
+char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "孙笑川", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张郃", "张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张紘", "凌统", "吴国太", "颜良文丑", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈", "公孙瓒", "神曹操", "神司马懿", "神吕蒙", "曹彰", "廖化", "灵雎", "SP貂蝉", "SP姜维", "袁术", "贾诩", "神周瑜"}
 char_wujiang_zhugong = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓","孙笑川"}  -- 主公武将牌
 char_wujiang_f = {}  -- 洗后的武将牌
 
@@ -442,10 +442,11 @@ function char_choose_zhudong()
 				
 			elseif skillname == "挑衅" or skillname == "伏枥" or skillname == "反间" or skillname == "驱虎" or skillname == "制衡" or skillname == "结姻" or skillname == "天义"  or skillname == "涅槃" or skillname == "缔盟" or skillname == "离间" or skillname == "离魂" or skillname == "青囊" or skillname == "焚心" or skillname == "攻心" or skillname == "强袭" or skillname == "甘露" then
 				char_juese[char_current_i].skill[skillname] = 1
+				table.insert(char_juese[char_current_i].skillname,skillname)
 			else
 				char_juese[char_current_i].skill[skillname] = "available"
+				table.insert(char_juese[char_current_i].skillname,skillname)
 			end
-			table.insert(char_juese[char_current_i].skillname,skillname)
 		end
 
 		table.remove(wujiang_choose, i)

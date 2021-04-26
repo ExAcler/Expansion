@@ -939,6 +939,24 @@ function card_judge_if_shan(ID, card_i)
 	return false
 end
 
+--  判断指定的牌是否是无懈可击  --
+function card_judge_if_wuxie(ID, card_i)
+	local card = char_juese[ID].shoupai[card_i]
+
+	if card[1] == "无懈可击" then
+		return true
+	end
+
+	local yanse, huase, dianshu = ai_judge_cardinfo(ID, {card})
+	if char_juese[ID].skill["看破"] == "available" then
+		if yanse == "黑色" then
+			return true
+		end
+	end
+
+	return false
+end
+
 --  计算卡牌/技能使用限制  --
 function card_if_d_limit(cardname, ID_s, ID_d, ID_shoupai)
     local v, p
@@ -1982,14 +2000,17 @@ end
 function _wuxie_prepare()
 	timer.start(0.2)
 
-	push_message("请等待无懈可击")
+	--push_message("请等待无懈可击")
 	wuxie_in_effect = false
 	wuxie_queue_jinnang = table.copy(funcptr_queue)
+
+	skills_skip_subqueue()
 end
 function _wuxie_prepare_2()
 	timer.start(0.2)
 
-	push_message("请等待无懈可击")
+	--push_message("请等待无懈可击")
+	skills_skip_subqueue()
 end
 function card_wuxie_query(actual_name, ID_s, ID_mubiao)	--  无懈可击：从锦囊作用目标开始，轮询确定各方是否出无懈可击
 	local id = ID_mubiao
@@ -2037,8 +2058,12 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 	local should_use_wuxie = false
 	if id == ID_mubiao then
 		local name = actual_name
-		if name == "决斗" or name == "过河拆桥" or name == "顺手牵羊" or name == "万箭齐发" or name == "南蛮入侵" or name == "借刀杀人" or name == "无懈可击" or name == "火攻" or (name == "铁索连环" and char_juese[id].hengzhi == false) then
+		if name == "决斗" or name == "过河拆桥" or name == "顺手牵羊" or name == "万箭齐发" or name == "南蛮入侵" or name == "借刀杀人" or name == "火攻" or (name == "铁索连环" and char_juese[id].hengzhi == false) then
 			should_use_wuxie = true
+		elseif name == "无懈可击" then
+			if ai_judge_same_identity(ID_mubiao, ID_s, true) ~= 1 then
+				should_use_wuxie = true
+			end
 		end
 	else
 		should_use_wuxie = ai_judge_wuxie(id, ID_s, ID_mubiao, actual_name)
@@ -2052,19 +2077,16 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 	local card_wx
 	if n > 0 and should_use_wuxie then
 		card_wx = char_juese[id].shoupai[n]
-		if card_wx[1] ~= "无懈可击" then
-			push_message(char_juese[id].name .. "发动了武将技能 '看破'")
-			msg = {char_juese[id].name, "使用了无懈可击 (", card_wx[2], card_wx[3], "的", card_wx[1], ")"}
-		else
-			msg = {char_juese[id].name, "使用了'", card_wx[2], card_wx[3], "的", card_wx[1], "'"}
-		end
-		push_message(table.concat(msg))
-		card_shanchu({id, n})
 		wuxie_in_effect = not wuxie_in_effect
 
 		--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
 		timer.stop()
 		funcptr_queue = {}
+
+		if card_wx[1] ~= "无懈可击" and char_juese[id].skill["看破"] == "available" then
+			add_funcptr(push_message, char_juese[id].name .. "发动了武将技能 '看破'")
+		end
+		add_funcptr(_wuxie_use, {id, n})
 
 		skills_losecard(id)
 		if char_juese[id].skill["集智"] == "available" or (char_juese[id].skill["极略"] == "available" and mark_ren[id] > 0) then
@@ -2078,6 +2100,8 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 		add_funcptr(_wuxie_prepare_2)
 		card_wuxie_query("无懈可击", id, ID_s)
 		funcptr_i = 0
+
+		skills_skip_subqueue()
 		timer.start(0.2)
 	else
 		--msg = {char_juese[id].name, "放弃无懈"}
@@ -2087,6 +2111,19 @@ function card_wuxie_ai(va_list)  --  无懈可击：他方无懈可击出牌判�
 			skills_skip_subqueue()
 		end
 	end
+end
+function _wuxie_use(va_list)
+	local id, n, msg
+	id = va_list[1]; n = va_list[2]
+
+	local card_wx = char_juese[id].shoupai[n]
+	if card_wx[1] ~= "无懈可击" then
+		msg = {char_juese[id].name, "使用了无懈可击 (", card_wx[2], card_wx[3], "的", card_wx[1], ")"}
+	else
+		msg = {char_juese[id].name, "使用了'", card_wx[2], card_wx[3], "的", card_wx[1], "'"}
+	end
+	push_message(table.concat(msg))
+	card_shanchu({id, n})
 end
 function _wuxie_yanshi()
 
@@ -2113,15 +2150,16 @@ function _wuxie_zhudong_chu(card, i, va_list)	--  无懈可击：己方选择出
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
 	
 	gamerun_status = "手牌生效中"
-	msg = {char_juese[char_current_i].name, "使用了'", card[2], card[3], "的", card[1], "'"}
-	push_message(table.concat(msg))
-	card_remove({char_current_i, i})
-	card_add_qipai(card)
 	wuxie_in_effect = not wuxie_in_effect
 
 	--  出无懈可击后，原有轮询已失效；从原锦囊的发出对象（无懈可击的作用对象）本身开始重新轮询  --
 	timer.stop()
 	funcptr_queue = {}
+
+	if card[1] ~= "无懈可击" and char_juese[char_current_i].skill["看破"] == "available" then
+		add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '看破'")
+	end
+	add_funcptr(_wuxie_use, {char_current_i, i})
 
 	skills_losecard(char_current_i)
 	if char_juese[char_current_i].skill["集智"] == "available" or (char_juese[char_current_i].skill["极略"] == "available" and mark_ren[char_current_i] > 0) then
@@ -2131,6 +2169,7 @@ function _wuxie_zhudong_chu(card, i, va_list)	--  无懈可击：己方选择出
 	add_funcptr(_wuxie_prepare_2)
 	card_wuxie_query("无懈可击", char_current_i, ID_s)
 	funcptr_i = 0
+
 	timer.start(0.2)
 end
 function _wuxie_zhudong_fangqi()	--  无懈可击：己方放弃出无懈可击
@@ -2918,7 +2957,10 @@ function card_nanman(ID_shoupai, _ID_s)
 	if char_juese[ID_s].skill["集智"] == "available" or (char_juese[ID_s].skill["极略"] == "available" and mark_ren[ID_s] > 0) then
 		add_funcptr(skills_jizhi, ID_s)
 	end
-
+	
+	id = ID_s + 1
+	if id > 5 then id = 1 end
+	
 	--  场上若有孟获，则改动伤害来源为孟获  --
 	for i = 1, 5 do
 		if char_juese[i].siwang == false and char_juese[i].skill["祸首"] == "available" then
@@ -2927,13 +2969,10 @@ function card_nanman(ID_shoupai, _ID_s)
 			break
 		end
 	end
-	
-	id = ID_s + 1
-	if id > 5 then id = 1 end
-	
+
 	for i = 1, 4 do
 		local weimu = (yanse == "黑色" and char_juese[id].skill["帷幕"] == "available")
-		if char_juese[id].siwang == false and char_juese[id].skill["祸首"] ~= "available" and id ~= _ID_s and not weimu then
+		if char_juese[id].siwang == false and id ~= _ID_s and not weimu then
 			funcptr_add_tag = "无懈执行前"
 			add_funcptr(_nanman_send_msg, {char_juese[ID_s].name, "对", char_juese[id].name, "使用了南蛮入侵"})
 			funcptr_add_tag = nil
@@ -2942,6 +2981,8 @@ function card_nanman(ID_shoupai, _ID_s)
 				_nanman_tengjia(id)
 			elseif char_juese[id].skill["巨象"] == "available" then
 				_nanman_juxiang(id)
+			elseif char_juese[id].skill["祸首"] == "available" then
+				_nanman_huoshou(id)
 			else
 				card_wuxie("南蛮入侵", ID_s, id)
 			end
@@ -2984,7 +3025,7 @@ function _nanman_tengjia_prepare(ID_mubiao)
 end
 function _nanman_judge_mian(ID_mubiao)	--  南蛮入侵：判断是否可以免除出杀
 	--  若装备藤甲，不用出杀  --
-	card = char_juese[ID_mubiao].fangju
+	local card = char_juese[ID_mubiao].fangju
 	if #card ~= 0 then
 	    if card[1] == "藤甲" then
 		    return true
@@ -2997,7 +3038,7 @@ function _nanman_exe(va_list)
 	local ID_s, ID_mubiao
 	ID_s = va_list[1]; ID_mubiao = va_list[2]
 
-	if _nanman_judge_mian(ID_mubiao) then
+	if _nanman_judge_mian(ID_mubiao) or char_juese[ID_mubiao].skill["巨象"] == "available" or char_juese[ID_mubiao].skill["祸首"] == "available" then
 		skills_skip_subqueue()
 		return
 	end
@@ -3862,6 +3903,9 @@ function _huogong_qipai(va_list)    --  火攻：攻方出牌
 	_nanman_send_msg({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"})
 end
 function _huogong_exe_3(ID_s)    --  火攻执行三：己方放弃
+	gamerun_status = "手牌生效中"
+	jiaohu_text = ""
+
 	if char_acting_i ~= char_current_i then
 		ai_skills_discard["火计"] = true
 	end

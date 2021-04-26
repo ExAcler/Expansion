@@ -85,7 +85,7 @@ end
 --  1多摸一张，2少摸一张，3不发动  --
 function ai_judge_jiangchi(ID)
 	if #char_juese[ID].shoupai <= 1 then
-		if ai_judge_random_percent(60 - 40 * (char_juese[ID].shoupai - 1)) == 1 then
+		if ai_judge_random_percent(60 - 40 * (#char_juese[ID].shoupai - 1)) == 1 then
 			return 1
 		end
 	end

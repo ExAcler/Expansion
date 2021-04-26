@@ -124,7 +124,14 @@ function draw_opponent(gc)
 				end
 			end
 	    end
-		gc:drawString(char_juese[id].name, x1 + 3, y1 + 20)  -- (8, 25)
+
+		local name = char_juese[id].name
+		if char_juese[id].skill["化身"] == "available" and huashen_wujiang ~= nil then
+			if huashen_wujiang[id] ~= nil then
+				name = "*" .. huashen_wujiang[id]
+			end
+		end
+		gc:drawString(name, x1 + 3, y1 + 20)  -- (8, 25)
 		
 		-- 装备 --
 		if #char_juese[id].wuqi ~= 0 then
@@ -413,7 +420,14 @@ function draw_self(gc)
 	gc:setColorRGB(0, 0, 0)
 	
 	-- 角色信息 & 技能 --
-	gc:drawString(char_juese[char_current_i].name, 224 + 3, 151 + 20)
+	local name = char_juese[char_current_i].name
+	if char_juese[char_current_i].skill["化身"] == "available" and huashen_wujiang ~= nil then
+		if huashen_wujiang[char_current_i] ~= nil then
+			name = "*" .. huashen_wujiang[char_current_i]
+		end
+	end
+	gc:drawString(name, 224 + 3, 151 + 20)
+	
 	for i = 1, math.min(#char_juese[char_current_i].skillname - 2 * skill_disrow,4) do
 	    if i < 3 then
 	        gc:drawString(char_juese[char_current_i].skillname[i + 2 * skill_disrow], 227 + 38 * (i - 1), 171 + 19)

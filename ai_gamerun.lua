@@ -114,8 +114,10 @@ function ai_judge_same_identity(ID, ID_mubiao, blackjack)
 		end
 	elseif char_juese[ID].shenfen == "内奸" then
 		if blackjack then
-			if char_juese[ID_mubiao].shenfen == "主公" and char_juese[ID_mubiao].tili <= 1 then
+			if char_juese[ID_mubiao].shenfen == "主公" and char_juese[ID_mubiao].tili <= 2 and char_alive_stat() > 2 then
 				return 1
+			elseif char_alive_stat() == 2 then
+				return 2
 			else
 				if ai_judge_blackjack(ID) then
 					if char_juese[ID_mubiao].isantigovernment == false and char_juese[ID_mubiao].isblackjack ~= true then
@@ -228,8 +230,14 @@ function ai_basic_judge_mubiao(ID, required, is_help, exclude_self, exclude_unkn
 					end
 				end
 			elseif char_juese[ID].shenfen == "内奸" then
-				if char_juese[possible_target[i]].shenfen == "主公" and char_juese[possible_target[i]].tili <= 1 then
-					table.remove(possible_target, i)
+				if char_juese[possible_target[i]].shenfen == "主公" and char_juese[possible_target[i]].tili <= 2 and char_alive_stat() > 2 then
+					if char_juese[possible_target[i]].isantigovernment == is_help then
+						table.remove(possible_target, i)
+					end
+				elseif char_alive_stat() == 2 then
+					if char_juese[possible_target[i]].isantigovernment == not is_help then
+						table.remove(possible_target, i)
+					end
 				else
 					if ai_judge_blackjack(ID) then
 						if char_juese[possible_target[i]].isantigovernment == is_help then
@@ -928,7 +936,7 @@ function ai_card_use(ID)
 			end
 		end
 	end
-	targets = ai_judge_target(ID, "火杀", {{"火杀","红桃","K"}}, 1)
+	local targets = ai_judge_target(ID, "火杀", {{"火杀","红桃","K"}}, 1)
 	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" or char_juese[ID].skill["旋风"] == "available" or #targets == 0 then
 		local card_use = ai_card_search(ID, "武器", 1)
 		if #card_use ~= 0 then
@@ -1008,6 +1016,11 @@ function ai_card_use(ID)
 			ID2 = targets[2]
 			if card_chupai_ai({card_use[1]}, ID1, ID2, ID, "铁索连环-连环") then
 				--  连后处理ai_next_card --
+				timer.start(0.6)
+				return
+			end
+		elseif #targets == 1 then
+			if card_chupai_ai({card_use[1]}, targets[1], nil, ID, "铁索连环-连环") then
 				timer.start(0.6)
 				return
 			end
@@ -1144,9 +1157,9 @@ function ai_card_use(ID)
 		end
 
 		if #targets > 0 and char_hejiu == false then
-			if char_juese[targets[1]].fangju ~= "白银狮" then
+			if char_juese[targets[1]].fangju[1] ~= "白银狮" then
 				local card_use_jiu = ai_card_search(ID, "酒", 1)
-				if (char_sha_time > 0 or char_juese[ID].wuqi[1] == "诸葛弩" ) and char_sha_able == true then
+				if (char_sha_time > 0 or char_juese[ID].wuqi[1] == "诸葛弩") and char_sha_able == true then
 					if #card_use_jiu ~= 0 then
 						if card_chupai_ai({card_use_jiu[1]}, ID, nil, nil, "酒") then
 							return

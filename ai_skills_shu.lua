@@ -73,7 +73,269 @@ end
 --  AI决定是否发动观星  --
 --  true发动，false不发动  --
 function ai_judge_guanxing(ID)
-	return false
+	return true
+end
+
+--  AI决定观星的手牌操作  --
+--  返回参数1为放在牌堆顶的牌，参数2为放在牌堆底的牌  --
+function ai_judge_guanxing_operation(ID, guankan_paidui)
+	local guanxing_discard = {}
+	local guanxing_self, guanxing_next = {}, {}
+	local panding_operated = false
+	local shandian = false
+
+	--  己方判定牌控制  --
+	for i = #char_juese[ID].panding, 1, -1 do
+		local leixing = _panding_get_leixing(ID, i)
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {guankan_paidui[1]})
+		local pos
+
+		if leixing == "乐不思蜀" then
+			panding_operated, pos = _ai_guanxing_panding(guankan_paidui, 1, ID, ID, huase, "红桃", true)
+		elseif leixing == "兵粮寸断" then
+			panding_operated, pos = _ai_guanxing_panding(guankan_paidui, 1, ID, ID, huase, "草花", true)
+		elseif leixing == "闪电" then
+			panding_operated, pos = _ai_guanxing_panding(guankan_paidui, 1, ID, ID, huase, "黑桃", false)
+			shandian = true
+		end
+
+		table.insert(guanxing_self, guankan_paidui[pos])
+		table.remove(guankan_paidui, pos)
+
+		if pos ~= 1 then
+			table.insert(guankan_paidui, guankan_paidui[1])
+			table.remove(guankan_paidui, 1)
+		end
+
+		if #guankan_paidui == 0 then
+			return _ai_guanxing_finalize(ID, false, guanxing_self, guanxing_next, guankan_paidui, guanxing_discard)
+		end
+	end
+
+	--  己方手牌控制 (进入待定区)  --
+	for i = 1, 2 do
+		table.insert(guanxing_discard, guankan_paidui[1])
+		table.remove(guankan_paidui, 1)
+
+		if #guankan_paidui == 0 then
+			return _ai_guanxing_finalize(ID, false, guanxing_self, guanxing_next, guankan_paidui, guanxing_discard)
+		end
+	end
+
+	for i = 1, #guanxing_discard do
+		table.insert(guankan_paidui, guanxing_discard[i])
+	end
+	guanxing_discard = {}
+
+	--  下家判定牌控制  --
+	local next = ID + 1
+	if next > 5 then
+		next = 1
+	end
+
+	local n = #char_juese[next].panding
+	if n == 0 and shandian then
+		n = 1
+		shandian = true
+	else
+		shandian = false
+	end
+
+	for i = n, 1, -1 do
+		local leixing
+		if shandian then
+			leixing = "闪电"
+		else
+			leixing = _panding_get_leixing(next, i)
+		end
+
+		local yanse, huase, dianshu = ai_judge_cardinfo(next, {guankan_paidui[1]})
+		local pos
+
+		if leixing == "乐不思蜀" then
+			panding_operated, pos = _ai_guanxing_panding(guankan_paidui, 1, ID, next, huase, "红桃", true)
+		elseif leixing == "兵粮寸断" then
+			panding_operated, pos = _ai_guanxing_panding(guankan_paidui, 1, ID, next, huase, "草花", true)
+		elseif leixing == "闪电" then
+			panding_operated, pos = _ai_guanxing_panding(guankan_paidui, 1, ID, next, huase, "黑桃", false)
+		end
+
+		table.insert(guanxing_next, guankan_paidui[pos])
+		table.remove(guankan_paidui, pos)
+
+		if pos ~= 1 then
+			table.insert(guankan_paidui, guankan_paidui[1])
+			table.remove(guankan_paidui, 1)
+		end
+
+		if #guankan_paidui == 0 then
+			return _ai_guanxing_finalize(ID, true, guanxing_self, guanxing_next, guankan_paidui, guanxing_discard)
+		end
+	end
+
+	return _ai_guanxing_finalize(ID, #char_juese[next].panding > 0, guanxing_self, guanxing_next, guankan_paidui, guanxing_discard)
+end
+function _ai_guanxing_self_judge_keep(ID, card, had_sha)		--  观星AI：判断是否要选择当前牌为自己的手牌
+	local card_treated = card[1]
+	
+	if card_treated == "杀" or card_treated == "火杀" or card_treated == "雷杀" then
+		local targets = ai_judge_target(ID, "火杀", {{"火杀", "红桃", "K"}}, 1)
+		if #targets == 0 then
+			--  够不到任何人则不要再拿杀  --
+			return false, had_sha
+		elseif char_juese[ID].wuqi[1] == "诸葛弩" then
+
+		elseif had_sha then
+			--  有杀则不要再拿杀  --
+			return false, had_sha
+		else
+			had_sha = true
+		end
+	elseif card_get_leixing(card_treated) == "防具" and #char_juese[ID].fangju ~= 0 and ai_judge_withdraw_fangju(ID, true) == false then
+		--  有防具则不要再拿防具  --
+		return false, had_sha
+	end
+
+	return true, had_sha
+end
+function _ai_guanxing_finalize(ID, next_panding, guanxing_self, guanxing_next, guankan_paidui, guanxing_discard)
+	local guanxing_up, guanxing_down = {}, {}
+
+	--  己方手牌控制  --
+	local cards_sha = ai_card_search(ID, "杀", 1)
+	local cards_tao = ai_card_search(ID, "桃", #char_juese[ID].shoupai)
+	local had_sha = false
+	local tao_num = #cards_tao
+	if #cards_sha > 0 then
+		had_sha = true
+	end
+
+	local keep_card = {}
+	local keep_tao = {}
+
+	for i = #guankan_paidui, 1, -1 do
+		local keep
+		local card_treated = guankan_paidui[i][1]
+		keep, had_sha = _ai_guanxing_self_judge_keep(ID, guankan_paidui[i], had_sha)
+		
+		if keep == true then
+			if card_treated == "杀" or card_treated == "火杀" or card_treated == "雷杀" then
+				table.insert(keep_card, guankan_paidui[i])
+			elseif card_treated == "桃" and tao_num < char_juese[ID].tili_max - char_juese[ID].tili then
+				table.insert(keep_tao, guankan_paidui[1])
+				tao_num = tao_num + 1
+			else
+				table.insert(keep_card, 1, guankan_paidui[i])
+			end
+			table.remove(guankan_paidui, i)
+		end
+	end
+
+	if #guanxing_self < 2 + #char_juese[ID].panding then
+		for i = #keep_tao, 1, -1 do
+			table.insert(guanxing_self, keep_tao[i])
+			table.remove(keep_tao, i)
+			if #guanxing_self == 2 + #char_juese[ID].panding then
+				break
+			end
+		end
+	end
+
+	for i = 1, #keep_tao do
+		table.insert(guankan_paidui, keep_tao[i])
+	end
+	keep_tao = {}
+
+	if #guanxing_self < 2 + #char_juese[ID].panding then
+		for i = #keep_card, 1, -1 do
+			table.insert(guanxing_self, keep_card[i])
+			table.remove(keep_card, i)
+			if #guanxing_self == 2 + #char_juese[ID].panding then
+				break
+			end
+		end
+	end
+
+	for i = 1, #keep_card do
+		table.insert(guankan_paidui, keep_card[i])
+	end
+	keep_card = {}
+
+	--  如果有操作下家判定，则修复牌位置  --
+	if next_panding then
+		while #guanxing_self < 2 + #char_juese[ID].panding do
+			local pos = math.random(#guankan_paidui)
+			table.insert(guanxing_self, guankan_paidui[pos])
+			table.remove(guankan_paidui, pos)
+		end
+	end
+
+	for i = 1, #guanxing_discard do
+		table.insert(guankan_paidui, guanxing_discard[i])
+	end
+
+	for i = 1, #guankan_paidui do
+		table.insert(guanxing_down, guankan_paidui[i])
+	end
+
+	for i = 1, #guanxing_self do
+		table.insert(guanxing_up, guanxing_self[i])
+	end
+
+	for i = 1, #guanxing_next do
+		table.insert(guanxing_up, guanxing_next[i])
+	end
+
+	return guanxing_up, guanxing_down
+end
+function _ai_guanxing_panding(guankan_paidui, panding_pos, ID_s, ID_d, huase, desired_huase, ineffect)		--  观星AI：判断是否替换判定牌
+	--  panding_pos为原判定牌在牌堆中的位置，desired_huase为改判需要的花色，ineffect表示判定到需要的花色是否是救队友
+	--  返回参数1为是否改判，返回参数2为要从牌堆中拿出替换的牌
+
+	local hslist = {"红桃", "黑桃", "草花", "方块"}
+	local cards
+
+	local identity1, identity2
+	if ineffect then
+		identity1 = 2
+		identity2 = 1
+	else
+		identity1 = 1
+		identity2 = 2
+	end
+
+	if ai_judge_same_identity(ID_s, ID_d, true) == identity1 then
+		if huase == desired_huase then
+			for i = 1, #hslist do
+				if hslist[i] ~= desired_huase then
+					cards = ai_card_search(ID_d, hslist[i], 1, guankan_paidui)
+					if #cards > 0 then
+						break
+					end
+				end
+			end
+			if #cards > 0 then
+				return true, cards[1]
+			else
+				return false, panding_pos
+			end
+		else
+			return false, panding_pos
+		end
+	elseif ai_judge_same_identity(ID_s, ID_d, true) == identity2 then
+		if huase ~= desired_huase then
+			local cards = ai_card_search(ID_d, desired_huase, 1, guankan_paidui)
+			if #cards > 0 then
+				return true, cards[1]
+			else
+				return false, panding_pos
+			end
+		else
+			return false, panding_pos
+		end
+	end
+
+	return false, panding_pos
 end
 
 --  AI决定是否发动放权  --
@@ -440,9 +702,7 @@ function ai_judge_tiaoxin(ID)
 			table.remove(attack_mubiao, i)
 		elseif ai_card_stat(attack_mubiao[i], true, false) == 0 then
 			table.remove(attack_mubiao, i)
-		elseif #char_juese[attack_mubiao[i]].shoupai >= 3 then
-			table.remove(attack_mubiao, i)
-		elseif #char_juese[attack_mubiao[i]].shoupai == 2 and ai_judge_random_percent(75) == 1 then
+		elseif #char_juese[attack_mubiao[i]].shoupai >= 2 then
 			table.remove(attack_mubiao, i)
 		end
 	end

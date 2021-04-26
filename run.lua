@@ -399,7 +399,7 @@ function gamerun_huihe_start()
 	
 	--  姜维志继  --
 	if char_juese[char_acting_i].skill["志继"] == "available" and #char_juese[char_acting_i].shoupai == 0 then
-		add_funcptr(skills_zhiji)
+		add_funcptr(skills_zhiji, char_acting_i)
 	end
 	
 	add_funcptr(_start_skills_kaishi)
@@ -1387,7 +1387,7 @@ function on.enterKey()
 		if string.find(gamerun_status, "无懈") then
 			if table.getn2(card_selected) ~= 0 then
 				card = char_juese[char_current_i].shoupai[card_highlighted]
-				if string.find(card[1], "无懈可击") or char_juese[char_current_i].skill["看破"] == "available" then
+				if card_judge_if_wuxie(char_current_i, card_highlighted) then
 					_wuxie_zhudong_chu(card, card_highlighted, wuxie_va)
 					card_selected = {}
 					set_hints("")

@@ -682,41 +682,48 @@ end
 function skills_tiandu(va_list)
 	local ID, card_panding
 	ID = va_list[1]; card_panding = va_list[2]
+
+	skills_push_queue()
+
 	if ID == char_current_i then
-		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-		timer.stop()
-		funcptr_queue = {}
-		funcptr_i = 0
-		skills_tiandu_enter(ID,card_panding)
+		skills_tiandu_enter(ID, card_panding)
 	else
 		skills_tiandu_set(ID, ai_judge_tiandu(ID), card_panding)
+		skills_skip_subqueue()
+		timer.start(0.6)
 	end
 end
-function skills_tiandu_enter(ID,card_panding)
+function skills_tiandu_enter(ID, card_panding)
 	gamerun_status = "确认操作"
 	jiaohu_text = "是否发动 '天妒'?"
 	gamerun_OK = false
+
 	gamerun_OK_ptr = function()
 		funcptr_queue = {}
-		skills_tiandu_set(char_current_i,gamerun_OK,card_panding)
-		
 		gamerun_status = ""
 		set_hints("")
-		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		--funcptr_i = funcptr_i + 1
-		timer.start(0.2)
+
+		skills_tiandu_set(char_current_i, gamerun_OK, card_panding)
+		timer.start(0.6)
 	end
 	
 	platform.window:invalidate()
 end
-function skills_tiandu_set(ID,gamerun_OK,card_panding)
+function skills_tiandu_set(ID, gamerun_OK, card_panding)
 	if gamerun_OK then
-		push_message(char_juese[ID].name .. "发动了武将技能 '天妒'")
-		card_insert(ID, card_panding)
-		push_message(table.concat({char_juese[ID].name, "获得了'", card_panding[2], card_panding[3], "的", card_panding[1], "'"}))
+		add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '天妒'")
+		add_funcptr(_tiandu_get_card, {ID, card_panding})
 	else
 		card_add_qipai(card_panding)
 	end
+	add_funcptr(skills_pop_queue)
+end
+function _tiandu_get_card(va_list)
+	local ID, card_panding
+	ID = va_list[1]; card_panding = va_list[2]
+
+	card_insert(ID, card_panding)
+	push_message(table.concat({char_juese[ID].name, "获得了'", card_panding[2], card_panding[3], "的", card_panding[1], "'"}))
 end
 
 --  典韦：强袭  --
@@ -792,7 +799,7 @@ function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 		horse_ignore = true
 	end
 
-	local _, inrange = ai_judge_distance(ID_s, ID_mubiao, weapon_ignore, horse_ignore)
+	local _, inrange = ai_judge_distance(ID_s, ID_mubiao, 1, weapon_ignore, horse_ignore)
 	if inrange == false then
 		return false
 	end

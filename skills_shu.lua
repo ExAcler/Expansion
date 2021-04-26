@@ -120,22 +120,25 @@ function skills_guanxing_ai(ID)
 		skills_skip_subqueue()
 		return
 	end
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+
+	skills_push_queue()
+	_guanxing_exe_ai(ID)
+end
+function _guanxing_exe_ai(ID)
+	local guanxing = _guanxing_guankan(ID)
+	local guanxing_up, guanxing_down = ai_judge_guanxing_operation(ID, guanxing)
+	card_dealed_1, card_dealed_2 = guanxing_up, guanxing_down
 
 	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '观星'")
+	add_funcptr(_guanxing_set_up, ID)
+	add_funcptr(_guanxing_set_down, ID)
+	add_funcptr(skills_pop_queue)
 
-	--_guanxing_exe(is_drawx, ID, guanxing_mubiao)
-	_guanxing_exe()
+	skills_skip_subqueue()
 	timer.start(0.6)
 end
 function skills_guanxing_enter(ID)
-	timer.stop()
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	gamerun_status = "选项选择"
 	choose_name = "观星"
@@ -148,19 +151,19 @@ function skills_guanxing_enter(ID)
 
 	gamerun_item = function(i)
 		txt_messages:setVisible(true)
+		set_hints("")
+		gamerun_status = ""
+
 		if i == 1 then
-			push_message(char_juese[char_current_i].name .. "发动了武将技能 '观星'")
 			is_drawx = false
 			funcptr_queue = {}
 			funcptr_i = 0
-			_guanxing_exe(char_current_i)
+
+			add_funcptr(push_message, char_juese[char_current_i].name .. "发动了武将技能 '观星'")
+			add_funcptr(_guanxing_exe, char_current_i)
 			timer.start(0.6)
 		else
-			set_hints("")
-			gamerun_status = ""
-
-			funcptr_queue, funcptr_i = pop_zhudong_queue()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 			return
 		end
@@ -173,7 +176,31 @@ function _guanxing_exe(ID_s)
 	guanxing_up, guanxing_down = {},{}
 	gamerun_status = "牌堆操作"
 	choose_name = "观星"
+	guanxing_up = _guanxing_guankan(char_current_i)
+
+	card_dealed_1, card_dealed_2 = guanxing_up, guanxing_down
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	card_dealed_selected = 0
+	card_paidui_dealed = 1
+
+	gamerun_deal = function()
+		funcptr_queue = {}
+		funcptr_i = 0
+
+		gamerun_status = ""
+		set_hints("")
+		txt_messages:setVisible(true)
+
+		skills_guanxing_set(char_current_i)
+		timer.start(0.6)
+	end
+	platform.window:invalidate()
+end
+function _guanxing_guankan(ID)
+	local guankan_paidui = {}
 	local live = 0
+
 	for i = 1, 5 do
 		if char_juese[i].siwang == false then
 			live = live + 1
@@ -183,38 +210,29 @@ function _guanxing_exe(ID_s)
 		if #card_yixi == 0 then
 		    card_xipai(true)
 		end
-		table.insert(guanxing_up,card_yixi[1])
+		table.insert(guankan_paidui, card_yixi[1])
 		table.remove(card_yixi, 1)	
 	end
-	card_dealed_1, card_dealed_2 = guanxing_up, guanxing_down
-	txt_messages:setVisible(false)
-	gamerun_guankan_selected = 1
-	card_dealed_selected = 0
-	card_paidui_dealed = 1
-	gamerun_deal = function()
-		funcptr_queue = {}
-		txt_messages:setVisible(true)
-		skills_guanxing_set()
-		gamerun_status = ""
-		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		--funcptr_i = funcptr_i + 1
-		timer.start(0.2)
-	end
-	platform.window:invalidate()
+
+	return guankan_paidui
 end
-function skills_guanxing_set()
-	push_message(char_juese[char_acting_i].name .. "将" .. #card_dealed_1 .. "张牌放在牌堆顶")
+function skills_guanxing_set(ID)
+	add_funcptr(_guanxing_set_up, ID)
+	add_funcptr(_guanxing_set_down, ID)
+	add_funcptr(skills_pop_queue)
+end
+function _guanxing_set_up(ID)
+	push_message(char_juese[ID].name .. "将" .. #card_dealed_1 .. "张牌放在牌堆顶")
 	for i = #card_dealed_1,1,-1 do
 		table.insert(card_yixi,1,card_dealed_1[i])
 	end
-	push_message(char_juese[char_acting_i].name .. "将" .. #card_dealed_2 .. "张牌放在牌堆底")
+end
+function _guanxing_set_down(ID)
+	push_message(char_juese[ID].name .. "将" .. #card_dealed_2 .. "张牌放在牌堆底")
 	for i = 1,#card_dealed_2 do
-		table.insert(card_yixi,card_dealed_1[i])
+		table.insert(card_yixi,card_dealed_2[i])
 	end
 end
---function _guanxing_huifu()
-	--funcptr_queue, funcptr_i = pop_zhudong_queue()
---end
 
 --  魏延：狂骨  --
 function skills_kuanggu(ID_s, dianshu)
@@ -226,6 +244,19 @@ end
 --  孟获：祸首  --
 function skills_huoshou(ID_s)
 	add_funcptr(push_message, char_juese[ID_s].name.."触发了武将技能 '祸首'")
+end
+function _nanman_huoshou(ID_mubiao)
+	funcptr_add_tag = "无懈轮询开始"
+	add_funcptr(_nanman_huoshou_prepare, ID_mubiao)
+	funcptr_add_tag = nil
+
+	add_funcptr(_wuxie_exe)
+end
+function _nanman_huoshou_prepare(ID_mubiao)
+	_nanman_send_msg({char_juese[ID_mubiao].name, "触发了武将技能 '祸首'"})
+
+	wuxie_in_effect = false
+	wuxie_queue_jinnang = table.copy(funcptr_queue)
 end
 
 --  卧龙诸葛：八阵  --
@@ -594,6 +625,7 @@ function _tiaoxin_fangqi(ID_req, ID_d)
 		add_funcptr(_chai_sub1, {true, ID_req, ID_d})
 	else
 		add_funcptr(_chai_ai, {ID_req, ID_d, true})
+		skills_losecard(ID_d)
 		add_funcptr(_chai_sub2)
 	end
 end
@@ -1029,7 +1061,7 @@ function _nanman_juxiang(ID_mubiao)
 	add_funcptr(_wuxie_exe)
 end
 function _nanman_juxiang_prepare(ID_mubiao)
-	_nanman_send_msg({char_juese[ID_mubiao].name, "触发了武将技能 '巨象"})
+	_nanman_send_msg({char_juese[ID_mubiao].name, "触发了武将技能 '巨象'"})
 
 	wuxie_in_effect = false
 	wuxie_queue_jinnang = table.copy(funcptr_queue)
@@ -1417,6 +1449,7 @@ function skills_jijiang_current_enter()
 			set_hints("")
 			skills_cs()
 
+			add_funcptr(skills_rst)
 			skills_push_queue()
 
 			skills_jijiang_add(char_current_i, "杀", {-1, char_current_i, gamerun_target_selected})

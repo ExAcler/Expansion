@@ -507,7 +507,7 @@ function ai_judge_lihun(ID)
 		return false, 0, 0
 	end
 
-	if ai_judge_random_percent(75) == 1 or allow_no_jiu then
+	if ai_judge_random_percent(75) == 1 or allow_no_jiu or #char_juese[mubiao].shoupai - math.max(char_juese[mubiao].tili - tili_threshold, 0) >= 3 then
 		return true, cards[1], mubiao
 	else
 		char_juese[ID].skill["离魂"] = "locked"
@@ -568,7 +568,7 @@ function ai_judge_luanwu(ID)
 		cur = 1
 	end
 
-	--  友方及敌方有可能被乱武击杀的角色数  --
+	--  友方及敌方有可能被收人头的角色数  --
 	local allies = 0
 	local enemies = 0
 	local visited = {}
@@ -593,27 +593,36 @@ function ai_judge_luanwu(ID)
 			end
 
 			for j = 1, #reach do
+				local _, inrange = ai_judge_distance(cur, reach[j], 1)
 				if ai_judge_same_identity(ID, cur, true) == 2 then
-					if ai_judge_same_identity(cur, reach[j], true) == 1 then
-						if char_juese[cur].tili <= 1 and #char_juese[cur].shoupai <= 2 and visited[cur] ~= true then
+					if char_juese[cur].tili <= 1 and #char_juese[cur].shoupai <= 2 and visited[cur] ~= true then
+						if char_juese[cur].skill["涅槃"] ~= "available" and char_juese[cur].skill["伏枥"] ~= "available" and char_juese[cur].skill["逢亮"] ~= "available" then
 							enemies = enemies + 1
 							visited[cur] = true
-						else
-							if #char_juese[cur].shoupai >= 3 and char_juese[reach[j]].tili <= 1 and #char_juese[reach[j]].shoupai <= 1 and (#char_juese[reach[j]].fangju == 0 or char_juese[reach[j]].fangju[1] == "白银狮") and visited[reach[j]] ~= true then
-								allies = allies + 1
-								visited[reach[j]] = true
+						end
+					else
+						if ai_judge_same_identity(ID, reach[j], true) == 1 then
+							if char_juese[reach[j]].skill["涅槃"] ~= "available" and char_juese[reach[j]].skill["伏枥"] ~= "available" and char_juese[reach[j]].skill["逢亮"] ~= "available" then
+								if inrange and #char_juese[cur].shoupai >= 3 and char_juese[reach[j]].tili <= 1 and #char_juese[reach[j]].shoupai <= 1 and (#char_juese[reach[j]].fangju == 0 or char_juese[reach[j]].fangju[1] == "白银狮") and visited[reach[j]] ~= true then
+									allies = allies + 1
+									visited[reach[j]] = true
+								end
 							end
 						end
 					end
 				elseif ai_judge_same_identity(ID, cur, true) == 1 then
-					if ai_judge_same_identity(cur, reach[j], true) == 2 then
-						if char_juese[cur].tili <= 1 and #char_juese[cur].shoupai <= 2 and visited[cur] ~= true then
+					if char_juese[cur].tili <= 1 and #char_juese[cur].shoupai <= 2 and visited[cur] ~= true then
+						if char_juese[cur].skill["涅槃"] ~= "available" and char_juese[cur].skill["伏枥"] ~= "available" and char_juese[cur].skill["逢亮"] ~= "available" then
 							allies = allies + 1
 							visited[cur] = true
-						else
-							if #char_juese[cur].shoupai >= 3 and char_juese[reach[j]].tili <= 1 and #char_juese[reach[j]].shoupai <= 1 and (#char_juese[reach[j]].fangju == 0 or char_juese[reach[j]].fangju[1] == "白银狮") and visited[reach[j]] ~= true then
-								enemies = enemies + 1
-								visited[reach[j]] = true
+						end
+					else
+						if ai_judge_same_identity(ID, reach[j], true) == 2 then
+							if char_juese[reach[j]].skill["涅槃"] ~= "available" and char_juese[reach[j]].skill["伏枥"] ~= "available" and char_juese[reach[j]].skill["逢亮"] ~= "available" then
+								if inrange and #char_juese[cur].shoupai >= 3 and char_juese[reach[j]].tili <= 1 and #char_juese[reach[j]].shoupai <= 1 and (#char_juese[reach[j]].fangju == 0 or char_juese[reach[j]].fangju[1] == "白银狮") and visited[reach[j]] ~= true then
+									enemies = enemies + 1
+									visited[reach[j]] = true
+								end
 							end
 						end
 					end
