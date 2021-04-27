@@ -522,6 +522,16 @@ function _ai_lihun_judge_target(ID, cards, sha_leixing, tili_threshold)
 	local ignore_card = -1
 	local allow_no_jiu = false
 
+	--  选择拿牌有高手牌收益的
+	for i = 1, #targets do
+		if #char_juese[targets[i]].shoupai - math.max(char_juese[targets[i]].tili - tili_threshold, 0) >= 3 and char_juese[targets[i]].xingbie == "男" then
+			mubiao = targets[i]
+			allow_no_jiu = true
+			lock = true
+			break
+		end
+	end
+	--  选择藤甲火杀
 	if sha_leixing == "火杀" then
 		for i = 1, #targets do
 			if #char_juese[targets[i]].fangju ~= 0 then
@@ -533,6 +543,7 @@ function _ai_lihun_judge_target(ID, cards, sha_leixing, tili_threshold)
 			end
 		end
 	end
+	--  选择拿牌能收人头的
 	for i = 1, #targets do
 		if char_juese[targets[i]].tili <= tili_threshold and #char_juese[targets[i]].shoupai ~= 0 and char_juese[targets[i]].xingbie == "男" then
 			mubiao = targets[i]

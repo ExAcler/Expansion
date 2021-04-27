@@ -272,7 +272,7 @@ function draw_opponent(gc)
 						ID_shoupai = nil
 					end
 			
-					if gamerun_status == "选择目标-B" or ((card == "驱虎2" or card == "节命" or card == "好施" or card == "遗计") and gamerun_status == "技能选择-目标B") then
+					if gamerun_status == "选择目标-B" or ((card == "驱虎2" or card == "节命" or card == "好施" or card == "遗计" or card == "业炎" or card == "青囊") and gamerun_status == "技能选择-目标B") then
 						fun = function(card) return card_if_d_limit(card, guankan_s, gamerun_target_selected, ID_shoupai) end
 					else
 						fun = function(card) return card_if_d_limit(card, char_current_i, id, ID_shoupai) end
@@ -894,6 +894,17 @@ function draw_others(gc)
 		gc:setPen("medium")
 	    gc:setColorRGB(255, 0, 0)
 	    gc:drawRect(87, 137 - 10 - 47 + 30 * (gamerun_guankan_selected - 1), gc:getStringWidth((gamerun_guankan_selected + item_disrow).."."..choose_option[gamerun_guankan_selected + item_disrow])+4, gc:getStringHeight((gamerun_guankan_selected + item_disrow).."."..choose_option[gamerun_guankan_selected + item_disrow])+4)
+	elseif string.find(gamerun_status, "关于") then
+		gc:setColorRGB(255, 255, 255)
+		gc:fillRect(20, 15, 280, 190)
+        gc:setColorRGB(0, 0, 0)
+        gc:drawRect(20, 15, 280, 190)
+		
+		gc:setFont("sansserif", "r", 9)
+		for i = 1, #about_box_text do
+			gc:drawString(about_box_text[i], 159 - 1/2*gc:getStringWidth(about_box_text[i]), 45 + 20 * (i - 1))
+		end
+		gc:setFont("sansserif", "r", 11)
 	end
 end
 

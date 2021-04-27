@@ -31,6 +31,7 @@ skills_func =
 	["双雄"] = function() return skills_shuangxiong_2_enter() end,
 	["甘露"] = function() return skills_ganlu_enter() end,
 	["乱武"] = function() return skills_luanwu_enter() end,
+	["业炎"] = function() return skills_yeyan_enter() end,
 }
 
 --  主公技触发函数表  --

@@ -1,10 +1,21 @@
 
 txt_messages = D2Editor.newRichText()    -- 游戏记录 (富文本框)
+about_box_text = {
+	"三国杀 for TI-Nspire",
+	table.concat({"(Build ", build, " on ", branch, ")"}),
+	"清水视野工作室 出品",
+	"原作者：miyuki_takara x Manaka Nemu",
+	"本软件为自由软件，修改或分发",
+	"请遵守其适用协议的约束条件",
+	"工作室网址：https://www.horizonriver.cn",
+	"鸣谢合作知乎专栏：你的计算器",
+}
+
 function init_run()
 -- 函数执行队列 (定时器) --
 funcptr_queue = {}
 funcptr_i = 1
-funcptr_lock = false
+funcptr_tick = 0
 
 -- 游戏记录 --
 message_list = {}
@@ -81,6 +92,7 @@ gamerun_qipai_n = 0		-- 当前回合于弃牌阶段弃牌总数
 
 ai_skills_discard = {}	-- 记录AI不再在本回合考虑的技能
 ai_attack_priority = nil	-- 记录AI是否有要在本回合优先攻击的对象 (决斗或杀)
+ai_giveup_chupai = false	-- 记录AI是否要放弃出牌阶段以发动技能
 
 for i = 1, 5 do
 	kunfen_adjusted[i] = false
@@ -181,21 +193,6 @@ function consent_func_queue(interval)
     timer.start(interval)
 end
 
---  暂停函数队列执行  --
-function pause_func_queue()
-	timer.stop()
-end
-
---  继续函数队列执行  --
-function continue_func_queue(interval)
-	if stick_at == nil then
-		consent_func_queue(interval)
-	else
-		funcptr_i = stick_at
-		timer.start(interval)
-	end
-end
-
 --  富文本框初始化  --
 function txt_messages_init()
     txt_messages:move(99, -2)
@@ -238,6 +235,52 @@ function push_message(message)
 	platform.window:invalidate()
 end
 
+--  显示游戏菜单  --
+function gamerun_menu()
+	if timer.getMilliSecCounter() - funcptr_tick <= 1000 then
+		return
+	end
+
+	if gamerun_status == "选项选择" or string.find(gamerun_status, "牌堆选择") or string.find(gamerun_status, "牌堆操作") or string.find(gamerun_status, "观看手牌") then
+		return
+	end
+
+	local old_gamerun_status = gamerun_status
+	local old_jiaohu_text = jiaohu_text
+
+	gamerun_status = "选项选择"
+	jiaohu_text = ""
+	choose_name = "游戏菜单"
+	choose_option = {"取消", "重新开始游戏", "关于三国杀"}
+	
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		
+		if i == 1 then
+			gamerun_status = old_gamerun_status
+			jiaohu_text = old_jiaohu_text
+		elseif i == 2 then
+			gamerun_start_new()
+		elseif i == 3 then
+			gamerun_show_about(old_gamerun_status, old_jiaohu_text)
+		end
+
+		platform.window:invalidate()
+	end
+end
+
+--  显示关于对话框  --
+function gamerun_show_about(old_gamerun_status, old_jiaohu_text)
+	txt_messages:setVisible(false)
+	about_gamerun_status = old_gamerun_status
+	about_jiaohu_text = old_jiaohu_text
+	gamerun_status = "关于软件"
+end
+
 --  设置交互提示区文字  --
 function set_hints(text)
     jiaohu_text = text
@@ -252,6 +295,19 @@ end
 --  设置游戏状态  --
 function gamerun_status_set(jieduan)
     gamerun_status = jieduan
+end
+
+--  开始新的游戏  --
+function gamerun_start_new()
+	timer.stop()
+	set_hints("")
+	txt_messages:setExpression("", -1)
+	txt_messages_init()
+	init_character()
+	init_cards()
+	init_run()
+	gamerun_init()    -- 开始阶段初始化
+	consent_func_queue(0.2)
 end
 
 --  游戏开始阶段初始化  --
@@ -345,6 +401,7 @@ function gamerun_huihe_start()
 	gamerun_qipai_n = 0
 	ai_skills_discard = {}
 	ai_attack_priority = nil
+	ai_giveup_chupai = false
 	lordskill_used = {}
 	for i = 1, 5 do
 		lordskill_used[i] = {}
@@ -815,6 +872,10 @@ function gamerun_huihe_jieshu(qipai)
 	end
 
 	--  弃牌阶段技能  --
+	if char_juese[char_acting_i].skill["琴音"] == "available" and gamerun_qipai_n >= 2 then
+		add_funcptr(skills_qinyin, char_acting_i)
+	end
+
 	if char_juese[char_acting_i].skill["旋风"] == "available" and gamerun_qipai_n >= 2 then
 		add_funcptr(skills_xuanfeng, {char_acting_i, "弃牌"})
 	end
@@ -1243,12 +1304,14 @@ function on.timer()
 	else
 		timer.stop()
 	end
+
+	funcptr_tick = timer.getMilliSecCounter()
 end
 
 --  脚本初始化  --
 function on.construction()
     local i, v
-	
+
 	-- 初始化图片元素 --
     hongxin_on_img = image.new(hongxin_on)
     hongxin_on = nil
@@ -1277,9 +1340,20 @@ function on.construction()
 	set_hints("请按'确定'开始")
 end
 
+function on.contextMenu()
+	gamerun_menu()
+end
+
 function on.enterKey()
     if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then return end
 	local card
+
+	if gamerun_status == "关于软件" then
+		txt_messages:setVisible(true)
+		gamerun_status = about_gamerun_status
+		jiaohu_text = about_jiaohu_text
+		return
+	end
 
     --  刚刚选局  --
     if gamerun_huihe == "" and gamerun_status ~= "选项选择" then
@@ -1291,16 +1365,7 @@ function on.enterKey()
 	
 	--  游戏结束，重新开始  --
     if gamerun_huihe == "游戏结束" then
-		timer.stop()
-	    pause = true
-		set_hints("")
-		txt_messages:setExpression("", -1)
-		txt_messages_init()
-		init_character()
-		init_cards()
-		init_run()
-        gamerun_init()    -- 开始阶段初始化
-	    consent_func_queue(0.2)
+		gamerun_start_new()
 		return
 	end
 
@@ -1747,7 +1812,7 @@ function on.escapeKey()
 		return
 	end
 
-	if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then
+	if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" or gamerun_status == "关于软件" then
 		return
 	end
 	
@@ -1979,6 +2044,10 @@ end
 
 --  方向键 (移动高亮的牌/选择卡牌使用目标)  --
 function on.arrowKey(key)
+	if gamerun_status == "关于软件" then
+		return
+	end
+
 	if (gamerun_huihe == "" or gamerun_huihe == "游戏结束") and gamerun_status ~= "选项选择" then
 		return
 	end
@@ -2182,7 +2251,7 @@ function on.tabKey()
 		return
 	end
 
-	if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" then
+	if gamerun_status == "手牌生效中" or gamerun_status == "AI出牌" or gamerun_status == "关于软件" then
 		return
 	end
 	
@@ -2342,7 +2411,7 @@ end
 function on.charIn(char)
 	local skills
 	if char_juese[char_current_i].name == "" then return end
-	if gamerun_status == "AI出牌" then return end
+	if gamerun_status == "AI出牌" or gamerun_status == "关于软件" then return end
 	
 	skills = char_juese[char_current_i].skillname
 	

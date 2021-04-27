@@ -1,24 +1,18 @@
 --  张春华：伤逝  --
 function skills_shangshi(ID, not_in_queue)
-	if #char_juese[ID].shoupai >= char_juese[ID].tili_max - char_juese[ID].tili then
+	if #char_juese[ID].shoupai >= char_juese[ID].tili_max - char_juese[ID].tili or char_juese[ID].siwang == true then
 		skills_skip_subqueue()
 		return
 	end
 
+	skills_push_queue()
+
 	if ID == char_current_i then
-		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-		timer.stop()
-		funcptr_queue = {}
-		funcptr_i = 0
 		skills_shangshi_enter(ID, not_in_queue)
 	else
 		skills_shangshi_set(ID, ai_judge_shangshi(ID))
-		if not_in_queue then
-			_lianying_shangshi_status_restore()
-			if char_juese[ID].skill["连营"] == "available" and #char_juese[ID].shoupai == 0 then
-				skills_lianying(ID, true)
-			end
-		end
+		skills_skip_subqueue()
+		timer.start(0.6)
 	end
 end
 function skills_shangshi_enter(ID, not_in_queue)
@@ -29,31 +23,23 @@ function skills_shangshi_enter(ID, not_in_queue)
 	gamerun_OK = false
 	gamerun_OK_ptr = function()
 		funcptr_queue = {}
-		skills_shangshi_set(char_current_i,gamerun_OK)
-		
 		gamerun_status = old_gamerun_status
 		set_hints("")
-		funcptr_queue, funcptr_i = pop_zhudong_queue()
-		--funcptr_i = funcptr_i + 1
 
-		if not_in_queue then
-			_lianying_shangshi_status_restore()
-			if char_juese[ID].skill["连营"] == "available" and #char_juese[ID].shoupai == 0 then
-				skills_lianying(ID, true)
-			end
-		else
-			timer.start(0.2)
-		end
+		skills_shangshi_set(char_current_i, gamerun_OK)
+		timer.start(0.6)
 	end
 	
 	platform.window:invalidate()
 end
-function skills_shangshi_set(ID,gamerun_OK)
+function skills_shangshi_set(ID, gamerun_OK)
 	if gamerun_OK then
-		push_message(char_juese[ID].name .. "发动了武将技能 '伤逝'")
-		card_fenfa({ID, char_juese[ID].tili_max-char_juese[ID].tili-#char_juese[ID].shoupai, true})
+		add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '伤逝'")
+		add_funcptr(card_fenfa, {ID, char_juese[ID].tili_max-char_juese[ID].tili-#char_juese[ID].shoupai, true})
 	end
 	jiaohu_text = ""
+
+	add_funcptr(skills_pop_queue)
 end
 
 --  荀彧：驱虎  --
@@ -363,14 +349,11 @@ function skills_fankui(va_list)
 	ID = va_list[1]
 	laiyuan = va_list[2]
 
-	if ai_card_stat(laiyuan, true, false) == 0 then
+	if ai_card_stat(laiyuan, true, false) == 0 or char_juese[laiyuan].siwang == true or char_juese[ID].siwang == true then
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	if ID == char_current_i then
 		fankui_gamerun_status = gamerun_status
@@ -393,8 +376,7 @@ function skills_fankui_enter(laiyuan)
 			push_message(char_juese[char_current_i].name .. "发动了武将技能 '反馈'")
 			_fankui_exe({char_current_i, laiyuan})
 	    else
-			_fankui_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -409,7 +391,7 @@ function skills_fankui_ai(ID,ID_mubiao)
 		add_funcptr(_fankui_exe, {ID, fanmian_mubiao})
 		skills_losecard(fanmian_mubiao)
 	end
-	add_funcptr(_fankui_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
 end
 function _fankui_exe(va_list)
@@ -458,7 +440,7 @@ end
 function _fankui_status_restore()
 	gamerun_status = fankui_gamerun_status
 	set_hints("")
-	_fankui_huifu()
+	skills_pop_queue()
 end
 function _fankui_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()
@@ -470,6 +452,11 @@ function skills_ganglie(va_list)
 	ID = va_list[1]
 	laiyuan = va_list[2]
 
+	if char_juese[ID].siwang == true or char_juese[laiyuan].siwang == true then
+		skills_skip_subqueue()
+		return
+	end
+
 	if ID == char_current_i then
 		skills_ganglie_enter(laiyuan)
 	else
@@ -478,10 +465,7 @@ function skills_ganglie(va_list)
 end
 
 function skills_ganglie_enter(laiyuan)
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	local old_gamerun_status = gamerun_status
 	gamerun_status = "确认操作"
@@ -501,8 +485,7 @@ function skills_ganglie_enter(laiyuan)
 			set_hints("")
 			gamerun_status = old_gamerun_status
 			
-			_ganglie_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -516,10 +499,7 @@ function skills_ganglie_ai(ID,ID_mubiao)
 		return
 	end
 	
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	_ganglie_exe({ID, fanmian_mubiao})
 	timer.start(0.6)
@@ -539,10 +519,7 @@ function _ganglie_exe(va_list)
 	timer.start(0.6)
 end
 function skills_enter_ganglie(ID_s)
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	push_message(char_juese[ID_s].name .. "的 '刚烈' 判定成功")
 	gamerun_status = "主动出牌-刚烈"
@@ -585,11 +562,8 @@ function _ganglie_jiesuan(va_list)		--  刚烈：结算判定牌
 		skills_card_qi_panding(ID_s)
 	end
 	
-	add_funcptr(_ganglie_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
-end
-function _ganglie_huifu()	--  刚烈：恢复己方中断前函数队列
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 function _ganglie_exe_ai(ID_s, ID_mubiao)	--  刚烈：AI做出决定
 	timer.stop()
@@ -617,7 +591,7 @@ function _ganglie_exe_1()    --  刚烈：弃置两张牌
 	skills_losecard(char_current_i)
 
 	gamerun_status = ganglie_gamerun_status
-	add_funcptr(_ganglie_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function _ganglie_exe_2()    --  刚烈：失去1点体力
 	gamerun_status = "手牌生效中"
@@ -625,16 +599,7 @@ function _ganglie_exe_2()    --  刚烈：失去1点体力
 	card_selected = {}; card_highlighted = 1
 	gamerun_status = ganglie_gamerun_status
 	char_tili_deduct({1, guankan_d, guankan_s, "普通", guankan_d})
-	add_funcptr(_ganglie_huifu)
-end
-function _ganglie_sub()
-	funcptr_queue = {}
-	card_selected = {}
-	card_highlighted = 1
-	set_hints("请您出牌")
-	gamerun_status = ""
-	guankan_s = 0
-	guankan_d = 0
+	add_funcptr(skills_pop_queue)
 end
 
 --  徐晃：断粮  --
@@ -811,6 +776,7 @@ function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	funcptr_queue = {}
 	gamerun_status = "手牌生效中"
 	set_hints("")
+	deduct_no_end_huihe = true
 	
 	add_funcptr(_qiangxi_sub1, {ID_s, ID_shoupai})
 	skills_losecard(ID_s)
@@ -819,7 +785,9 @@ function skills_qiangxi(ID_s, ID_shoupai, ID_mubiao)
 	if ID_shoupai == 0 then
 		char_tili_deduct({1, ID_s, -1, "流失", ID_s})
 	end
+
 	char_tili_deduct({1, ID_mubiao, ID_s, "普通", ID_mubiao})
+	add_funcptr(char_judge_siwang_skip_all_stages)
 	add_funcptr(_fanjian_sub4)
 	
 	return true
@@ -1174,7 +1142,7 @@ end
 function skills_guicai_guidao_zhudong_choose(ID_laiyuan, ID_mubiao, panding_leixing, old_gamerun_status)
 	local id = char_current_i
 
-	if skill_judge_guicai_guidao(id) == "鬼道" then
+	if skills_judge_guicai_guidao(id) == "鬼道" then
 		gamerun_wuqi_into_hand(char_current_i)
 	end
 
@@ -1305,6 +1273,11 @@ function skills_fangzhu(va_list)
 	ID = va_list[1]
 	laiyuan = va_list[2]
 
+	if char_juese[ID].siwang == true then
+		skills_skip_subqueue()
+		return
+	end
+
 	skills_push_queue()
 
 	if ID == char_current_i then
@@ -1390,6 +1363,11 @@ end
 function skills_yiji(va_list)
 	local ID
 	ID = va_list[1]
+
+	if char_juese[ID].siwang == true then
+		skills_skip_subqueue()
+		return
+	end
 
 	skills_push_queue()
 	if ID == char_current_i then
@@ -1527,6 +1505,11 @@ end
 function skills_jieming(va_list)
 	local ID
 	ID = va_list[1]
+
+	if char_juese[ID].siwang == true then
+		skills_skip_subqueue()
+		return
+	end
 
 	skills_push_queue()
 
@@ -1702,14 +1685,12 @@ end
 
 --  曹操：奸雄  --
 function skills_jianxiong(ID)
-	if #card_jiesuan[1] == 0 then
+	if #card_jiesuan[1] == 0 or char_juese[ID].siwang == true then
+		skills_skip_subqueue()
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	if ID == char_current_i then
 		skills_jianxiong_enter()
@@ -1734,8 +1715,7 @@ function skills_jianxiong_enter()
 		if gamerun_OK then
 			_jianxiong_exe(char_current_i)
 	    else
-			_jianxiong_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 		platform.window:invalidate()
@@ -1746,7 +1726,7 @@ end
 function _jianxiong_exe(ID)
 	push_message(char_juese[ID].name .. "发动了武将技能 '奸雄'")
 	add_funcptr(_jianxiong_get_card, ID)
-	add_funcptr(_jianxiong_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
 end
 function _jianxiong_get_card(ID)
@@ -1765,9 +1745,6 @@ function _jianxiong_get_card(ID)
 		card_insert(ID, card_jiesuan[1][i])
 	end
 	card_jiesuan[1] = {}
-end
-function _jianxiong_huifu()
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  夏侯渊：神速  --

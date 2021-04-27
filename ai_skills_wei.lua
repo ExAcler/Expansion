@@ -38,13 +38,59 @@ end
 --  AI决定是否发动裸衣  --
 --  1发动，2不发动  --
 function ai_judge_luoyi(ID)
-	return 2
+	local cards_jiu = ai_card_search(ID, "酒", 1)
+	local cards_sha = ai_card_search(ID, "杀", 1)
+
+	local attack_mubiao = ai_basic_judge_mubiao(ID, 4, false, true, true)
+	for i = #attack_mubiao, 1, -1 do
+		local _, inrange = ai_judge_distance(ID, attack_mubiao[i], 1)
+		if inrange == false then
+			table.remove(attack_mubiao, i)
+		end
+	end
+	if #attack_mubiao == 0 then
+		return 2
+	end
+
+	if #cards_jiu > 0 and #cards_sha > 0 then
+		return 1
+	end
+
+	local mindef_ID = attack_mubiao[1]
+	for i = 2, #attack_mubiao do
+		if #char_juese[attack_mubiao[i]].shoupai < #char_juese[mindef_ID].shoupai then
+			mindef_ID = attack_mubiao[i]
+		end
+	end
+
+	local percent = 80
+	if #char_juese[mindef_ID].shoupai >= 4 then
+		percent = 0
+	elseif #char_juese[mindef_ID].shoupai == 3 then
+		percent = 10
+	elseif #char_juese[mindef_ID].shoupai == 2 then
+		percent = 35
+	end
+	if #cards_sha == 0 then
+		percent = math.max(percent - 50, 0)
+	end
+
+	if ai_judge_random_percent(percent) == 1 then
+		ai_attack_priority = mindef_ID
+		return 1
+	else
+		return 2
+	end
 end
 
 --  AI决定是否发动困奋  --
 --  true发动，false不发动  --
 function ai_judge_kunfen(ID)
-	return false
+	if #char_juese[ID].shoupai == 0 and char_juese[ID].tili == char_juese[ID].tili_max then
+		return true
+	else
+		return false
+	end
 end
 
 --  AI决定是否发动据守  --
@@ -520,53 +566,90 @@ end
 function ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
 	local skill_available = skills_judge_guicai_guidao(id)
 
-	if id == ID_mubiao or ai_judge_same_identity(id, ID_mubiao, false) == 1 then
-		--  延时类锦囊自救/解救队友  --
-		if panding_leixing == "乐不思蜀" and card_panding_card[2] ~= "红桃" and skill_available ~= "鬼道" then
-			local card_id = ai_card_search(id, "红桃", 1)
-			if #card_id == 0 then
-				return nil
-			else
-				return card_id[1]
+	if panding_leixing == "乐不思蜀" or panding_leixing == "兵粮寸断" or panding_leixing == "闪电" then
+		if id == ID_mubiao or ai_judge_same_identity(id, ID_mubiao, false) == 1 then
+			--  延时类锦囊自救/解救队友  --
+			if panding_leixing == "乐不思蜀" and card_panding_card[2] ~= "红桃" and skill_available ~= "鬼道" then
+				local card_id = ai_card_search(id, "红桃", 1)
+				if #card_id == 0 then
+					return nil
+				else
+					return card_id[1]
+				end
 			end
+
+			if panding_leixing == "兵粮寸断" and card_panding_card[2] ~= "草花" then
+				local card_id = ai_card_search(id, "草花", 1)
+				if #card_id == 0 then
+					return nil
+				else
+					return card_id[1]
+				end
+			end
+
+			if panding_leixing == "闪电" and card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
+				local card_id = ai_card_search(id, "草花", 1)
+				if #card_id == 0 and skill_available ~= "鬼道" then
+					card_id = ai_card_search(id, "红桃", 1)
+				end
+				if #card_id == 0 and skill_available ~= "鬼道" then
+					card_id = ai_card_search(id, "方块", 1)
+				end
+
+				if #card_id == 0 then
+					return nil
+				else
+					return card_id[1]
+				end
+			end
+
+			return nil
+		elseif ai_judge_same_identity(id, ID_mubiao, true) == 2 then
+			--  改判敌方延时类锦囊使其生效  --
+			if panding_leixing == "乐不思蜀" and card_panding_card[2] == "红桃" then
+				local card_id = ai_card_search(id, "黑桃", 1)
+				if #card_id == 0 then
+					card_id = ai_card_search(id, "草花", 1)
+				end
+				if #card_id == 0 and skill_available ~= "鬼道" then
+					card_id = ai_card_search(id, "方块", 1)
+				end
+
+				if #card_id == 0 then
+					return nil
+				else
+					return card_id[1]
+				end
+			end
+
+			if panding_leixing == "兵粮寸断" and card_panding_card[2] == "草花" then
+				local card_id = ai_card_search(id, "黑桃", 1)
+				if #card_id == 0 and skill_available ~= "鬼道" then
+					card_id = ai_card_search(id, "方块", 1)
+				end
+				if #card_id == 0 and skill_available ~= "鬼道" then
+					card_id = ai_card_search(id, "红桃", 1)
+				end
+
+				if #card_id == 0 then
+					return nil
+				else
+					return card_id[1]
+				end
+			end
+
+			return nil
 		end
+	end
 
-		if panding_leixing == "兵粮寸断" and card_panding_card[2] ~= "草花" then
-			local card_id = ai_card_search(id, "草花", 1)
-			if #card_id == 0 then
-				return nil
-			else
-				return card_id[1]
-			end
+	--  张角发动雷击，改判使其生效  --
+	if panding_leixing == "雷击" and card_panding_card[2] ~= "黑桃" and (id == ID_mubiao or ai_judge_same_identity(id, ID_mubiao, false) == 1) then
+		local card_id = ai_card_search(id, "黑桃", 1)
+		if #card_id == 0 then
+			return nil
+		else
+			return card_id[1]
 		end
-
-		if panding_leixing == "闪电" and card_panding_card[2] == "黑桃" and card_panding_card[3] >= "2" and card_panding_card[3] <= "9" then
-			local card_id = ai_card_search(id, "草花", 1)
-			if #card_id == 0 and skill_available ~= "鬼道" then
-				card_id = ai_card_search(id, "红桃", 1)
-			end
-			if #card_id == 0 and skill_available ~= "鬼道" then
-				card_id = ai_card_search(id, "方块", 1)
-			end
-
-			if #card_id == 0 then
-				return nil
-			else
-				return card_id[1]
-			end
-		end
-
-		--  张角发动雷击，改判使其生效  --
-		if panding_leixing == "雷击" and card_panding_card[2] ~= "黑桃" then
-			local card_id = ai_card_search(id, "黑桃", 1)
-			if #card_id == 0 then
-				return nil
-			else
-				return card_id[1]
-			end
-		end
-
-		return nil
 	end
 
 	--  敌方发动八卦阵效果，改判使其失效  --

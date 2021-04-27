@@ -831,7 +831,7 @@ function ai_judge_dimeng(ID)
 			local n_shoupai_help = #char_juese[help_mubiao[i]].shoupai
 			local n_shoupai_attack = #char_juese[attack_mubiao[j]].shoupai
 
-			if n_shoupai_help < n_shoupai_attack and math.abs(n_shoupai_help - n_shoupai_attack) <= 2 and #cards >= math.abs(n_shoupai_help - n_shoupai_attack) then
+			if n_shoupai_help < n_shoupai_attack and math.abs(n_shoupai_help - n_shoupai_attack) >= 2 and math.abs(n_shoupai_help - n_shoupai_attack) <= 3 and #cards >= math.abs(n_shoupai_help - n_shoupai_attack) then
 				table.insert(possible_combinations, {help_mubiao[i], attack_mubiao[j]})
 			end
 		end

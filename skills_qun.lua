@@ -656,6 +656,11 @@ function skills_xinsheng(va_list)
 	local ID, is_beginning
 	ID = va_list[1]; is_beginning = va_list[2]
 
+	if char_juese[ID].siwang == true then
+		skills_skip_subqueue()
+		return
+	end
+
 	skills_push_queue()
 
 	if ID == char_current_i then

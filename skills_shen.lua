@@ -359,6 +359,11 @@ function skills_guixin(va_list)
 	local ID
 	ID = va_list[1]
 
+	if char_juese[ID].siwang == true then
+		skills_skip_subqueue()
+		return
+	end
+
 	if ID == char_current_i then
 		skills_guixin_enter()
 	else
@@ -462,9 +467,6 @@ function _guixin_sub2(va_list)
 
 	skills_skip_subqueue()
 	timer.start(0.6)
-end
-function _guixin_huifu()
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  神吕蒙：攻心  --
@@ -603,4 +605,353 @@ function _gongxin_sub1()
 
 		ai_card_use(char_acting_i)
 	end
+end
+
+--  神周瑜：琴音  --
+function skills_qinyin(ID)
+	if ID == char_current_i then
+		skills_qinyin_enter()
+	else
+		skills_qinyin_ai(ID)
+	end
+end
+function skills_qinyin_ai(ID)
+	local choice = ai_judge_qinyin(ID)
+	if choice == 3 then
+		skills_skip_subqueue()
+		return
+	end
+
+	skills_push_queue()
+	if choice == 1 then
+		_qinyin_exe(ID, "回复体力")
+	else
+		_qinyin_exe(ID, "失去体力")
+	end
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function skills_qinyin_enter()
+	skills_push_queue()
+
+	gamerun_status = "选项选择"
+	choose_name = "琴音"
+	jiaohu_text = "是否令所有角色增减体力?"
+	choose_option = {"回复一点体力", "失去一点体力", "不发动"}
+	
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		gamerun_status = ""
+		set_hints("")
+
+		funcptr_queue = {}
+		funcptr_i = 0
+
+		if i == 1 then
+			_qinyin_exe(char_current_i, "回复体力")
+		elseif i == 2 then
+			_qinyin_exe(char_current_i, "失去体力")
+		else
+			skills_pop_queue(true)
+		end
+
+		timer.start(0.6)
+		platform.window:invalidate()
+	end
+
+	platform.window:invalidate()
+end
+function _qinyin_exe(ID, mode)
+	local cur = ID
+	if mode == "失去体力" then
+		deduct_no_end_huihe = true
+	end
+
+	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '琴音'")
+
+	for i = 1, 5 do
+		if char_juese[cur].siwang == false then
+			if mode == "回复体力" then
+				if char_juese[cur].tili < char_juese[cur].tili_max then
+					char_tili_huifu(cur, 1)
+				end
+			elseif mode == "失去体力" then
+				char_tili_deduct({1, cur, -1, "流失", cur})
+			end
+		end
+
+		cur = cur + 1
+		if cur > 5 then
+			cur = 1
+		end
+	end
+
+	add_funcptr(char_judge_siwang_skip_all_stages)
+	add_funcptr(skills_pop_queue)
+end
+
+--  神周瑜：业炎  --
+function skills_judge_yeyan(ID, ID_shoupai)
+	local hslist = {["黑桃"] = 0, ["草花"] = 0, ["红桃"] = 0, ["方块"] = 0}
+
+	for i = 1, #ID_shoupai do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[ID_shoupai[i]]})
+		hslist[huase] = hslist[huase] + 1
+	end
+
+	if hslist["黑桃"] == 1 and hslist["草花"] == 1 and hslist["红桃"] == 1 and hslist["方块"] == 1 then
+		return true
+	else
+		return false
+	end
+end
+function skills_yeyan_ai(ID, ID_shoupai, fenpei)
+	if #ID_shoupai > 0 and skills_judge_yeyan(ID, ID_shoupai) == false then
+		return false
+	end
+
+	yeyan_dianshu_left = nil
+	yeyan_maximum_dianshu = nil
+	yeyan_mubiao = table.copy(fenpei)
+	yeyan_shoupai = nil
+
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	if #ID_shoupai > 0 then
+		yeyan_maximum_dianshu = 3
+		yeyan_shoupai = table.copy(ID_shoupai)
+	else
+		yeyan_maximum_dianshu = 1
+	end
+
+	_yeyan_exe(ID)
+	return true
+end
+function skills_yeyan_enter()
+	yeyan_dianshu_left = nil
+	yeyan_maximum_dianshu = nil
+	yeyan_mubiao = nil
+	yeyan_shoupai = nil
+
+	gamerun_status = "选项选择"
+	choose_name = "业炎"
+	jiaohu_text = "至多为每名角色分配几点伤害?"
+	choose_option = {"1点", "2点或3点", "取消"}
+
+	funcptr_queue = {}
+	funcptr_i = 0
+	
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		gamerun_status = ""
+		set_hints("")
+
+		if i == 1 then
+			yeyan_dianshu_left = 3
+			yeyan_maximum_dianshu = 1
+			yeyan_mubiao = {}
+
+			_yeyan_select_target_enter(1)
+		elseif i == 2 then
+			_yeyan_select_shoupai_enter()
+		else
+			gamerun_skill_selected = 0
+			skills_rst()
+		end
+
+		platform.window:invalidate()
+	end
+
+	platform.window:invalidate()
+	return true
+end
+function _yeyan_select_shoupai_enter()
+	skills_enter("请选择四张不同花色手牌", "", "业炎", "技能选择-多牌")
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			local ID_shoupai = skills_get_selected_shoupai()
+			if skills_judge_yeyan(char_current_i, ID_shoupai) then
+				yeyan_dianshu_left = 3
+				yeyan_maximum_dianshu = 3
+				yeyan_mubiao = {}
+				yeyan_shoupai = ID_shoupai
+
+				_yeyan_select_target_enter(1)
+			end
+		else
+			gamerun_skill_selected = 0
+			skills_rst()
+		end
+	end
+
+	gamerun_tab_ptr = nil
+end
+function _yeyan_judge_target(ID_mubiao)
+	if yeyan_mubiao == nil then
+		return false
+	end
+
+	for i = 1, #yeyan_mubiao do
+		if yeyan_mubiao[i][1] == ID_mubiao then
+			return false
+		end
+	end
+	return true
+end
+function _yeyan_select_target_enter(i)
+	skills_enter("请选择目标" .. tostring(i), "", "业炎", "技能选择-目标B")
+	gamerun_select_target("init")
+	guankan_s = -1
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		if gamerun_OK == true then
+			if _yeyan_judge_target(gamerun_target_selected) then
+				if yeyan_maximum_dianshu == 3 then
+					_yeyan_select_dianshu_enter(gamerun_target_selected)
+				else
+					_yeyan_select_if_next_enter(gamerun_target_selected, "1点")
+				end
+			end
+		else
+			gamerun_skill_selected = 0
+			skills_rst()
+		end
+	end
+
+	gamerun_tab_ptr = nil
+end
+function _yeyan_select_dianshu_enter(ID_mubiao)
+	gamerun_status = "选项选择"
+	choose_name = "业炎"
+	jiaohu_text = "为" .. char_juese[ID_mubiao].name .. "分配几点伤害?"
+	choose_option = {"取消发动"}
+
+	if yeyan_dianshu_left >= 1 and #yeyan_mubiao ~= 0 then
+		table.insert(choose_option, "1点")
+	end
+	if yeyan_dianshu_left >= 2 then
+		table.insert(choose_option, "2点")
+	end
+	if yeyan_dianshu_left >= 3 then
+		table.insert(choose_option, "3点")
+	end
+	
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		gamerun_status = "手牌生效中"
+		set_hints("")
+
+		if i ~= 1 then
+			_yeyan_select_if_next_enter(ID_mubiao, choose_option[i])
+		else
+			gamerun_skill_selected = 0
+			skills_rst()
+		end
+
+		platform.window:invalidate()
+	end
+
+	platform.window:invalidate()
+end
+function _yeyan_select_if_next_enter(ID_mubiao, dianshu_text)
+	local dianshu = 1
+	if dianshu_text == "1点" then
+		dianshu = 1
+	elseif dianshu_text == "2点" then
+		dianshu = 2
+	elseif dianshu_text == "3点" then
+		dianshu = 3
+	end
+
+	table.insert(yeyan_mubiao, {ID_mubiao, dianshu})
+	yeyan_dianshu_left = yeyan_dianshu_left - dianshu
+
+	if yeyan_dianshu_left == 0 then
+		_yeyan_exe(char_current_i)
+		return
+	end
+
+	gamerun_status = "选项选择"
+	choose_name = "业炎"
+	jiaohu_text = "是否选择下一个目标?"
+	choose_option = {"是", "否 (发动业炎)", "取消发动"}
+	
+	txt_messages:setVisible(false)
+	gamerun_guankan_selected = 1
+	item_disrow = 0
+
+	gamerun_item = function(i)
+		txt_messages:setVisible(true)
+		gamerun_status = "手牌生效中"
+		set_hints("")
+
+		if i == 1 then
+			_yeyan_select_target_enter(#yeyan_mubiao + 1)
+		elseif i == 2 then
+			_yeyan_exe(char_current_i)
+		else
+			gamerun_skill_selected = 0
+			skills_rst()
+		end
+
+		platform.window:invalidate()
+	end
+
+	platform.window:invalidate()
+end
+function _yeyan_exe(ID)
+	skills_cs()
+
+	add_funcptr(push_message, char_juese[ID].name .. "发动了武将技能 '业炎'")
+	char_juese[ID].skill["业炎"] = "locked_whole_game"
+	deduct_no_end_huihe = true
+
+	if yeyan_maximum_dianshu == 3 then
+		_yeyan_add_qipai(ID)
+		skills_losecard(ID)
+		char_tili_deduct({3, ID, -1, "流失", ID})
+	end
+
+	for i = 1, #yeyan_mubiao do
+		local ID_mubiao = yeyan_mubiao[i][1]
+		local dianshu = yeyan_mubiao[i][2]
+
+		char_tili_deduct({dianshu, ID_mubiao, ID, "火", ID_mubiao})
+	end
+
+	add_funcptr(char_judge_siwang_skip_all_stages)
+	add_funcptr(_fanjian_sub4)
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _yeyan_add_qipai(ID)
+	for i = #yeyan_shoupai, 1, -1 do
+		add_funcptr(_yeyan_qipai, {ID, yeyan_shoupai[i]})
+	end
+end
+function _yeyan_qipai(va_list)
+	local ID, ID_shoupai
+	ID = va_list[1]; ID_shoupai = va_list[2]
+
+	local card = char_juese[ID].shoupai[ID_shoupai]
+	push_message(table.concat({char_juese[ID].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+	card_shanchu({ID, ID_shoupai})
 end

@@ -964,8 +964,16 @@ function card_if_d_limit(cardname, ID_s, ID_d, ID_shoupai)
 
 	--  技能可以对自己使用，且需要指定目标数为1的情况  --
 	if ID_s < 0 then
+		--  华佗青囊  --
 		if card == "青囊" then
 			if char_juese[ID_d].tili == char_juese[ID_d].tili_max then
+				return false
+			end
+		end
+
+		--  神周瑜业炎  --
+		if card == "业炎" then
+			if _yeyan_judge_target(ID_d) == false then
 				return false
 			end
 		end
@@ -2354,8 +2362,27 @@ function card_lian_chongzhu(va_list)
 
 	gamerun_status = "手牌生效中"
 	set_hints("")
+	
+	funcptr_queue = {}
+	funcptr_i = 0
 
-    local msg, card
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+	if char_juese[ID_s].skill["连环"] == "available" and card[1] ~= "铁索连环" then
+		add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '连环'")
+	end
+
+	add_funcptr(_chongzhu_fenfa, {ID_s, ID_shoupai})
+	skills_losecard(ID_s)
+	add_funcptr(_chongzhu_sub1)
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _chongzhu_fenfa(va_list)
+	local ID_s, ID_shoupai
+	ID_s = va_list[1]; ID_shoupai = va_list[2]
+
+	local msg, card
 	card = char_juese[ID_s].shoupai[ID_shoupai]
 	
 	card_add_qipai(card)
@@ -2364,21 +2391,11 @@ function card_lian_chongzhu(va_list)
 	card_fenfa({ID_s, 1, false})
 	
 	if card[1] == "铁索连环" then
-		msg = {char_juese[ID_s].name, "重铸'", card[2], card[3], "的铁索连环"}
-		push_message(table.concat(msg))
+		msg = {char_juese[ID_s].name, "重铸'", card[2], card[3], "的铁索连环'"}
 	else
-		push_message(char_juese[ID_s].name.."发动了武将技能 '连环'")
 		msg = {char_juese[ID_s].name, "重铸铁索连环 (", card[2], card[3], "的", card[1], ")"}
-		push_message(table.concat(msg))
 	end
-	
-	funcptr_queue = {}
-	funcptr_i = 0
-
-	skills_losecard(ID_s)
-	add_funcptr(_chongzhu_sub1)
-
-	timer.start(0.6)
+	push_message(table.concat(msg))
 end
 function _chongzhu_sub1()
 	if char_acting_i == char_current_i then

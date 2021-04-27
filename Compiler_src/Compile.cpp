@@ -23,18 +23,23 @@ int appendFile(const char *filename)
 
 int main()
 {
-	fBuild = fopen("build.txt", "r");
-	fscanf(fBuild, "%d", &build);
+	char branch_string[64] = {0};
+
+	fBuild = fopen("build.lua", "r");
+	fscanf(fBuild, "build = %d\nbranch = %s\n", &build, branch_string);
 	fclose(fBuild);
-	fBuild = fopen("build.txt", "w");
-	fprintf(fBuild, "%d", ++build);
+	fBuild = fopen("build.lua", "w");
+	fprintf(fBuild, "build = %d\nbranch = %s\n", ++build, branch_string);
 	fclose(fBuild);
 	
 	remove("Debug/dest.lua");
 	fDest = fopen("Debug/dest.lua", "ab");
 	if (fDest == NULL) return 0;
-	
+
 	if (appendFile("sprite.lua") == 0)
+		return 0;
+
+	if (appendFile("build.lua") == 0)
 		return 0;
 
 	if (appendFile("ai_skills_jin.lua") == 0)

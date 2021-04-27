@@ -554,6 +554,34 @@ function ai_judge_random_percent(percent)
 	end
 end
 
+--  AI回合内使用技能 (最高优先级)  --
+function ai_skill_use_highest_priority(ID)
+	local fadong, ID_shoupai, mubiao
+
+	--  神周瑜业炎  --
+	if char_juese[ID].skill["业炎"] == "available" then
+		fadong, ID_shoupai, mubiao = ai_judge_yeyan(ID)
+		if fadong == true then
+			if skills_yeyan_ai(ID, ID_shoupai, mubiao) then
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
+	--  神周瑜是否放弃出牌发动琴音  --
+	if char_juese[ID].skill["琴音"] == "available" then
+		fadong = ai_judge_qinyin(ID)
+		if fadong ~= 3 and #char_juese[ID].shoupai >= char_juese[ID].tili + 2 then
+			if ai_judge_random_percent(50) == 1 then
+				ai_giveup_chupai = true
+			end
+		end
+	end
+
+	return false
+end
+
 --  AI回合内使用技能 (优先于使用大部分牌前的)  --
 function ai_skill_use_priority(ID)
 	local fadong, ID_shoupai, mubiao
@@ -936,6 +964,16 @@ function ai_card_use(ID)
 			end
 		end
 	end
+
+	if ai_skill_use_highest_priority(ID) then
+		return
+	end
+
+	if ai_giveup_chupai == true then
+		ai_stage_qipai(ID)
+		return
+	end
+
 	local targets = ai_judge_target(ID, "火杀", {{"火杀","红桃","K"}}, 1)
 	if #char_juese[ID].wuqi == 0 or char_juese[ID].skill["枭姬"] == "available" or char_juese[ID].skill["旋风"] == "available" or #targets == 0 then
 		local card_use = ai_card_search(ID, "武器", 1)

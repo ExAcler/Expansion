@@ -1,4 +1,8 @@
 
+--  控制是否将测试武将 (孙笑川) 加入将池  --
+--  请在推送到GitHub前关闭此开关，谢谢  --
+enable_debug_wujiang = false
+
 -- 各角色拥有技能 --
 char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
     ["刘备"] = {{4, 4}, "蜀", true, {"仁德", "激将"}, "男", {"", "主公"}, true}, 
@@ -71,9 +75,12 @@ char_juese_jineng = {    -- 体力上限, 阵营, 能否为主公, 技能
 	["神吕蒙"] = {{3, 3}, "神", false, {"涉猎", "攻心"}, "男", {"", ""}, true},	
 	["神曹操"] = {{3, 3}, "神", false, {"归心", "飞影"}, "男", {"", "锁定"}, true},
 	["神司马懿"] = {{4, 4}, "神", false, {"忍戒", "拜印", "连破"}, "男", {"锁定", "觉醒", ""}, true},
-	["神周瑜"] = {{4, 4}, "神", false, {"琴音", "业炎"}, "男", {"", "限定"}, false},
-	["孙笑川"] = {{4,4}, "神", false, {"挑衅","甘露","观星","空城"}, "男", {"","","","锁定"}, true},
+	["神周瑜"] = {{4, 4}, "神", false, {"琴音", "业炎"}, "男", {"", "限定"}, true},
 }
+
+if enable_debug_wujiang then
+	char_juese_jineng["孙笑川"] = {{4, 4}, "神", false, {"挑衅", "甘露", "琴音", "业炎"}, "男", {"", "", "", "限定"}, true}
+end
 
 -- 技能分类列表 --
 char_jineng_gong = {["铁骑"] = 1, ["观星"] = 1, ["集智"] = 1, ["奇才"] = 1, ["烈弓"] = 1, ["连环"] = 1, ["火计"] = 1, ["再起"] = 1, ["烈刃"] = 1, ["挑衅"] = 1, ["放权"] = 1, ["当先"] = 1, ["突袭"] = 1, ["洛神"] = 1, ["据守"] = 1, ["神速"] = 1, ["驱虎"] = 1, ["强袭"] = 1, ["断粮"] = 1, ["巧变"] = 1, ["绝情"] = 1, ["将驰"] = 1, ["制衡"] = 1, ["奇袭"] = 1, ["苦肉"] = 1, ["英姿"] = 1, ["反间"] = 1, ["国色"] = 1, ["结姻"] = 1, ["天义"] = 1, ["好施"] = 1, ["英魂"] = 1, ["直谏"] = 1, ["激昂"] = 1, ["甘露"] = 1, ["旋风"] = 1, ["双雄"] = 1, ["无双"] = 1, ["离间"] = 1, ["青囊"] = 1, ["猛进"] = 1, ["乱击"] = 1, ["酒池"] = 1, ["庸肆"] = 1, ["涉猎"] = 1, ["攻心"] = 1}
@@ -92,9 +99,14 @@ card_wuqi_r =
 
 function init_character()
 -- 各角色武将牌 --
-char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "孙笑川", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张郃", "张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张紘", "凌统", "吴国太", "颜良文丑", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈", "公孙瓒", "神曹操", "神司马懿", "神吕蒙", "曹彰", "廖化", "灵雎", "SP貂蝉", "SP姜维", "袁术", "贾诩", "神周瑜"}
-char_wujiang_zhugong = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓","孙笑川"}  -- 主公武将牌
+char_wujiang = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓", "关羽", "张飞", "赵云", "马超", "诸葛亮", "黄月英", "黄忠", "魏延", "庞统", "卧龙诸葛", "孟获", "祝融", "姜维", "司马懿", "郭嘉", "张辽", "甄姬", "夏侯惇", "曹仁", "许褚", "夏侯渊", "荀彧", "典韦", "徐晃", "邓艾", "张郃", "张春华", "甘宁", "黄盖", "周瑜", "陆逊", "大乔", "吕蒙", "孙尚香", "周泰", "太史慈", "鲁肃", "孙坚", "张昭张紘", "凌统", "吴国太", "颜良文丑", "吕布", "貂蝉", "华佗", "庞德", "蔡文姬", "左慈", "公孙瓒", "神曹操", "神司马懿", "神吕蒙", "曹彰", "廖化", "灵雎", "SP貂蝉", "SP姜维", "袁术", "贾诩", "神周瑜"}
+char_wujiang_zhugong = {"刘备", "刘禅", "曹操", "曹丕", "孙权", "孙策", "张角", "袁绍", "董卓"}  -- 主公武将牌
 char_wujiang_f = {}  -- 洗后的武将牌
+
+if enable_debug_wujiang then
+	table.insert(char_wujiang, 10, "孙笑川")
+	table.insert(char_wujiang_zhugong, 10, "孙笑川")
+end
 
 -- 各角色身份牌 --
 char_juese_identity = {"主公", "忠臣", "反贼", "反贼", "内奸"}
@@ -273,6 +285,7 @@ deduct_hengzhi_stack = {}	-- 当前正在结算的伤害是否需要连环传导
 deduct_tianxiang_stack = {}	-- 当前正在结算的伤害是否为天香转移而来
 deduct_id_ignore_stack = {}		-- 天香已经转移的伤害ID (用于避免重复连环传导)
 deduct_cansellblood_stack = {}	-- 当前正在结算的伤害是否可以卖血 (体力流失不能卖血)
+deduct_no_end_huihe = false		-- 伤害结算导致当前角色死亡之后是否还有其他事件需要结算，如为true则濒死结算后不直接结束当前回合
 
 --  临时变量  --
 binsi_tili_recovered = 0		--  濒死状态时一个玩家单次为濒死玩家恢复体力的点数 (用于不屈牌移除)
@@ -381,7 +394,9 @@ function char_choose_wujiang()
 	math.randomseed(timer.getMilliSecCounter())
 
 	--  总是显示孙笑川选项  --
-	table.insert(wujiang_choose,{char_juese_jineng[char_wujiang_f[9]][2], char_wujiang_f[9], char_juese_jineng[char_wujiang_f[9]][1][1], char_juese_jineng[char_wujiang_f[9]][1][2], char_juese_jineng[char_wujiang_f[9]][5]})
+	if enable_debug_wujiang then
+		table.insert(wujiang_choose,{char_juese_jineng[char_wujiang_f[9]][2], char_wujiang_f[9], char_juese_jineng[char_wujiang_f[9]][1][1], char_juese_jineng[char_wujiang_f[9]][1][2], char_juese_jineng[char_wujiang_f[9]][5]})
+	end
 
 	while wujiang_number > 0 do
 		local t = math.random(#char_wujiang_f)
@@ -760,7 +775,7 @@ function char_judge_shengli(va_list)
 	end
 	
 	--  奖惩  --
-	if laiyuan ~= -1 then
+	if laiyuan ~= -1 and char_juese[laiyuan].siwang == false then
 		--  任何人杀死反贼，摸3张牌  --
 		if siwang_id ~= laiyuan and char_juese[siwang_id].shenfen == "反贼" then
 			add_funcptr(card_fenfa, {laiyuan, 3, true})
@@ -867,7 +882,7 @@ function char_skills_injured()
 	local dianshu, id, laiyuan, shuxing
 	dianshu = deduct_va[1]; id = deduct_va[2]; laiyuan = deduct_va[3]; shuxing = deduct_va[4]
 
-	if laiyuan == -1 or dianshu == 0 or id == deduct_id_ignore then
+	if laiyuan == -1 or dianshu == 0 or id == deduct_id_ignore or char_juese[id].siwang == true then
 		_baiyin_skip()
 		return
 	end
@@ -968,6 +983,11 @@ function char_skills_transfer_deduct()
 	local id, laiyuan
 	id = deduct_va[2]; laiyuan = deduct_va[3]
 
+	if char_juese[id].siwang == true then
+		skills_skip_subqueue()
+		return
+	end
+
 	_tili_deduct_push_queue()
 
 	--  小乔天香  --
@@ -1023,6 +1043,7 @@ function char_skills_after_deduct(is_lianhuan)
 end
 
 --  体力扣减结算  --
+--  参数1为点数，参数2为受伤害的对象，参数3为伤害来源，参数4为伤害属性，参数5为铁索连环的传导起点  --
 function char_tili_deduct(va_list, is_lianhuan)
 	--  设置伤害参数  --
 	add_funcptr(_tili_deduct_set_va, {va_list, is_lianhuan})
@@ -1111,7 +1132,7 @@ function _char_tili_deduct()    --  体力扣减：队列执行函数
 	local msg
 	dianshu = deduct_va[1]; id = deduct_va[2]; laiyuan = deduct_va[3]; shuxing = deduct_va[4]
 
-	if deduct_id_ignore == id then
+	if deduct_id_ignore == id or char_juese[id].siwang == true then
 		skills_skip_subqueue()
 		return
 	end
@@ -1166,7 +1187,7 @@ function _deduct_chongzhi()    --  体力扣减：横置状态重置
 	local dianshu, ID, shuxing
 	dianshu = deduct_va[1]; ID = deduct_va[2]; shuxing = deduct_va[4]
 
-	if char_juese[ID].hengzhi == false or not (shuxing == "火" or shuxing == "雷") or dianshu == 0 or ID == deduct_id_ignore then
+	if char_juese[ID].hengzhi == false or not (shuxing == "火" or shuxing == "雷") or dianshu == 0 or ID == deduct_id_ignore or char_juese[ID].siwang == true then
 		_baiyin_skip()
 		return
 	end
@@ -1201,7 +1222,7 @@ function _deduct_lianhuan()    --  体力扣减：遍历连环伤害对象
 	end
 
 	--  如果角色已死亡且在自己的回合，跳过其所有阶段  --
-	add_funcptr(char_judge_siwang_skip_all_stages)
+	add_funcptr(_deduct_finalize)
 
 	add_funcptr(_tili_deduct_pop_queue)
 	_baiyin_skip()
@@ -1250,7 +1271,7 @@ function char_binsi_2(va_list)	--  濒死结算 (从其他函数调用)
 	char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellblood, is_buqu, -1)
 end
 function char_binsi_enter(dianshu, id, ID_shanghai, shanghai_shuxing, has_sellblood, is_buqu, deduct_id_ignore)
-	if char_juese[id].tili > 0 or id == deduct_id_ignore then
+	if char_juese[id].tili > 0 or id == deduct_id_ignore or char_juese[id].siwang == true then
 		skills_skip_subqueue()
 		return
 	end
@@ -1674,7 +1695,7 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	skills_withdraw_outgame(id)
 
 	--  灵雎发动焚心  --
-	if ID_shanghai ~= -1 and shuxing ~= "流失" and ID_shanghai ~= id then
+	if ID_shanghai ~= -1 and shanghai_shuxing ~= "流失" and ID_shanghai ~= id then
 		if char_juese[ID_shanghai].skill["焚心"] == 1 and char_juese[ID_shanghai].shenfen ~= "主公" and char_juese[id].shenfen ~= "主公" then
 			fenxin_pending = id
 			add_funcptr(skills_fenxin, {ID_shanghai, id})
@@ -1682,7 +1703,7 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 	end
 	
 	--  蔡文姬触发断肠  --
-	if ID_shanghai ~= -1 and shuxing ~= "流失" and char_juese[id].skill["断肠"] == "available" then
+	if ID_shanghai ~= -1 and shanghai_shuxing ~= "流失" and char_juese[id].skill["断肠"] == "available" then
 		add_funcptr(skills_duanchang, {id, ID_shanghai})
 	end
 
@@ -1695,7 +1716,7 @@ function _binsi_siwang(va_list)	--  濒死结算：角色最终死亡处理
 		add_funcptr(char_judge_shengli, {id, ID_shanghai})
 	end
 
-	add_funcptr(_binsi_remove_sellblood, {has_sellblood, id})
+	add_funcptr(_binsi_finalize, {has_sellblood, id})
 	skills_skip_subqueue()
 	timer.start(0.6)
 end
@@ -1706,7 +1727,7 @@ function _binsi_siwang_qipai(ID_siwang)
 	skills_skip_subqueue()
 	timer.start(0.6)
 end
-function _binsi_remove_sellblood(va_list)	--  濒死结算：角色已死亡，从队列中删除所有卖血结算函数
+function _binsi_finalize(va_list)	--  濒死结算：濒死结算完成
 	local has_sellblood, siwang_id
 	has_sellblood = va_list[1]; siwang_id = va_list[2]
 
@@ -1728,10 +1749,20 @@ function _binsi_sub1(id)
 	push_message(table.concat(msg))
 end
 
+--  伤害结算完成，恢复原伤害结算队列的状态，以及判断当前回合玩家是否死亡  --
+function _deduct_finalize()
+	pop_deduct_params()
+	if deduct_no_end_huihe == false then
+		char_judge_siwang_skip_all_stages()
+	else
+		deduct_no_end_huihe = false
+		skills_skip_subqueue()
+	end
+end
+
 --  当前玩家死亡，跳过其接下来所有阶段  --
 function char_judge_siwang_skip_all_stages()
-	pop_deduct_params()
-
+	deduct_no_end_huihe = false
 	local skip = false
 	for i = 1, 5 do
 		if char_juese[i].siwang == true and i == char_acting_i then
@@ -1744,6 +1775,13 @@ function char_judge_siwang_skip_all_stages()
 		timer.stop()
 		clear_zhudong_queue()
 		funcptr_queue = {}
+
+		if gamerun_huihe == "弃牌" and #wugucards > 0 then
+			for i = 1, #wugucards do
+				card_add_qipai(wugucards[i])
+			end
+			wugucards = {}
+		end
 
 		gamerun_wuqi_out_hand(char_acting_i)
 		gamerun_huihe_set("结束")

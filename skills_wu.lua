@@ -2098,7 +2098,7 @@ function skills_ganlu_enter()
 	gamerun_select_target("init")
 	
 	gamerun_OK_ptr = function()
-		if gamerun_status == "技能选择-目标" then
+		if gamerun_status == "技能选择-目标" and gamerun_OK == true then
 			--  进入阶段2  --
 			guankan_s = gamerun_target_selected
 			set_hints("请选择目标B")
@@ -2109,7 +2109,7 @@ function skills_ganlu_enter()
 		end
 		
 		if gamerun_status == "技能选择-目标B" then
-			if skills_ganlu(char_current_i, guankan_s, gamerun_target_selected) then
+			if skills_ganlu(char_current_i, guankan_s, gamerun_target_selected) and gamerun_OK == true then
 				skills_cs_2()
 				consent_func_queue(0.6)
 			end

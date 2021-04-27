@@ -132,3 +132,160 @@ function ai_judge_jilve_wansha(ID)
 
 	return false, 0
 end
+
+--  AI决定是否发动琴音  --
+--  1回复体力，2失去体力，3不发动  --
+function ai_judge_qinyin(ID)
+	local enemies = ai_basic_judge_mubiao(ID, 4, false, false, true)
+	local allies = ai_basic_judge_mubiao(ID, 4, true, false, true)
+
+	local enemy_blood = 0
+	local ally_blood = 0
+
+	local n_enemy_maxblood = 0
+	local n_ally_maxblood = 0
+
+	local enemy_dying = false
+	local ally_dying = false
+
+	for i = 1, #enemies do
+		if char_juese[enemies[i]].siwang == false then
+			enemy_blood = enemy_blood + math.min(char_juese[enemies[i]].tili, 5)
+			if char_juese[enemies[i]].tili == 1 then
+				enemy_dying = true
+			elseif char_juese[enemies[i]].tili == char_juese[enemies[i]].tili_max then
+				n_enemy_maxblood = n_enemy_maxblood + 1
+			end
+		end
+	end
+	for i = 1, #allies do
+		if char_juese[allies[i]].siwang == false then
+			ally_blood = ally_blood + math.min(char_juese[allies[i]].tili, 5)
+			if char_juese[allies[i]].tili == 1 or (char_juese[allies[i]].shenfen == "主公" and char_juese[allies[i]].tili == 2) then
+				ally_dying = true
+			elseif char_juese[allies[i]].tili == char_juese[allies[i]].tili_max then
+				n_ally_maxblood = n_ally_maxblood + 1
+			end
+		end
+	end
+
+	if enemy_dying == true and ally_dying == false then
+		return 2
+	end
+
+	if enemy_blood / #enemies > ally_blood / #allies then
+		if n_enemy_maxblood < #enemies or n_ally_maxblood < #allies then
+			return 1
+		end
+	else
+		if ally_dying == false then
+			return 2
+		end
+	end
+
+	return 3
+end
+
+--  AI决定是否发动业炎  --
+--  返回参数1为是否发动；返回参数2为弃牌ID (为一名角色分配2点以上时)，如为空则为至多1点；返回参数3为 一个表，每项为：{业炎目标ID, 为该目标分配的业炎点数}  --
+function ai_judge_yeyan(ID)
+	--  大业炎判断  --
+	local cards_caohua = ai_card_search(ID, "草花", 1)
+	local cards_fangkuai = ai_card_search(ID, "方块", 1)
+	local cards_heitao = ai_card_search(ID, "黑桃", 1)
+	local cards_hongtao = ai_card_search(ID, "红桃", 1)
+
+	if #cards_caohua < 1 or #cards_fangkuai < 1 or #cards_heitao < 1 or #cards_hongtao < 1 then
+		return false, {}, {}
+	end
+
+	local cards = {}
+	table.insert(cards, cards_caohua[1])
+	table.insert(cards, cards_fangkuai[1])
+	table.insert(cards, cards_heitao[1])
+	table.insert(cards, cards_hongtao[1])
+	table.sort(cards)
+
+	local real_allies = {}
+	local real_enemies = {}
+	local unknown = {}
+	for i = 1, 5 do
+		if ai_judge_same_identity(ID, i, false) == 1 then
+			table.insert(real_allies, i)
+		end
+		if ai_judge_same_identity(ID, i, false) == 2 then
+			table.insert(real_enemies, i)
+		end
+		if ai_judge_same_identity(ID, i, false) == 3 then
+			table.insert(unknown, i)
+		end
+	end
+
+	if char_juese[ID].shenfen == "主公" and char_juese[ID].tili <= 3 then
+		return false, {}, {}
+	end
+	if char_juese[ID].shenfen == "内奸" and char_juese[ID].tili <= 3 then
+		return false, {}, {}
+	end
+	if char_juese[ID].shenfen == "反贼" and #real_allies == 1 and char_juese[ID].tili <= 3 then
+		return false, {}, {}
+	end
+
+	local ID_enemy_hengzhi = {}
+	local ally_hengzhi = false
+	for i = 1, 5 do
+		if ai_judge_same_identity(ID, i, true) == 1 then
+			if char_juese[i].hengzhi == true then
+				ally_hengzhi = true
+			end
+		else
+			if char_juese[i].hengzhi == true then
+				table.insert(ID_enemy_hengzhi, i)
+			end
+		end
+	end
+
+	if ally_hengzhi == false and #ID_enemy_hengzhi > 0 then
+		local target = random_pick(ID_enemy_hengzhi, 1)
+
+		if char_juese[ID].shenfen == "主公" and (#real_enemies > 2 or #unknown > 0) then
+			return false, {}, {}
+		elseif char_juese[ID].shenfen == "内奸" and (#real_enemies > 3 or #unknown > 0) and char_alive_stat() > 2 then
+			return false, {}, {}
+		end
+
+		return true, cards, {{target[1], 3}}
+	end
+
+	local attack_mubiao = {}
+	for i = 1, 5 do
+		if ai_judge_same_identity(ID, i, true) == 2 then
+			if char_juese[i].hengzhi == false then
+				table.insert(attack_mubiao, i)
+			end
+		end
+	end
+	if #attack_mubiao == 0 then
+		return false, {}, {}
+	end
+
+	local mindef_ID = -1
+	local mindef = 1000
+	for i = 1, #attack_mubiao do
+		if char_juese[attack_mubiao[i]].tili < mindef and char_juese[attack_mubiao[i]].tili >= 2 then
+			mindef_ID = attack_mubiao[i]
+			mindef = char_juese[attack_mubiao[i]].tili
+		end
+	end
+	if mindef_ID == -1 then
+		return false, {}, {}
+	end
+
+	if char_juese[ID].shenfen == "主公" and (#real_enemies > 1 or #unknown > 0) then
+		return false, {}, {}
+	elseif char_juese[ID].shenfen == "内奸" and (#real_enemies > 2 or #unknown > 0) and char_alive_stat() > 2 then
+		return false, {}, {}
+	end
+
+	return true, cards, {{mindef_ID, 3}}
+end
