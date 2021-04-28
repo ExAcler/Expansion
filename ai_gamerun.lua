@@ -113,9 +113,16 @@ function ai_judge_same_identity(ID, ID_mubiao, blackjack)
 			end
 		end
 	elseif char_juese[ID].shenfen == "内奸" then
+		local lord_id = ai_get_lord_id()
 		if blackjack then
-			if char_juese[ID_mubiao].shenfen == "主公" and char_juese[ID_mubiao].tili <= 2 and char_alive_stat() > 2 then
+			if char_juese[ID_mubiao].shenfen == "主公" and char_juese[ID_mubiao].tili <= 2 and char_alive_stat() > 3 then
 				return 1
+			elseif char_alive_stat() == 3 and char_juese[lord_id].tili <= 2 then
+				if char_juese[ID_mubiao].shenfen == "主公" then
+					return 1
+				else
+					return 2
+				end
 			elseif char_alive_stat() == 2 then
 				return 2
 			else
@@ -230,9 +237,20 @@ function ai_basic_judge_mubiao(ID, required, is_help, exclude_self, exclude_unkn
 					end
 				end
 			elseif char_juese[ID].shenfen == "内奸" then
+				local lord_id = ai_get_lord_id()
 				if char_juese[possible_target[i]].shenfen == "主公" and char_juese[possible_target[i]].tili <= 2 and char_alive_stat() > 2 then
 					if char_juese[possible_target[i]].isantigovernment == is_help then
 						table.remove(possible_target, i)
+					end
+				elseif char_alive_stat() == 3 and char_juese[lord_id].tili <= 2 then
+					if char_juese[possible_target[i]].shenfen == "主公" then
+						if char_juese[possible_target[i]].isantigovernment == is_help then
+							table.remove(possible_target, i)
+						end
+					else
+						if char_juese[possible_target[i]].isantigovernment == not is_help then
+							table.remove(possible_target, i)
+						end
 					end
 				elseif char_alive_stat() == 2 then
 					if char_juese[possible_target[i]].isantigovernment == not is_help then
@@ -558,6 +576,23 @@ end
 function ai_skill_use_highest_priority(ID)
 	local fadong, ID_shoupai, mubiao
 
+	--  颜良文丑双雄  --
+	if char_juese[ID].skill["双雄"] == "available" and char_shuangxiong ~= nil and ai_skills_discard["双雄"] ~= 2 then
+		fadong, ID_shoupai, mubiao = ai_judge_shuangxiong_mubiao(ID)
+		if fadong == true then
+			if card_juedou({ID_shoupai}, ID, mubiao) then
+				if type(ai_skills_discard["双雄"]) ~= "number" then
+					ai_skills_discard["双雄"] = 1
+				else
+					ai_skills_discard["双雄"] = ai_skills_discard["双雄"] + 1
+				end
+
+				timer.start(0.6)
+				return true
+			end
+		end
+	end
+
 	--  神周瑜业炎  --
 	if char_juese[ID].skill["业炎"] == "available" then
 		fadong, ID_shoupai, mubiao = ai_judge_yeyan(ID)
@@ -599,23 +634,6 @@ function ai_skill_use_priority(ID)
 		if skills_gongxin_ai(ID) then
 			timer.start(0.6)
 			return true
-		end
-	end
-
-	--  颜良文丑双雄  --
-	if char_juese[ID].skill["双雄"] == "available" and char_shuangxiong ~= nil and ai_skills_discard["双雄"] ~= 2 then
-		fadong, ID_shoupai, mubiao = ai_judge_shuangxiong_mubiao(ID)
-		if fadong == true then
-			if card_juedou({ID_shoupai}, ID, mubiao) then
-				if type(ai_skills_discard["双雄"]) ~= "number" then
-					ai_skills_discard["双雄"] = 1
-				else
-					ai_skills_discard["双雄"] = ai_skills_discard["双雄"] + 1
-				end
-
-				timer.start(0.6)
-				return true
-			end
 		end
 	end
 
@@ -944,6 +962,26 @@ function ai_skill_use(ID)
 			skills_jijiang_add(ID, "杀", {-1, ID, mubiao})
 			timer.start(0.6)
 			return true
+		end
+	end
+
+	--  张角黄天  --
+	if char_juese[ID].shili == "群" then
+		fadong, ID_shoupai, mubiao = ai_judge_huangtian(ID)
+		if fadong == true then
+			if skills_huangtian_ai(ID_shoupai, ID, mubiao) then
+				return true
+			end
+		end
+	end
+
+	--  孙策制霸  --
+	if char_juese[ID].shili == "吴" then
+		fadong, mubiao = ai_judge_zhiba(ID)
+		if fadong == true then
+			if skills_zhiba(ID, mubiao) then
+				return true
+			end
 		end
 	end
 
@@ -1326,8 +1364,7 @@ function ai_stage_qipai(ID)
 		extra = skills_judge_xueyi(char_acting_i)
 		if char_juese[ID].skill["巧变"] == "available" then
 			add_funcptr(skills_qiaobian,{ID, "弃牌"})
-		end
-		if char_juese[ID].skill["克己"] == "available" and char_yisha == false then
+		elseif char_juese[ID].skill["克己"] == "available" and char_yisha == false then
 			add_funcptr(skills_keji,ID)
 		elseif char_juese[ID].tili + extra < #char_juese[ID].shoupai or char_juese[ID].skill["庸肆"] == "available" then
 			_ai_qipai_exe(ID)

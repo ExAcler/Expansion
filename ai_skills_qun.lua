@@ -734,3 +734,36 @@ function ai_judge_luanwu_shoupai(ID)
 
 	return {}
 end
+
+--  AI决定是否响应黄天  --
+--  返回是否响应、手牌ID、有黄天角色的ID  --
+function ai_judge_huangtian(ID)
+	local cards = ai_card_search(ID, "闪", 2)
+	if #cards <= 1 then
+		return false, 0, 0
+	end
+
+	local mubiao = -1
+	for i = 1, 5 do
+		if i ~= ID and char_juese[i].skill["黄天"] == "available" and lordskill_used[i]["黄天"] ~= 1 and ai_judge_same_identity(ID, i, true) == 1 then
+			mubiao = i
+			break
+		end
+	end
+
+	if mubiao == -1 then
+		return false, 0, 0
+	end
+
+	local percent = 40
+	if char_juese[mubiao].skill["雷击"] == "available" then
+		--  袁术伪帝拿的主公技响应概率减小  --
+		percent = 80
+	end
+
+	if ai_judge_random_percent(percent) == 1 then
+		return true, cards[1], mubiao
+	else
+		return false, 0, 0
+	end
+end

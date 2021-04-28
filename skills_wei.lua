@@ -1895,16 +1895,20 @@ function skills_qiaobian(va_list)
 	local jieduan = va_list[2]
 
 	if jieduan == "判定" and game_skip_panding == true then
+		skills_skip_subqueue()
 		return
 	end
 	if jieduan == "摸牌" and game_skip_mopai == true then
+		skills_skip_subqueue()
 		return
 	end
 	if jieduan == "出牌" and game_skip_chupai == true then
+		skills_skip_subqueue()
 		return
 	end
 	
-	if ai_card_stat(ID,true,true) == 0 then
+	if ai_card_stat(ID, true, true) == 0 then
+		skills_skip_subqueue()
 		return
 	end
 
@@ -1916,12 +1920,8 @@ function skills_qiaobian(va_list)
 end
 function skills_qiaobian_enter(jieduan)
 	local old_gamerun_status = gamerun_status
-	if jieduan ~= "弃牌" then
-		push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-		timer.stop()
-		funcptr_queue = {}
-		funcptr_i = 0
-	end
+	skills_push_queue()
+
 	gamerun_status = "选项选择"
 	choose_name = "巧变"
 	if jieduan == "判定" then
@@ -1948,9 +1948,9 @@ function skills_qiaobian_enter(jieduan)
 		if i == 1 then
 			skills_qiaobian_withdraw(jieduan)
 	    else
+			skills_pop_queue(true)
+
 			if jieduan ~= "弃牌" then
-				_qiaobian_huifu()
-				--funcptr_i = funcptr_i + 1
 				timer.start(0.6)
 			else
 				gamerun_huihe_set("弃牌")
@@ -1975,41 +1975,31 @@ function skills_qiaobian_ai(ID, jieduan)
 			timer.start(0.2)
 			return
 		else
+			skills_skip_subqueue()
 			return
 		end
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
+
 	if jieduan == "判定" or jieduan == "弃牌" then
-		_qiaobian_exe(ID_shoupai, ID, jieduan)
+		_qiaobian_exe(ID_shoupai[1], ID, jieduan, {})
 	elseif jieduan == "摸牌" then
-		_qiaobian_exe(ID_shoupai, ID, jieduan)
-		if #ID_mubiao > 1 then
-			guankan_s, gamerun_target_selected = ID_mubiao[1], ID_mubiao[2]
-			_qiaobian_mopai_exe(ID, true)
-		else
-			gamerun_target_selected = ID_mubiao[1]
-			_qiaobian_mopai_exe(ID, false)
-		end
+		_qiaobian_exe(ID_shoupai[1], ID, jieduan, ID_mubiao)
 	elseif jieduan == "出牌" then
-		_qiaobian_exe(ID_shoupai, ID, jieduan)
-		skills_qiaobian_chupai_set(ID_mubiao)
+		_qiaobian_exe(ID_shoupai[1], ID, jieduan, ID_mubiao)
 	end
+
 	return true
 end
 function skills_qiaobian_withdraw(jieduan)
-
 	skills_enter("请选择一张牌", "", "巧变", "技能选择-单牌")
 	
 	gamerun_OK_ptr = function()
 		if gamerun_OK == true then
 			_qiaobian_exe(card_highlighted, char_current_i, jieduan)
 		elseif gamerun_OK == false then
-			_qiaobian_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.6)
 		end
 		return true
@@ -2017,48 +2007,48 @@ function skills_qiaobian_withdraw(jieduan)
 	
 	return true
 end
-function _qiaobian_exe(ID_shoupai, ID_s, jieduan)
+function _qiaobian_exe(ID_shoupai, ID_s, jieduan, mopai_mubiao)
 	funcptr_queue = {}
 	funcptr_i = 0
-	if ID_s == char_current_i then
-		local card = char_juese[ID_s].shoupai[ID_shoupai]
-		card_add_qipai(card)
-		card_remove({ID_s, ID_shoupai})
+	
+	gamerun_status = ""
+	set_hints("")
+	skills_cs()
 
-		push_message(table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
-		skills_losecard(ID_s)
-	else
-		ai_withdraw(ID_s, ID_shoupai, {}, false)
-		skills_losecard(ID_s)
-	end
-	push_message(char_juese[ID_s].name .. "发动了武将技能 '巧变'")
+	add_funcptr(_qiaobian_qipai, {ID_s, ID_shoupai})
+	skills_losecard(ID_s)
+	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '巧变'")
+	
 	if jieduan == "判定" then
-		gamerun_status = ""
-		set_hints("")
 		game_skip_panding = true
-		skills_cs()
-		_qiaobian_huifu()
-		timer.start(0.6)
-		platform.window:invalidate()
+
 	elseif jieduan == "摸牌" then
 		game_skip_mopai = true
+
 		local total_shoupai = 0
 		for i = 1, 5 do
 			if char_juese[i].siwang ~= true and i ~= ID_s then
-				total_shoupai = total_shoupai + # char_juese[i].shoupai
+				total_shoupai = total_shoupai + #char_juese[i].shoupai
 			end
 		end
+
 		if ID_s == char_current_i then
 			if total_shoupai ~= 0 then
-				_qiaobian_mopai_target1(ID_s)
+				add_funcptr(_qiaobian_mopai_target1, ID_s)
+			end
+		else
+			if #mopai_mubiao > 1 then
+				guankan_s, gamerun_target_selected = mopai_mubiao[1], mopai_mubiao[2]
+				_qiaobian_mopai_exe(ID_s, true)
 			else
-				_qiaobian_huifu()
-				skills_cs()
-				timer.start(0.6)
+				gamerun_target_selected = mopai_mubiao[1]
+				_qiaobian_mopai_exe(ID_s, false)
 			end
 		end
+
 	elseif jieduan == "出牌" then
 		game_skip_chupai = true
+
 		local local_difference, last_one = false, nil
 		for i = 1, 5 do
 			if char_juese[i].siwang ~= true then
@@ -2079,25 +2069,47 @@ function _qiaobian_exe(ID_shoupai, ID_s, jieduan)
 				end
 			end
 		end
+
 		if ID_s == char_current_i then
 			if local_difference == true then
-				_qiaobian_chupai_target1(ID_s)
-			else
-				_qiaobian_huifu()
-				skills_cs()
-				timer.start(0.6)
+				add_funcptr(_qiaobian_chupai_target1, ID_s)
 			end
+		else
+			skills_qiaobian_chupai_set(mopai_mubiao)
 		end
+
 	else
-		funcptr_queue = {}
-		--_qiaobian_huifu()
-		skills_cs()
-		set_hints("")
-		gamerun_huihe_jieshu(true)
-		timer.start(0.2)
+		add_funcptr(_qiaobian_enter_jieshu)
 	end
+
+	add_funcptr(skills_pop_queue)
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _qiaobian_qipai(va_list)
+	local ID_s, ID_shoupai
+	ID_s = va_list[1]; ID_shoupai = va_list[2]
+	
+	local card = char_juese[ID_s].shoupai[ID_shoupai]
+	card_add_qipai(card)
+	card_remove({ID_s, ID_shoupai})
+
+	push_message(table.concat({char_juese[ID_s].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
+end
+function _qiaobian_enter_jieshu()
+	skills_pop_queue(true)
+	
+	funcptr_queue = {}
+	funcptr_i = 0
+
+	gamerun_huihe_jieshu(true)
+
+	skills_skip_subqueue()
+	timer.start(0.2)
 end
 function _qiaobian_mopai_target1(ID_s)
+	skills_push_queue()
+
 	skills_enter("请选择目标A", "", "巧变", "技能选择-目标")
 	gamerun_select_target("init")
 	gamerun_OK = false
@@ -2120,10 +2132,14 @@ function _qiaobian_mopai_target2(ID_s)
 		else
 			_qiaobian_mopai_exe(ID_s, false)
 		end
+
+		add_funcptr(skills_pop_queue)
+		timer.start(0.6)
 	end
 end
 function _qiaobian_mopai_exe(ID_s, double)
 	gamerun_status = ""
+	set_hints("")
 	char_qiaobian = true
 	
 	add_funcptr(_qiaobian_mopai_sub1, {ID_s, gamerun_target_selected})
@@ -2133,9 +2149,6 @@ function _qiaobian_mopai_exe(ID_s, double)
 		add_funcptr(_qiaobian_mopai_sub1, {ID_s, guankan_s})
 		skills_losecard(guankan_s)
 	end
-	
-	add_funcptr(_qiaobian_huifu, nil)
-	timer.start(0.2)
 end
 function _qiaobian_mopai_sub1(va_list)
 	local ID_s, ID_mubiao
@@ -2150,7 +2163,9 @@ function _qiaobian_mopai_sub1(va_list)
 	card_insert(ID_s, card)
 end
 function _qiaobian_chupai_target1(ID_s)
-	skills_enter("请选择目标A", "", "巧变", "技能选择-目标")
+	skills_push_queue()
+
+	skills_enter("请选择目标A", "", "巧变", "技能选择-目标B")
 	gamerun_select_target("init")
 	gamerun_OK = false
 	gamerun_target_selected = ID_s
@@ -2213,52 +2228,110 @@ function _qiaobian_chupai_exe(ID_s, guankan_s, gamerun_target_selected)
 	end
 	platform.window:invalidate()
 end
-function _qiaobian_huifu()
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
-end
-
 function skills_qiaobian_chupai_set(va_list)
 	local ID_s, ID_mubiao, ID_card
-	local t, card
 	ID_s = va_list[1]; ID_mubiao = va_list[2]; ID_card = va_list[3]
+
 	gamerun_status = ""
 	txt_messages:setVisible(true)
+
 	if ID_card == 1 then
-		push_message(table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的武器"}))
-		char_juese[ID_s].wuqi, char_juese[ID_mubiao].wuqi = char_juese[ID_mubiao].wuqi, char_juese[ID_s].wuqi
-		skills_losecard(ID_s)
-		skills_losecard(ID_mubiao)
+		add_funcptr(push_message, table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的武器"}))
+		_qiaobian_exchange_arm(ID_s, ID_mubiao, "武器")
+
 	elseif ID_card == 2 then
-		push_message(table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的防具"}))
-
-		local s_fangju = table.copy(char_juese[ID_s].fangju)
-		local mubiao_fangju = table.copy(char_juese[ID_mubiao].fangju)
-		card_arm_fangju(ID_s, mubiao_fangju)
-		card_arm_fangju(ID_mubiao, s_fangju)
-
-		skills_losecard(ID_s)
-		skills_losecard(ID_mubiao)
+		add_funcptr(push_message, table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的防具"}))
+		_qiaobian_exchange_arm(ID_s, ID_mubiao, "防具")
+		
 	elseif ID_card == 3 then
-		push_message(table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的-1马"}))
-		char_juese[ID_s].gongma, char_juese[ID_mubiao].gongma = char_juese[ID_mubiao].gongma, char_juese[ID_s].gongma
-		skills_losecard(ID_s)
-		skills_losecard(ID_mubiao)
+		add_funcptr(push_message, table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的-1马"}))
+		_qiaobian_exchange_arm(ID_s, ID_mubiao, "-1马")
+
 	elseif ID_card == 4 then
-		push_message(table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的+1马"}))
-		char_juese[ID_s].fangma, char_juese[ID_mubiao].fangma = char_juese[ID_mubiao].fangma, char_juese[ID_s].fangma
-		skills_losecard(ID_s)
-		skills_losecard(ID_mubiao)
+		add_funcptr(push_message, table.concat({char_juese[ID_s].name.."获得", char_juese[ID_mubiao].name, "的+1马"}))
+		_qiaobian_exchange_arm(ID_s, ID_mubiao, "+1马")
+
 	else
-		push_message(table.concat({char_juese[ID_mubiao].name, "判定区的一张牌被转移给"..char_juese[ID_s].name}))
-		card = char_juese[ID_mubiao].panding[ID_card - 4]
-		table.remove(char_juese[ID_mubiao].panding,ID_card - 4)
-		table.insert(char_juese[ID_s].panding, card)
+		add_funcptr(_qiaobian_exchange_panding, {ID_s, ID_mubiao, ID_card})
 	end
-	--[[funcptr_queue, funcptr_i = pop_zhudong_queue()
-	funcptr_i = funcptr_i + 1
-	timer.start(0.2)]]
-	add_funcptr(_qiaobian_huifu, nil)
-	timer.start(0.2)
+end
+function _qiaobian_exchange_panding(va_list)
+	local ID_s, ID_mubiao, ID_card
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; ID_card = va_list[3]
+
+	push_message(table.concat({char_juese[ID_mubiao].name, "判定区的一张牌被转移给"..char_juese[ID_s].name}))
+	local card = char_juese[ID_mubiao].panding[ID_card - 4]
+	table.remove(char_juese[ID_mubiao].panding,ID_card - 4)
+	table.insert(char_juese[ID_s].panding, card)
+end
+function _qiaobian_exchange_arm(ID_s, ID_mubiao, typ)
+	add_funcptr(_qiaobian_lose_arm_1, {ID_s, typ})
+	skills_losecard(ID_s)
+	add_funcptr(_qiaobian_lose_arm_2, {ID_mubiao, typ})
+	skills_losecard(ID_mubiao)
+	add_funcptr(_qiaobian_exchange_arm_exe, {ID_s, ID_mubiao, typ})
+end
+function _qiaobian_lose_arm_1(va_list)
+	local ID, typ
+	ID = va_list[1]; typ = va_list[2]
+
+	if typ == "武器" then
+		qiaobian_arm_1 = table.copy(char_juese[ID].wuqi)
+		char_juese[ID].wuqi = {}
+	elseif typ == "防具" then
+		qiaobian_arm_1 = table.copy(char_juese[ID].fangju)
+		char_juese[ID].fangju = {}
+	elseif typ == "+1马" then
+		qiaobian_arm_1 = table.copy(char_juese[ID].fangma)
+		char_juese[ID].fangma = {}
+	elseif typ == "-1马" then
+		qiaobian_arm_1 = table.copy(char_juese[ID].gongma)
+		char_juese[ID].gongma = {}
+	end
+
+	skills_skip_subqueue()
+end
+function _qiaobian_lose_arm_2(va_list)
+	local ID, typ
+	ID = va_list[1]; typ = va_list[2]
+
+	if typ == "武器" then
+		qiaobian_arm_2 = table.copy(char_juese[ID].wuqi)
+		char_juese[ID].wuqi = {}
+	elseif typ == "防具" then
+		qiaobian_arm_2 = table.copy(char_juese[ID].fangju)
+		char_juese[ID].fangju = {}
+	elseif typ == "+1马" then
+		qiaobian_arm_2 = table.copy(char_juese[ID].fangma)
+		char_juese[ID].fangma = {}
+	elseif typ == "-1马" then
+		qiaobian_arm_2 = table.copy(char_juese[ID].gongma)
+		char_juese[ID].gongma = {}
+	end
+
+	skills_skip_subqueue()
+end
+function _qiaobian_exchange_arm_exe(va_list)
+	local ID_s, ID_mubiao, typ
+	ID_s = va_list[1]; ID_mubiao = va_list[2]; typ = va_list[3]
+
+	if typ == "武器" then
+		char_juese[ID_s].wuqi = table.copy(qiaobian_arm_2)
+		char_juese[ID_mubiao].wuqi = table.copy(qiaobian_arm_1)
+	elseif typ == "防具" then
+		card_arm_fangju(ID_s, table.copy(qiaobian_arm_2))
+		card_arm_fangju(ID_mubiao, table.copy(qiaobian_arm_1))
+	elseif typ == "+1马" then
+		char_juese[ID_s].fangma = table.copy(qiaobian_arm_2)
+		char_juese[ID_mubiao].fangma = table.copy(qiaobian_arm_1)
+	elseif typ == "-1马" then
+		char_juese[ID_s].gongma = table.copy(qiaobian_arm_2)
+		char_juese[ID_mubiao].gongma = table.copy(qiaobian_arm_1)
+	end
+
+	qiaobian_arm_1 = nil
+	qiaobian_arm_2 = nil
+	skills_skip_subqueue()
 end
 
 --  曹丕：颂威  --

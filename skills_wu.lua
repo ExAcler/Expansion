@@ -1489,18 +1489,11 @@ function skills_guzheng_ai(ID_s, ID_mubiao)
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
-
+	skills_push_queue()
 	_guzheng_exe({ID_paidui, ID_s, ID_mubiao})
 end
 function skills_guzheng_enter(ID_mubiao)
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	local old_gamerun_status = gamerun_status
 	gamerun_status = "确认操作"
@@ -1515,8 +1508,7 @@ function skills_guzheng_enter(ID_mubiao)
 		if gamerun_OK then
 			_guzheng_paidui_select(ID_mubiao)
 	    else
-			_guzheng_huifu()
-			--funcptr_i = funcptr_i + 1
+			skills_pop_queue(true)
 			timer.start(0.2)
 		end
 		platform.window:invalidate()
@@ -1545,8 +1537,10 @@ function _guzheng_exe(va_list)
 	add_funcptr(push_message, char_juese[ID_s].name .. "发动了武将技能 '固政'")
 	add_funcptr(_guzheng_return_card, va_list)
 	add_funcptr(_guzheng_get_cards, va_list)
-	add_funcptr(_guzheng_huifu)
-	timer.start(0.2)
+	add_funcptr(skills_pop_queue)
+
+	skills_skip_subqueue()
+	timer.start(0.6)
 end
 function _guzheng_return_card(va_list)
 	local ID_paidui, ID_s, ID_mubiao
@@ -1567,9 +1561,6 @@ function _guzheng_get_cards(va_list)
 		card_insert(ID_s, wugucards[i])
 	end
 	wugucards = {}
-end
-function _guzheng_huifu()
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  大乔：流离  --
@@ -1725,11 +1716,69 @@ function skills_zhiba(ID_s, ID_zhugong)
 
 	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "响应了", char_juese[ID_zhugong].name, "的武将技能 '制霸'"}))
 	add_funcptr(push_message, table.concat({char_juese[ID_s].name, "与", char_juese[ID_zhugong].name, "进行拼点"}))
-	add_funcptr(card_pindian, {ID_s, ID_zhugong, win_fp, true})
+
+	if char_juese[ID_zhugong].skill["魂姿"] ~= "locked_whole_game" then
+		pindian_always_high = true
+		add_funcptr(card_pindian, {ID_s, ID_zhugong, win_fp, true})
+	else
+		add_funcptr(_zhiba_confirm, {ID_s, ID_zhugong, win_fp})
+	end
+	
 	add_funcptr(_zhiba_sub1)
 	timer.start(0.6)
 	
 	return true
+end
+function _zhiba_confirm(va_list)
+	local ID_s, ID_zhugong, win_fp
+	ID_s = va_list[1]; ID_zhugong = va_list[2]; win_fp = va_list[3]
+
+	skills_push_queue()
+
+	if ID_zhugong == char_current_i then
+		_zhiba_confirm_enter(ID_s, ID_zhugong, win_fp)
+	else
+		_zhiba_confirm_ai(ID_s, ID_zhugong, win_fp)
+	end
+end
+function _zhiba_confirm_ai(ID_s, ID_zhugong, win_fp)
+	local reject = false
+	if ai_judge_same_identity(ID_zhugong, ID_s, true) ~= 1 then
+		reject = true
+	end
+
+	if reject then
+		add_funcptr(push_message, table.concat({char_juese[ID_zhugong].name, "拒绝拼点"}))
+	else
+		pindian_always_high = true
+		add_funcptr(card_pindian, {ID_s, ID_zhugong, win_fp, true})
+	end
+	add_funcptr(skills_pop_queue)
+
+	skills_skip_subqueue()
+	timer.start(0.6)
+end
+function _zhiba_confirm_enter(ID_s, ID_zhugong, win_fp)
+	gamerun_status = "确认操作"
+	set_hints("是否响应此拼点?")
+	gamerun_OK = false
+
+	gamerun_OK_ptr = function()
+		gamerun_status = "手牌生效中"
+		set_hints("")
+
+		if gamerun_OK == true then
+			pindian_always_high = true
+			add_funcptr(card_pindian, {ID_s, ID_zhugong, win_fp, true})
+		else
+			add_funcptr(push_message, table.concat({char_juese[ID_zhugong].name, "拒绝拼点"}))
+		end
+
+		add_funcptr(skills_pop_queue)
+		timer.start(0.6)
+	end
+
+	platform.window:invalidate()
 end
 function _zhiba_sub1()
 	gamerun_OK = false
@@ -2164,7 +2213,6 @@ function _ganlu_sub2()
 	end
 end
 function _ganlu_lose_arm_1(ID)
-	--push_message(table.concat({char_juese[ID].name, "失去了所有装备"}))
 	ganlu_arm_1 = {}
 
 	table.insert(ganlu_arm_1, table.copy(char_juese[ID].wuqi))
@@ -2180,7 +2228,6 @@ function _ganlu_lose_arm_1(ID)
 	skills_skip_subqueue()
 end
 function _ganlu_lose_arm_2(ID)
-	--push_message(table.concat({char_juese[ID].name, "失去了所有装备"}))
 	ganlu_arm_2 = {}
 
 	table.insert(ganlu_arm_2, table.copy(char_juese[ID].wuqi))
@@ -2199,15 +2246,13 @@ function _ganlu_exchange_arm(va_list)
 	local ID_first, ID_second
 	ID_first = va_list[1]; ID_second = va_list[2]
 
-	--push_message(table.concat({char_juese[ID_first].name, "获得了", char_juese[ID_second].name, "的所有装备"}))
 	char_juese[ID_first].wuqi = ganlu_arm_2[1]
-	char_juese[ID_first].fangju = ganlu_arm_2[2]
+	card_arm_fangju(ID_first, ganlu_arm_2[2])
 	char_juese[ID_first].gongma = ganlu_arm_2[3]
 	char_juese[ID_first].fangma = ganlu_arm_2[4]
 
-	--push_message(table.concat({char_juese[ID_second].name, "获得了", char_juese[ID_first].name, "的所有装备"}))
 	char_juese[ID_second].wuqi = ganlu_arm_1[1]
-	char_juese[ID_second].fangju = ganlu_arm_1[2]
+	card_arm_fangju(ID_second, ganlu_arm_1[2])
 	char_juese[ID_second].gongma = ganlu_arm_1[3]
 	char_juese[ID_second].fangma = ganlu_arm_1[4]
 

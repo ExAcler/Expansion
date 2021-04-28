@@ -66,10 +66,32 @@ function skills_duanchang(va_list)
 end
 function _duanchang_lose_skills(ID_shanghai)
 	push_message(char_juese[ID_shanghai].name .. "失去所有武将技能")
+
+	--  左慈变回原来身份  --
 	if char_juese[ID_shanghai].skill["化身"] == "available" then
 		local name = char_juese[ID_shanghai].name
 		char_juese[ID_shanghai].shili = char_juese_jineng[name][2]
 		char_juese[ID_shanghai].xingbie = char_juese_jineng[name][5]
+	end
+
+	--  袁术失去所有主公技  --
+	if char_juese[ID_shanghai].shenfen == "主公" then
+		for i = 1, 5 do
+			if i ~= ID_shanghai and char_juese[i].skill["伪帝"] == "available" and char_juese[i].siwang == false then
+				local lordskill_list = {"激将", "护驾", "救援", "黄天", "血裔", "颂威", "暴虐", "若愚", "制霸"}
+				for j = 1, #lordskill_list do
+					if char_juese[ID_shanghai].skill[lordskill_list[j]] == "available" and char_juese[i].skill[lordskill_list[j]] == "available" then
+						char_juese[i].skill[lordskill_list[j]] = nil
+						for k = 1, #char_juese[i].skillname do
+							if char_juese[i].skillname[k] == lordskill_list[j] then
+								table.remove(char_juese[i].skillname, k)
+								break
+							end
+						end
+					end
+				end
+			end
+		end
 	end
 
 	char_juese[ID_shanghai].skill = {}

@@ -650,29 +650,34 @@ function draw_messages(gc)
 	gc:setColorRGB(255, 0, 0)
 	gc:setFont("sansserif", "b", 9)
 	gc:drawString(#card_yixi, 292, 150) 
-	gc:setColorRGB(0, 255, 0)
-	local card_stat = #card_yixi + #card_qipai
-	for i = 1, 5 do
-		card_stat = card_stat + #char_juese[i].panding + #char_juese[i].shoupai
-		if #char_juese[i].wuqi ~= 0 then
-			card_stat = card_stat + 1
-		end
-		if #char_juese[i].fangju ~= 0 then
-			card_stat = card_stat + 1
-		end
-		if #char_juese[i].gongma ~= 0 then
-			card_stat = card_stat + 1
-		end
-		if #char_juese[i].fangma ~= 0 then
-			card_stat = card_stat + 1
-		end
-	end
-	if wugucards ~= nil then
-		card_stat = card_stat + #wugucards
-	end
-	card_stat = card_stat + #card_jiesuan[1]
 
-	gc:drawString(card_stat, 252, 150)
+	if enable_cardtotal_display then
+		gc:setColorRGB(0, 255, 0)
+
+		local card_stat = #card_yixi + #card_qipai
+		for i = 1, 5 do
+			card_stat = card_stat + #char_juese[i].panding + #char_juese[i].shoupai
+			if #char_juese[i].wuqi ~= 0 then
+				card_stat = card_stat + 1
+			end
+			if #char_juese[i].fangju ~= 0 then
+				card_stat = card_stat + 1
+			end
+			if #char_juese[i].gongma ~= 0 then
+				card_stat = card_stat + 1
+			end
+			if #char_juese[i].fangma ~= 0 then
+				card_stat = card_stat + 1
+			end
+		end
+		if wugucards ~= nil then
+			card_stat = card_stat + #wugucards
+		end
+		card_stat = card_stat + #card_jiesuan[1]
+
+		gc:drawString(card_stat, 252, 150)
+	end
+
 	gc:setColorRGB(0, 0, 0)
 	gc:setFont("sansserif", "r", 11)
 	

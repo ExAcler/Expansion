@@ -17,7 +17,7 @@ TI-Nspire 计算器的按键在 Expansion 中的意义如下：
 
 # 如何下载
 
-您可以在 [这里](https://github.com/ExAcler/Expansion/releases) 中下载预编译好的 tns 文件，也可以自行进行编译最新版本，步骤如下：
+您可以在 [这里](https://github.com/ExAcler/Expansion/releases) 下载预编译好的 tns 文件，也可以自行进行编译最新版本，步骤如下：
 1. 创建 Debug 文件夹；
 2. 运行 Compile.exe 文件；
 3. 查看 Debug 文件夹下的 dest.lua 文件。

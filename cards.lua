@@ -729,12 +729,9 @@ function card_pindian(va_list)
 
 	ID_s = va_list[1]; ID_mubiao = va_list[2]; win_fp = va_list[3]; keep_card = va_list[4]; chosen_pindian_card_id = va_list[5]
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
-
+	skills_push_queue()
 	pindianing = {}
+
 	if ID_s == char_current_i or ID_mubiao == char_current_i then
 		skills_enter("请选择拼点的牌", "", "进行拼点", "技能选择-拼点")
 		gamerun_OK_pindian_ptr = function()
@@ -744,8 +741,15 @@ function card_pindian(va_list)
 			if ID_s == char_current_i then
 				add_funcptr(card_into_pindian, {ID_s, card_highlighted})
 				skills_losecard(ID_s)
-				add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, ai_judge_same_identity(ID_mubiao, ID_s, false) ~= 1)})
+
+				if pindian_always_high == true then
+					pindian_always_high = false
+					add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, true)})
+				else
+					add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, ai_judge_same_identity(ID_mubiao, ID_s, false) ~= 1)})
+				end
 				skills_losecard(ID_mubiao)
+
 			elseif ID_mubiao == char_current_i then
 				if chosen_pindian_card_id == nil then
 					add_funcptr(card_into_pindian, {ID_s, ai_pindian_judge(ID_s, true)})
@@ -761,7 +765,7 @@ function card_pindian(va_list)
 			card_highlighted = 1
 
 			add_funcptr(card_pindian_judge, {ID_s, ID_mubiao, win_fp, keep_card})
-			add_funcptr(_pindian_huifu)
+			add_funcptr(skills_pop_queue)
 			timer.start(0.6)
 		end
 	else
@@ -771,11 +775,19 @@ function card_pindian(va_list)
 			add_funcptr(card_into_pindian, {ID_s, chosen_pindian_card_id})
 		end
 		skills_losecard(ID_s)
-		add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, ai_judge_same_identity(ID_mubiao, ID_s, false) ~= 1)})
+
+		if pindian_always_high == true then
+			pindian_always_high = false
+			add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, true)})
+		else
+			add_funcptr(card_into_pindian, {ID_mubiao, ai_pindian_judge(ID_mubiao, ai_judge_same_identity(ID_mubiao, ID_s, false) ~= 1)})
+		end
 		skills_losecard(ID_mubiao)
 		
 		add_funcptr(card_pindian_judge, {ID_s, ID_mubiao, win_fp, keep_card})
-		add_funcptr(_pindian_huifu)
+		add_funcptr(skills_pop_queue)
+
+		skills_skip_subqueue()
 		timer.start(0.6)
 	end
 end
@@ -1575,7 +1587,7 @@ end
 --  装备防具  --
 function card_arm_fangju(ID, card)
 	char_juese[ID].fangju = card
-	if card[1] == "白银狮" then
+	if #card ~= 0 and card[1] == "白银狮" then
 		char_juese[ID].arm_baiyin = true
 	end
 end

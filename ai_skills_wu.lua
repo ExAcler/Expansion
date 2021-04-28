@@ -877,3 +877,51 @@ function ai_judge_dimeng(ID)
 	table.sort(cards)
 	return true, cards, possible_combinations[maxdef_ID]
 end
+
+--  AI决定是否响应制霸  --
+--  返回是否响应、有制霸角色的ID  --
+function ai_judge_zhiba(ID)
+	local cards = ai_card_search(ID, "随意", #char_juese[ID].shoupai)
+	local has_shan = false
+
+	for i = #cards, 1, -1 do
+		local yanse, huase, dianshu = ai_judge_cardinfo(ID, {char_juese[ID].shoupai[cards[i]]})
+
+		if (dianshu >= "2" and dianshu <= "9") or dianshu == "A" then
+			table.remove(cards, i)
+		end
+	end
+	if #cards == 0 then
+		return false, 0
+	end
+
+	local highest = cards[1]
+	for i = 2, #cards do
+		if _pindian_convert_dianshu(char_juese[ID].shoupai[cards[i]][3]) > _pindian_convert_dianshu(char_juese[ID].shoupai[highest][3]) then
+			highest = cards[i]
+		end
+	end
+	if card_judge_if_shan(ID, highest) then
+		return false, 0
+	end
+
+	local mubiao = -1
+	for i = 1, 5 do
+		if i ~= ID and char_juese[i].skill["制霸"] == "available" and lordskill_used[i]["制霸"] ~= 1 and ai_judge_same_identity(ID, i, true) == 2 then
+			mubiao = i
+			break
+		end
+	end
+	if mubiao == -1 then
+		return false, 0
+	end
+	if #char_juese[mubiao].shoupai == 0 or #char_juese[mubiao].shoupai > 3 then
+		return false, 0
+	end
+
+	if ai_judge_random_percent(40) == 1 then
+		return true, mubiao
+	else
+		return false, 0
+	end
+end

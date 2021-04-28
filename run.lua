@@ -245,6 +245,10 @@ function gamerun_menu()
 		return
 	end
 
+	if gamerun_huihe == "" or gamerun_huihe == "游戏结束" then
+		return
+	end
+
 	local old_gamerun_status = gamerun_status
 	local old_jiaohu_text = jiaohu_text
 
@@ -271,6 +275,8 @@ function gamerun_menu()
 
 		platform.window:invalidate()
 	end
+
+	platform.window:invalidate()
 end
 
 --  显示关于对话框  --
@@ -402,6 +408,7 @@ function gamerun_huihe_start()
 	ai_skills_discard = {}
 	ai_attack_priority = nil
 	ai_giveup_chupai = false
+	pindian_always_high = false
 	lordskill_used = {}
 	for i = 1, 5 do
 		lordskill_used[i] = {}
@@ -1352,6 +1359,7 @@ function on.enterKey()
 		txt_messages:setVisible(true)
 		gamerun_status = about_gamerun_status
 		jiaohu_text = about_jiaohu_text
+		platform.window:invalidate()
 		return
 	end
 
@@ -2168,6 +2176,8 @@ function on.arrowKey(key)
 					if gamerun_guankan_selected <= 4 then
 						if card_dealed_1[gamerun_guankan_selected][1] == "空" then
 							skills_qiaobian_chupai_set({qiaobian_up, qiaobian_down, gamerun_guankan_selected})
+							add_funcptr(skills_pop_queue)
+							timer.start(0.6)
 						end
 					else
 						local cardname, same_card = "",false
@@ -2183,6 +2193,8 @@ function on.arrowKey(key)
 						end
 						if same_card == false and (cardname ~= "乐不思蜀" or char_juese[qiaobian_up].skill["谦逊"] ~= "available") and (ai_judge_cardinfo(qiaobian_down,{card_dealed_2[gamerun_guankan_selected]}) ~= "黑色" or char_juese[qiaobian_up].skill["帷幕"] ~= "available")  then
 							skills_qiaobian_chupai_set({qiaobian_up, qiaobian_down, gamerun_guankan_selected})
+							add_funcptr(skills_pop_queue)
+							timer.start(0.6)
 						end
 					end
 				end
@@ -2217,6 +2229,8 @@ function on.arrowKey(key)
 					if gamerun_guankan_selected <= 4 then
 						if card_dealed_2[gamerun_guankan_selected][1] == "空" then
 							skills_qiaobian_chupai_set({qiaobian_up, qiaobian_down, gamerun_guankan_selected})
+							add_funcptr(skills_pop_queue)
+							timer.start(0.6)
 						end
 					else
 						local cardname, same_card = "",false
@@ -2232,6 +2246,8 @@ function on.arrowKey(key)
 						end
 						if same_card == false and (cardname ~= "乐不思蜀" or char_juese[qiaobian_down].skill["谦逊"] ~= "available") and (ai_judge_cardinfo(qiaobian_up,{card_dealed_1[gamerun_guankan_selected]}) ~= "黑色" or char_juese[qiaobian_down].skill["帷幕"] ~= "available") then
 							skills_qiaobian_chupai_set({qiaobian_down, qiaobian_up, gamerun_guankan_selected})
+							add_funcptr(skills_pop_queue)
+							timer.start(0.6)
 						end
 					end
 				end
@@ -2530,6 +2546,8 @@ function on.charIn(char)
 end
 
 function skills_rst()
+	gamerun_OK_ptr = nil
+	gamerun_tab_ptr = nil
 	last_OK = false
 	imp_card = ""
 	skill_text_1 = ""
