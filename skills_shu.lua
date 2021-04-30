@@ -1356,10 +1356,7 @@ function skills_xiangle(va_list)
 	local ID, ID_laiyuan
 	ID = va_list[1]; ID_laiyuan = va_list[2]
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	push_message(table.concat({char_juese[ID].name, "触发了武将技能 '享乐'"}))
 	if ID_laiyuan == char_current_i then
@@ -1373,7 +1370,7 @@ function skills_xiangle_ai(ID, ID_laiyuan)
 	if #cards > 0 then
 		_xiangle_exe(cards[1], ID, ID_laiyuan)
 	else
-		_xiangle_huifu()
+		skills_pop_queue(true)
 		funcptr_queue = {}
 		funcptr_i = 0
 
@@ -1406,7 +1403,7 @@ function skills_xiangle_enter(ID)
 			set_hints("")
 			push_message(table.concat({char_juese[char_current_i].name, "放弃"}))
 
-			_xiangle_huifu()
+			skills_pop_queue(true)
 			funcptr_queue = {}
 			funcptr_i = 0
 
@@ -1420,7 +1417,7 @@ end
 function _xiangle_exe(ID_shoupai, ID, ID_laiyuan)
 	add_funcptr(_xiangle_sub1, {ID_shoupai, ID_laiyuan})
 	skills_losecard(ID_laiyuan)
-	add_funcptr(_xiangle_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
 end
 function _xiangle_sub1(va_list)
@@ -1432,9 +1429,6 @@ function _xiangle_sub1(va_list)
 	push_message(table.concat({char_juese[ID_laiyuan].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
 	card_add_qipai(card)
 	card_remove({ID_laiyuan, ID_shoupai})
-end
-function _xiangle_huifu()
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  刘备：激将  --
@@ -1708,9 +1702,7 @@ function skills_judge_ruoyu()
 	return true
 end
 function skills_ruoyu()
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	push_message(char_juese[char_acting_i].name.."触发了武将技能 '若愚'")
 	add_funcptr(_ruoyu_add_tili_max)
@@ -1725,7 +1717,7 @@ function skills_ruoyu()
 
 	char_juese[char_acting_i].skill["若愚"] = "locked_whole_game"
 
-	add_funcptr(_hujia_huifu)
+	add_funcptr(skills_pop_queue)
 	timer.start(0.6)
 end
 function _ruoyu_add_tili_max()

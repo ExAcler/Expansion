@@ -791,6 +791,7 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 
 			skills_card_qi_panding(char_acting_i)
 			char_tili_deduct({3, char_acting_i, -1, "雷", char_acting_i})
+			add_funcptr(card_out_jiesuan_queued)
 		else
 		    msg = {char_juese[char_acting_i].name, "的'闪电'判定失败"}
 			push_message(table.concat(msg))
@@ -805,8 +806,12 @@ function _panding_sub2(va_list)    -- 子函数2：确认判定是否生效并�
 	    _panding_pass(id)
 	else
 	    --  弃掉玩家判定区及临时判定区内的牌  --
-		card_add_qipai(char_juese[char_acting_i].panding[id])
-		
+		if card ~= "闪电" then
+			card_add_qipai(char_juese[char_acting_i].panding[id])
+		else
+			card_into_jiesuan_2(char_juese[char_acting_i].panding[id], "闪电", -1)
+		end
+
 		if #char_juese[char_acting_i].panding == 1 then
 			char_juese[char_acting_i].panding = {}
 		else

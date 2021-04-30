@@ -1942,6 +1942,8 @@ function skills_qiaobian_enter(jieduan)
 	gamerun_item = function(i)
 		txt_messages:setVisible(true)
 		funcptr_queue = {}
+		funcptr_i = 0
+
 		gamerun_status = old_gamerun_status
 		set_hints("")
 
@@ -1971,6 +1973,9 @@ function skills_qiaobian_ai(ID, jieduan)
 	local ID_shoupai, ID_mubiao = ai_judge_qiaobian(ID, jieduan)
 	if #ID_shoupai == 0 then
 		if jieduan == "弃牌" then
+			funcptr_queue = {}
+			funcptr_i = 0
+
 			_ai_qipai_exe(char_acting_i)
 			timer.start(0.2)
 			return
@@ -2440,10 +2445,7 @@ function skills_hujia_req_side_ai(ID_req, mode, va)
 		return
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	skills_hujia_add(ID_req, mode, va)
 	timer.start(0.6)
@@ -2451,10 +2453,7 @@ end
 function skills_hujia_req_side_enter(mode, va)
 	local old_gamerun_status = gamerun_status
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	gamerun_status = "确认操作"
 	jiaohu_text = "是否发动 '护驾'?"
@@ -2466,7 +2465,7 @@ function skills_hujia_req_side_enter(mode, va)
 		if gamerun_OK == true then
 			skills_hujia_add(char_current_i, mode, va)
 		else
-			_hujia_huifu()
+			skills_pop_queue(true)
 		end
 		timer.start(0.6)
 	end
@@ -2480,7 +2479,7 @@ function skills_hujia_add(ID_req, mode, va)
 			add_funcptr(skills_hujia, {ID_req, i, mode, va})
 		end
 	end
-	add_funcptr(_hujia_huifu)
+	add_funcptr(skills_pop_queue)
 end
 function skills_hujia(va_list)
 	local ID_req, ID_res, mode, va
@@ -2514,11 +2513,7 @@ function skills_hujia_ai(ID_req, ID_res, mode, va)
 		end
 	end
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
-
+	skills_push_queue()
 	push_message(table.concat({char_juese[ID_res].name, "响应"}))
 
 	if arm_bagua == false then
@@ -2531,10 +2526,7 @@ end
 function skills_hujia_enter(ID_req, mode, va)
 	local old_gamerun_status = gamerun_status
 
-	push_zhudong_queue(table.copy(funcptr_queue), funcptr_i)
-	timer.stop()
-	funcptr_queue = {}
-	funcptr_i = 0
+	skills_push_queue()
 
 	gamerun_status = "确认操作"
 	jiaohu_text = table.concat({"是否响应", char_juese[ID_req].name, "的'护驾'?"})
@@ -2561,7 +2553,7 @@ function skills_hujia_enter(ID_req, mode, va)
 			end
 		else
 			push_message(table.concat({char_juese[char_current_i].name, "不响应"}))
-			_hujia_huifu()
+			skills_pop_queue(true)
 		end
 		timer.start(0.6)
 	end
@@ -2591,7 +2583,7 @@ function _hujia_determine_shan(ID_req, ID_res, mode, va)
 	local c_pos = ai_chazhao_shan(ID_res, char_juese[ID_res].shoupai)
 	if c_pos < 0 then
 		push_message(table.concat({char_juese[ID_res].name, "放弃"}))
-		_hujia_huifu()
+		skills_pop_queue(true)
 	else
 		_hujia_exe(ID_req, ID_res, c_pos, mode, va)
 	end
@@ -2616,7 +2608,7 @@ function _hujia_select_card(ID_req, mode, va, old_gamerun_status)
 			gamerun_status = old_gamerun_status
 			set_hints("")
 			push_message(table.concat({char_juese[char_current_i].name, "放弃"}))
-			_hujia_huifu()
+			skills_pop_queue(true)
 		end
 		timer.start(0.6)
 	end
@@ -2625,10 +2617,10 @@ function _hujia_select_card(ID_req, mode, va, old_gamerun_status)
 end
 function _hujia_exe(ID_req, ID_res, ID_shoupai, mode, va)
 	--  弹出第一层：护驾响应  --
-	_hujia_huifu()
+	skills_pop_queue(true)
 
 	--  弹出第二层：护驾请求  --
-	_hujia_huifu()
+	skills_pop_queue(true)
 
 	--  清空原有函数队列  --
 	funcptr_queue = {}
@@ -2656,9 +2648,6 @@ function _hujia_get_ids(va, mode)
 		return va[1]
 	end
 	return nil
-end
-function _hujia_huifu()
-	funcptr_queue, funcptr_i = pop_zhudong_queue()
 end
 
 --  邓艾：屯田  --

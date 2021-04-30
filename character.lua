@@ -1,5 +1,4 @@
 
-
 --  请在推送到GitHub前关闭以下调试开关，谢谢
 enable_debug_wujiang = false			--  控制是否将测试武将 (孙笑川) 加入将池
 enable_cardtotal_display = false		--  控制是否显示游戏内牌总数
@@ -80,7 +79,7 @@ char_juese_jineng = {    -- 体力上限, 阵营, 是否为传统主公, 技能�
 }
 
 if enable_debug_wujiang then
-	char_juese_jineng["孙笑川"] = {{4, 4}, "神", false, {"挑衅", "甘露", "巧变"}, "男", {"", "", ""}, true}
+	char_juese_jineng["孙笑川"] = {{4, 4}, "神", false, {"挑衅", "甘露", "奸雄", "巧变"}, "男", {"", "", "", ""}, true}
 end
 
 -- 技能分类列表 --
@@ -267,7 +266,7 @@ char_sha_add_target_able = false	-- 回合内杀是否允许增加攻击目标
 char_sha_additional_target = 0	-- 回合内杀增加的攻击目标个数
 char_jiu_time = 1  -- 回合内允许的喝酒次数
 char_hejiu = false  -- 已经喝酒
-char_wushi = false  -- 无视防具标志 (古锭刀)
+char_wushi = {}  -- 无视某角色防具标志
 char_rende_given = 0  -- 使用仁德技能已给出牌数
 char_luoyi = false  -- 许褚使用了裸衣技能
 char_xiangying_2 = false	-- 吕布无双、董卓肉林，需要己方使用两张手牌抵消的
@@ -293,6 +292,7 @@ binsi_tili_recovered = 0		--  濒死状态时一个玩家单次为濒死玩家�
 
 for i = 1, 5 do
 	char_buqu[i] = false
+	char_wushi[i] = false
     for j = 1, 4 do
 		char_juese[i][-j] = {}
 	end
@@ -924,7 +924,7 @@ function char_skills_sellblood()
 	end
 	
 	--  曹操发动奸雄  --
-	if char_juese[id].skill["奸雄"] == "available" and cansellblood == true then
+	if char_juese[id].skill["奸雄"] == "available" and cansellblood == true and laiyuan == card_jiesuan[3] then
 		add_funcptr(skills_jianxiong, id)
 	end
 
@@ -1141,7 +1141,7 @@ function _char_tili_deduct()    --  体力扣减：队列执行函数
 	_tili_deduct_push_queue()
 	
 	--  青釭剑无视防具  --
-	if not char_wushi then
+	if not char_wushi[id] then
 		--  藤甲受火属性伤害，伤害+1  --
 		if char_juese[id].fangju[1] == "藤甲" and shuxing == "火" then
 			msg = {char_juese[id].name, "触发了'藤甲'效果"}
@@ -1233,7 +1233,7 @@ function _deduct_count(va_list)    --  体力扣减：计算体力扣减点数
 	local dianshu, id, laiyuan, shuxing
 	dianshu = va_list[1]; id = va_list[2]; laiyuan = va_list[3]; shuxing = va_list[4]
 	
-	if not char_wushi then
+	if not char_wushi[id] then
 	    if char_juese[id].fangju[1] == "藤甲" and shuxing == "火" then
 		    dianshu = dianshu + 1
 	    end
@@ -1753,6 +1753,7 @@ end
 --  伤害结算完成，恢复原伤害结算队列的状态，以及判断当前回合玩家是否死亡  --
 function _deduct_finalize()
 	pop_deduct_params()
+	
 	if deduct_no_end_huihe == false then
 		char_judge_siwang_skip_all_stages()
 	else
@@ -1777,6 +1778,7 @@ function char_judge_siwang_skip_all_stages()
 		clear_zhudong_queue()
 		funcptr_queue = {}
 
+		card_out_jiesuan()
 		if gamerun_huihe == "弃牌" and #wugucards > 0 then
 			for i = 1, #wugucards do
 				card_add_qipai(wugucards[i])

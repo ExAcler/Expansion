@@ -428,6 +428,13 @@ function card_into_jiesuan(ID, ID_shoupai, actual_name, ID_laiyuan)
 		end
 	end
 end
+function card_into_jiesuan_2(card, actual_name, ID_laiyuan)
+	card_jiesuan[1] = {}
+	card_jiesuan[2] = actual_name
+	card_jiesuan[3] = ID_laiyuan
+
+	table.insert(card_jiesuan[1], card)
+end
 
 --  手牌结算完毕后从结算区移入弃牌堆  --
 function card_out_jiesuan()
@@ -461,6 +468,10 @@ function card_out_jiesuan()
 	card_jiesuan[1] = {}
 	card_jiesuan[2] = ""
 	card_jiesuan[3] = 0
+end
+function card_out_jiesuan_queued()
+	card_out_jiesuan()
+	skills_skip_subqueue()
 end
 
 --  弃牌阶段结算结束后将牌从弃牌阶段牌堆移入弃牌堆  --
@@ -4250,7 +4261,7 @@ function _sha_judge_fangju_ying(card_zhuangbei, card_shoupai, sha_leixing, ID_s,
 end
 function _sha_exe_ai_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
 	if #card ~= 0 then
-		if not char_wushi then        
+		if not char_wushi[ID_mubiao] then        
 		    if card[1] == "八卦阵" then
 				if char_juese[ID_mubiao].skill["八阵"] == "available" then
 					add_funcptr(skills_bazhen, ID_mubiao)
@@ -4271,7 +4282,7 @@ function _sha_zhudong_xiangying(va_list)
 	funcptr_i = 0
 
 	if #fangju_card ~= 0 then
-	    if not char_wushi then
+	    if not char_wushi[ID_mubiao] then
 		    if fangju_card[1] == "八卦阵" then
 				if _bagua_jiesuan(ID_mubiao) then
 					_sha_shan_replaced(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)
@@ -4602,7 +4613,7 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 	--  青釭剑，设置无视防具标志  --
 	if #char_juese[ID_s].wuqi ~= 0 then
 	    if char_juese[ID_s].wuqi[1] == "青釭剑" then
-	        char_wushi = true
+	        char_wushi[ID_mubiao] = true
 	    end
 		if char_juese[ID_s].wuqi[1] == "朱雀扇" then
 			if char_zhuque == true then
@@ -4634,7 +4645,7 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 			add_funcptr(_nanman_send_msg, {char_juese[ID_mubiao].name, "触发了武将技能 '毅重'，此杀无效"})
 			add_funcptr(_sha_sub2, nil)
 			return
-		elseif not char_wushi then
+		elseif not char_wushi[ID_mubiao] then
 			if _sha_judge_fangju_ying(card, card_shoupai, hint_1, ID_s, ID_mubiao) then
 				add_funcptr(_sha_sub2, nil)
 			    return
@@ -4669,7 +4680,7 @@ function _sha_exe_1(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)    --  
 end
 function _sha_exe_1_fangyu(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag, card)
 	if #card ~= 0 then
-	    if not char_wushi then
+	    if not char_wushi[ID_mubiao] then
 		    if card[1] == "八卦阵" then
 				if char_juese[ID_mubiao].skill["八阵"] == "available" then
 					add_funcptr(skills_bazhen, ID_mubiao)
@@ -4713,7 +4724,7 @@ function _sha_ai_xiangying(va_list)
 	funcptr_i = 0
 
 	if #fangju_card ~= 0 then
-	    if not char_wushi then
+	    if not char_wushi[ID_mubiao] then
 		    if fangju_card[1] == "八卦阵" then
 				if _bagua_jiesuan(ID_mubiao) then
 					_sha_shan_replaced(card_shoupai, ID_s, ID_mubiao, iscur, wushuang_flag)
@@ -5202,14 +5213,14 @@ function _sha_sub2()
 	card_out_jiesuan()
 	gamerun_wuqi_out_hand(char_acting_i)
 
-	local iscur = char_sha_params[5]
+	local ID_mubiao, iscur = char_sha_params[4], char_sha_params[5]
 	if iscur then
 		char_yisha = true
 		char_sha_time = char_sha_time - 1
 		char_hejiu = false
 	end
 
-	char_wushi = false
+	char_wushi[ID_mubiao] = false
 	char_sha_params = nil
 	char_sha_mubiao = nil
 	char_sha_mubiao_i = nil
@@ -5480,7 +5491,6 @@ function _jiedao_sub1(va_list)
 	card_shanchu({ID_req, ID_shoupai})
 end
 function _jiedao_sub2()
-	char_wushi = false
 	gamerun_OK = false
 	guankan_s = 0
 
