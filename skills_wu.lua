@@ -1430,7 +1430,7 @@ function _tianxiang_exe(ID_shoupai, ID, ID_mubiao, dianshu)
 	deduct_hengzhi_stack[#deduct_hengzhi_stack] = char_juese[ID_mubiao].hengzhi
 
 	if deduct_id_ignore_stack[#deduct_id_ignore_stack] == ID_mubiao then
-		deduct_id_ignore_stack[#deduct_id_ignore_stack] = nil
+		deduct_id_ignore_stack[#deduct_id_ignore_stack] = -1
 	end
 	
 	add_funcptr(skills_pop_queue)
@@ -1443,7 +1443,7 @@ function _tianxiang_sub1(va_list)
 	local card = char_juese[ID].shoupai[ID_shoupai]
 	card_add_qipai(card)
 	card_remove({ID, ID_shoupai})
-	push_message(table.concat({char_juese[ID].name, "弃掉了", card[2], card[3], "的", card[1]}))
+	push_message(table.concat({char_juese[ID].name, "弃掉了'", card[2], card[3], "的", card[1], "'"}))
 end
 function _tianxiang_huifu()
 	funcptr_queue, funcptr_i = pop_zhudong_queue()

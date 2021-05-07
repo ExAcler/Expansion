@@ -3104,6 +3104,14 @@ function _nanman_AI(ID_s, ID_mubiao)    --  南蛮入侵：响应AI
 	
 	c_pos = ai_chazhao_sha(ID_mubiao, char_juese[ID_mubiao].shoupai)
 	if c_pos > -1 then
+		local card_origin = char_juese[ID_mubiao].shoupai[c_pos]
+		if card_origin[1] ~= "杀" and card_origin[1] ~= "火杀" and card_origin[1] ~= "雷杀" then
+			if char_juese[ID_mubiao].skill["武圣"] == "available" then
+				add_funcptr(push_message, table.concat({char_juese[ID_mubiao].name, "发动了武将技能 '武圣'"}))
+			elseif char_juese[ID_mubiao].skill["龙胆"] == "available" then
+				add_funcptr(push_message, table.concat({char_juese[ID_mubiao].name, "发动了武将技能 '龙胆'"}))
+			end
+		end
 	    add_funcptr(_nanman_sha, {ID_mubiao, c_pos})
 		skills_losecard(ID_mubiao)
 	else
@@ -3124,14 +3132,14 @@ function _nanman_zhudong_enter(ID_s)	--  南蛮入侵：进入己方主动出牌
 	platform.window:invalidate()
 end
 function _nanman_zhudong_chu(ID_s)	--  南蛮入侵：己方出杀
-	c_pos = card_highlighted
+	local c_pos = card_highlighted
 
 	gamerun_status = "手牌生效中"
 	set_hints("")
 	card_selected = {}
 	card_highlighted = 1
 
-	card_origin = char_juese[char_current_i].shoupai[c_pos]
+	local card_origin = char_juese[char_current_i].shoupai[c_pos]
 	if card_origin[1] ~= "杀" and card_origin[1] ~= "火杀" and card_origin[1] ~= "雷杀" then
 		if char_juese[char_current_i].skill["武圣"] == "available" then
 			add_funcptr(push_message, table.concat({char_juese[char_current_i].name, "发动了武将技能 '武圣'"}))
