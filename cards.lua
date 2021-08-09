@@ -5228,7 +5228,9 @@ function _sha_sub2()
 		char_hejiu = false
 	end
 
-	char_wushi[ID_mubiao] = false
+	for i = 1, 5 do
+		char_wushi[i] = false
+	end
 	char_sha_params = nil
 	char_sha_mubiao = nil
 	char_sha_mubiao_i = nil
