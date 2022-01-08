@@ -337,7 +337,7 @@ function char_fenpei_id()
     add_funcptr(_id_sub1, nil)
 end
 function _id_sub1()
-    local i, t = 0
+    local i, t
 
     char_juese_fid = table.copy(char_juese_identity)
 	math.randomseed(timer.getMilliSecCounter())
@@ -353,7 +353,7 @@ end
 
 --  分配武将  --
 function char_fenpei_wujiang()
-    local i, t = 0
+    local i, t
 	
 	-- 主公分配武将 --
 	add_funcptr(_wujiang_sub1, nil)

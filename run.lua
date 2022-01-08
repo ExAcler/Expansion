@@ -1514,7 +1514,7 @@ function on.enterKey()
 			if table.getn2(card_selected) ~= 0 then
 				funcptr_queue = {}
 				_buyi_exe({char_current_i, char_current_i, card_highlighted})
-				add_funcptr(_buyi_huifu_2, nil)
+				add_funcptr(skills_pop_queue)
 				consent_func_queue(0.6)
 			end
 			return

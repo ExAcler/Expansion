@@ -686,12 +686,12 @@ function skills_xinsheng(va_list)
 	skills_push_queue()
 
 	if ID == char_current_i then
-		skills_xinsheng_enter(ID)
+		skills_xinsheng_enter(ID, is_beginning)
 	else
 		skills_xinsheng_set(ID, ai_judge_xinsheng(ID), is_beginning)
 	end
 end
-function skills_xinsheng_enter(ID)
+function skills_xinsheng_enter(ID, is_beginning)
 	gamerun_status = "确认操作"
 	jiaohu_text = "是否发动 '新生'?"
 	gamerun_OK = false

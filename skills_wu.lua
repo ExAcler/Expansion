@@ -451,7 +451,7 @@ function skills_buyi_ai(ID, ID_mubiao)
 	
 	if fanmian_mubiao ~= nil then
 		push_message(char_juese[ID].name .. "发动了武将技能 '补益'")
-		local card_searched, card_chosen = {}
+		local card_searched, card_chosen
 		if ID ~= ID_mubiao then
 			card_chosen = math.random(#char_juese[ID_mubiao].shoupai)
 		else

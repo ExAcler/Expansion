@@ -685,7 +685,7 @@ function ai_judge_change_panding(id, ID_laiyuan, ID_mubiao, panding_leixing)
 			card_id = ai_card_search(id, "红桃", 1)
 		end
 		if #card_id == 0 and skill_available ~= "鬼道" then
-			card_id = ai_card_serach(id, "方块", 1)
+			card_id = ai_card_search(id, "方块", 1)
 		end
 
 		if #card_id == 0 then
