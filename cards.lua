@@ -1809,7 +1809,7 @@ function card_le(va_list)
 	if card[1] == "乐不思蜀" then
 		msg = {char_juese[ID_s].name, "给", char_juese[ID_mubiao].name, "安装了'", card[2], card[3], "的", card[1], "'"}
 	else
-		msg = {char_juese[ID_s].name, "给", char_juese[ID_mubiao].name, "安装了乐不思蜀 {", card[2], card[3], "的", card[1], ")"}
+		msg = {char_juese[ID_s].name, "给", char_juese[ID_mubiao].name, "安装了乐不思蜀 (", card[2], card[3], "的", card[1], ")"}
 	end
 	push_message(table.concat(msg))
 	
@@ -3601,6 +3601,7 @@ function card_juedou(ID_shoupai, ID_s, ID_mubiao)
 		end
 	end
 
+	--[[
 	if char_juese[ID_mubiao].isantigovernment ~= nil then
 		if char_juese[ID_mubiao].isantigovernment == false then
 			if char_juese[ID_s].shenfen == "主公" then
@@ -3613,6 +3614,7 @@ function card_juedou(ID_shoupai, ID_s, ID_mubiao)
 		end
 	end
 	ai_judge_shenfen()
+	--]]
 	
 	--  非技能模拟的决斗才可被无懈  --
 	if char_juese[ID_s].shoupai[ID_shoupai[1]][2] ~= "" then
